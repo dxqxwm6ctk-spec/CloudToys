@@ -1,0 +1,123 @@
+Build a premium, production-ready eCommerce website called "Cloud Toys".
+
+IMPORTANT:
+Do NOT generate a generic AI-looking website. The design must feel like it was handcrafted by a professional UI/UX designer.
+
+Brand:
+- Name: Cloud Toys
+- Industry: Toy Store
+- Style: Modern, Premium, Clean, Minimal
+- Primary Color: Burgundy (#7A1F3D)
+- Secondary Color: White (#FFFFFF)
+- Accent Color: Soft Gold (#C9A227) used sparingly for premium highlights.
+- Rounded corners, soft shadows, elegant spacing.
+
+Design Requirements:
+- Beautiful hero section with a premium toy-themed background.
+- Large headline with smooth entrance animations.
+- Modern typography.
+- Glassmorphism only where appropriate.
+- Plenty of white space.
+- Smooth hover animations.
+- Micro interactions.
+- Elegant transitions.
+- Professional gradients.
+- High-end Apple/Tesla-inspired layout.
+- Fully responsive for desktop, tablet, and mobile.
+
+Pages:
+1. Home
+2. Shop
+3. Product Details
+4. Categories
+5. About Us
+6. Contact
+7. Cart
+8. Checkout
+9. Wishlist
+10. User Account
+11. Order Tracking
+
+Homepage Sections:
+- Hero Banner
+- Featured Products
+- Best Sellers
+- New Arrivals
+- Shop by Category
+- Why Choose Us
+- Customer Reviews
+- Newsletter
+- Instagram Gallery
+- Footer
+
+Header:
+- Sticky navigation
+- Logo
+- Search bar
+- Categories dropdown
+- Wishlist icon
+- Cart icon
+- User profile
+- Mobile menu
+
+Product Cards:
+- Premium product image
+- Product name
+- Price
+- Discount badge
+- Rating stars
+- Add to Cart
+- Wishlist
+- Quick View
+- Hover animation
+
+Store Features:
+- Product filtering
+- Search
+- Sorting
+- Pagination
+- Related products
+- Product gallery
+- Quantity selector
+- Coupon system
+- Shipping calculator
+- Multiple payment methods
+- Order summary
+
+Animations:
+- Framer Motion
+- Fade
+- Slide
+- Scale
+- Smooth page transitions
+- Loading skeletons
+- Animated buttons
+- Elegant hover effects
+
+Tech Stack:
+- React
+- Next.js
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- Lucide Icons
+- Responsive Grid Layout
+
+Performance:
+- SEO optimized
+- Fast loading
+- Lazy loading images
+- Optimized components
+- Clean architecture
+- Reusable components
+- Modern folder structure
+
+Images:
+Use realistic, high-quality toy images.
+No AI-generated illustration style.
+Use professional product photography with white backgrounds.
+
+Overall Goal:
+The final result should look like a real premium online store comparable to Apple, LEGO, Nike, or Zara—not an AI template. Every section should have attention to detail, perfect spacing, elegant typography, and a luxurious shopping experience.
+
+Generate complete production-quality code with clean architecture, reusable components, and scalable folder structure.

@@ -1,3 +1,4 @@
+import path from "path";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -29,6 +30,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(
+  "/api/images",
+  express.static(path.resolve(import.meta.dirname, "..", "public", "images")),
+);
 app.use("/api", router);
 
 export default app;

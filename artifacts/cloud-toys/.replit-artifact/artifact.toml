@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Cloud Toys"
+description = "A premium eCommerce website for Cloud Toys, a modern toy store selling high-quality toys with a luxury, Apple/Tesla-inspired shopping experience. Includes browsing, cart, wishlist, checkout, and account flows."
+version = "1.0.0"
+id = "artifacts/cloud-toys"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21147
+
+[services.development]
+run = "pnpm --filter @workspace/cloud-toys run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cloud-toys", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cloud-toys/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21147"
+BASE_PATH = "/"
