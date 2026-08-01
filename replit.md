@@ -12,6 +12,7 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/db run seed` — seed demo categories, products, reviews, and a sample order (idempotent — safe to re-run)
 - Required env: `DATABASE_URL` — Postgres connection string (auto-provisioned by Replit)
+- Required env for image uploads: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` — Replit Object Storage (provisioned via the object-storage tool)
 
 ## Stack
 
