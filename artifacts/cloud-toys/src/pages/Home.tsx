@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useListFeaturedProducts, useListBestSellerProducts, useListCategories } from '@workspace/api-client-react/src/generated/api';
+import { useListFeaturedProducts, useListBestSellerProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
 import { CategoryCard } from '../components/ui/CategoryCard';
 import { motion } from 'framer-motion';

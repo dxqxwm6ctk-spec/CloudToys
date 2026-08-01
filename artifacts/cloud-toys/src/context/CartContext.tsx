@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import type { Product } from '@workspace/api-client-react/src/generated/api.schemas';
+import type { Product } from '@workspace/api-client-react';
 
 export type CartItem = Product & { quantity: number };
 

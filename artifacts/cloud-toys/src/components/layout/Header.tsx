@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'wouter';
 import { ShoppingBag, Heart, Search, User, Menu, X } from 'lucide-react';
-import { useCart } from '../context/CartContext';
-import { useWishlist } from '../context/WishlistContext';
+import { useCart } from '../../context/CartContext';
+import { useWishlist } from '../../context/WishlistContext';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useRoute } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useGetProduct } from '@workspace/api-client-react/src/generated/api';
+import { useGetProduct } from '@workspace/api-client-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';

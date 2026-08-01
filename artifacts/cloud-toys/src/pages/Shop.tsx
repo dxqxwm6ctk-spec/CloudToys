@@ -1,10 +1,10 @@
 import { useLocation } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useListProducts, useListCategories } from '@workspace/api-client-react/src/generated/api';
+import { useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
 import { useState, useEffect } from 'react';
 import { Filter, ChevronDown, Check } from 'lucide-react';
-import type { ListProductsSort } from '@workspace/api-client-react/src/generated/api.schemas';
+import type { ListProductsSort } from '@workspace/api-client-react';
 
 export function Shop() {
   const [location, setLocation] = useLocation();

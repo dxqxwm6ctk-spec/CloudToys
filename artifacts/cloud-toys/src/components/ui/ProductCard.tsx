@@ -1,7 +1,7 @@
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
 import { Heart, ShoppingCart } from 'lucide-react';
-import type { Product } from '@workspace/api-client-react/src/generated/api.schemas';
+import type { Product } from '@workspace/api-client-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';

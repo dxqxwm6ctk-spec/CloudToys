@@ -1,4 +1,4 @@
-import { useListCategories } from '@workspace/api-client-react/src/generated/api';
+import { useListCategories } from '@workspace/api-client-react';
 import { PageTransition } from '../components/ui/PageTransition';
 import { CategoryCard } from '../components/ui/CategoryCard';
 

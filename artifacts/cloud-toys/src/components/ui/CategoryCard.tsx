@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
-import type { Category } from '@workspace/api-client-react/src/generated/api.schemas';
+import type { Category } from '@workspace/api-client-react';
 
 export function CategoryCard({ category }: { category: Category }) {
   return (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useTrackOrder } from '@workspace/api-client-react/src/generated/api';
+import { useTrackOrder } from '@workspace/api-client-react';
 import { Search, Package, Truck, CheckCircle2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 
