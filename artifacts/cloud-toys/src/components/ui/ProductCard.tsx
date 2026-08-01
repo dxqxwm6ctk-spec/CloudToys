@@ -112,13 +112,12 @@ export function ProductCard({ product }: { product: Product }) {
                 <ShoppingBag className="w-4 h-4" />
                 {product.inStock ? 'Add to Bag' : 'Out of Stock'}
               </button>
-              <Link
-                href={`/product/${product.id}`}
-                className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-gray-600 hover:text-[#7A1F3D] shadow-lg transition-colors flex-shrink-0"
-                onClick={(e) => e.stopPropagation()}
+              <span
+                className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-gray-600 shadow-lg flex-shrink-0"
+                aria-hidden="true"
               >
                 <Eye className="w-4 h-4" />
-              </Link>
+              </span>
             </motion.div>
           )}
         </AnimatePresence>
