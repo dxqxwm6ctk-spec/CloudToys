@@ -4,6 +4,7 @@ import {
   db,
   categoriesTable,
   productsTable,
+  reviewsTable,
   ordersTable,
   paymentMethodsTable,
   type OrderTrackingStep,
@@ -424,6 +425,12 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  // Reviews reference this product with a NOT NULL foreign key — remove them
+  // first so the product delete doesn't fail with a constraint violation.
+  await db
+    .delete(reviewsTable)
+    .where(eq(reviewsTable.productId, Number(params.data.id)));
+
   await db
     .delete(productsTable)
     .where(eq(productsTable.id, Number(params.data.id)));
@@ -554,9 +561,23 @@ router.delete("/admin/categories/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const categoryId = Number(params.data.id);
+
+  const [{ productCount }] = await db
+    .select({ productCount: sql<number>`count(*)`.mapWith(Number) })
+    .from(productsTable)
+    .where(eq(productsTable.categoryId, categoryId));
+
+  if (productCount > 0) {
+    res.status(409).json({
+      error: `Cannot delete category with ${productCount} product${productCount === 1 ? "" : "s"} still assigned to it. Move or delete those products first.`,
+    });
+    return;
+  }
+
   const [deleted] = await db
     .delete(categoriesTable)
-    .where(eq(categoriesTable.id, Number(params.data.id)))
+    .where(eq(categoriesTable.id, categoryId))
     .returning();
 
   if (!deleted) {

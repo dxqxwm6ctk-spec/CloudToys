@@ -82,7 +82,10 @@ export default function CategoriesList() {
         toast({ title: "Category deleted" });
         queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
       },
-      onError: () => toast({ title: "Failed to delete", variant: "destructive" })
+      onError: (err: any) => {
+        const message = err?.response?.data?.error || "Failed to delete";
+        toast({ title: message, variant: "destructive" });
+      }
     });
   };
 
