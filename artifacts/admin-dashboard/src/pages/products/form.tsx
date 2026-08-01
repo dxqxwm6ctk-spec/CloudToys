@@ -185,6 +185,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
 
       const response = await fetch(`${getApiBase()}/api/admin/images/upload`, {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       });
 

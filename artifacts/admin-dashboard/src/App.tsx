@@ -3,8 +3,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useParams } from 'wouter';
+import { Loader2 } from 'lucide-react';
 
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
 import ProductsList from '@/pages/products/list';
 import ProductForm from '@/pages/products/form';
@@ -43,12 +46,32 @@ function Router() {
   );
 }
 
+function Gate() {
+  const { username, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!username) {
+    return <Login />;
+  }
+
+  return <Router />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-          <Router />
+          <AuthProvider>
+            <Gate />
+          </AuthProvider>
         </WouterRouter>
         <Toaster />
       </TooltipProvider>

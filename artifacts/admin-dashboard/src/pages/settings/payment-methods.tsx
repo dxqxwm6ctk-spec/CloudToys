@@ -17,7 +17,9 @@ import { getApiBase } from '@/lib/api-url';
 const BASE = getApiBase();
 
 async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
-  const res = await fetch(`${BASE}/api/admin/settings/payment-methods`);
+  const res = await fetch(`${BASE}/api/admin/settings/payment-methods`, {
+    credentials: 'include',
+  });
   if (!res.ok) throw new Error('Failed to load');
   return res.json();
 }
@@ -25,6 +27,7 @@ async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
 async function updatePaymentMethod(id: string, enabled: boolean): Promise<PaymentMethod> {
   const res = await fetch(`${BASE}/api/admin/settings/payment-methods/${id}`, {
     method: 'PUT',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ enabled }),
   });

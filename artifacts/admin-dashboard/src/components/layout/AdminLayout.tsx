@@ -2,9 +2,11 @@ import React from 'react';
 import { Link, useLocation } from 'wouter';
 import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { username, logout } = useAuth();
 
   const navItems = [
     { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -43,7 +45,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="p-4 border-t border-border mt-auto">
-          <button className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button
+            onClick={() => logout()}
+            className="flex w-full items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
             <LogOut className="w-4 h-4" />
             Sign Out
           </button>
@@ -58,7 +63,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
-              O
+              {username ? username.charAt(0).toUpperCase() : '?'}
             </div>
           </div>
         </header>
