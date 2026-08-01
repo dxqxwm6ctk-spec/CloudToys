@@ -6,6 +6,7 @@ import type { Product } from '@workspace/api-client-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
+import { ProductPicture } from './ProductPicture';
 
 export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
@@ -48,9 +49,9 @@ export function ProductCard({ product }: { product: Product }) {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <motion.img
+        <ProductPicture
           src={product.mediumUrl ?? product.imageUrl}
-          srcSet={
+          avifSrcSet={
             product.thumbUrl && product.mediumUrl && product.largeUrl
               ? `${product.thumbUrl} 300w, ${product.mediumUrl} 800w, ${product.largeUrl} 1600w`
               : undefined

@@ -6,6 +6,7 @@ import {
   productsTable,
   ordersTable,
 } from "@workspace/db";
+import { deleteProductImageSet } from "./images";
 import {
   GetAdminStatsResponse,
   AdminListProductsQueryParams,
@@ -283,11 +284,26 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  // Fetch current image URLs before overwriting so we can delete stale files
+  const [before] = await db
+    .select({ thumbUrl: productsTable.thumbUrl })
+    .from(productsTable)
+    .where(eq(productsTable.id, Number(params.data.id)));
+
   const [updated] = await db
     .update(productsTable)
     .set(updates)
     .where(eq(productsTable.id, Number(params.data.id)))
     .returning();
+
+  // If a new image set was uploaded, delete the old one (fire-and-forget)
+  if (
+    before?.thumbUrl &&
+    d.thumbUrl !== undefined &&
+    d.thumbUrl !== before.thumbUrl
+  ) {
+    deleteProductImageSet(before.thumbUrl).catch(() => {});
+  }
 
   if (!updated) {
     res.status(404).json({ error: "Product not found" });
@@ -332,15 +348,23 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [deleted] = await db
-    .delete(productsTable)
-    .where(eq(productsTable.id, Number(params.data.id)))
-    .returning();
+  // Fetch image URLs before deleting so we can clean up storage
+  const [product] = await db
+    .select({ thumbUrl: productsTable.thumbUrl })
+    .from(productsTable)
+    .where(eq(productsTable.id, Number(params.data.id)));
 
-  if (!deleted) {
+  if (!product) {
     res.status(404).json({ error: "Product not found" });
     return;
   }
+
+  await db
+    .delete(productsTable)
+    .where(eq(productsTable.id, Number(params.data.id)));
+
+  // Delete stored image files after the DB row is gone (fire-and-forget)
+  deleteProductImageSet(product.thumbUrl).catch(() => {});
 
   res.json(AdminDeleteProductResponse.parse({ success: true }));
 });

@@ -2,7 +2,7 @@
  * Image management routes — upload, process, serve
  *
  * POST /admin/images/upload   — accept multipart, process with Sharp, store in GCS
- * GET  /images/p/:key         — serve processed AVIF with immutable cache headers
+ * GET  /images/p/:key         — serve processed AVIF/WebP with immutable cache headers
  */
 import path from "path";
 import { randomUUID } from "crypto";
@@ -54,12 +54,41 @@ function getBucketId(): string {
   return id;
 }
 
-function imageGcsPath(productId: string, uuid: string, size: string): string {
-  return `products/${productId}/${uuid}/${size}.avif`;
+function imageGcsPath(productId: string, uuid: string, size: string, ext: "avif" | "webp"): string {
+  return `products/${productId}/${uuid}/${size}.${ext}`;
 }
 
 function imageServingUrl(productId: string, uuid: string, size: string): string {
   return `/api/images/p/${productId}/${uuid}/${size}.avif`;
+}
+
+/**
+ * Parse productId and uuid from an internal image URL.
+ * Returns null for external URLs.
+ */
+function parseInternalImageUrl(url: string): { productId: string; uuid: string } | null {
+  const match = url.match(/^\/api\/images\/p\/([a-zA-Z0-9_-]+)\/([0-9a-f-]{36})\//);
+  if (!match) return null;
+  return { productId: match[1], uuid: match[2] };
+}
+
+/**
+ * Delete all stored image files (AVIF + WebP, all sizes) for a product image set.
+ * Identified by any one of the variant URLs (e.g. thumbUrl).
+ * Safe to call with null/undefined or external URLs — does nothing in those cases.
+ * Never throws; failures are logged and swallowed so callers need not worry.
+ */
+export async function deleteProductImageSet(imageUrl: string | null | undefined): Promise<void> {
+  if (!imageUrl) return;
+  const parsed = parseInternalImageUrl(imageUrl);
+  if (!parsed) return; // external URL — nothing stored by us
+  const { productId, uuid } = parsed;
+  try {
+    const bucket = objectStorageClient.bucket(getBucketId());
+    await bucket.deleteFiles({ prefix: `products/${productId}/${uuid}/` });
+  } catch (err) {
+    console.error("[images] deleteProductImageSet failed:", err);
+  }
 }
 
 async function processAndUpload(
@@ -69,28 +98,43 @@ async function processAndUpload(
 ): Promise<{ thumbUrl: string; mediumUrl: string; largeUrl: string }> {
   const bucket = objectStorageClient.bucket(getBucketId());
 
-  const avifBuffers = await Promise.all(
-    SIZES.map(({ px }) =>
-      sharp(buffer)
-        .rotate() // auto-rotate from EXIF
-        .resize(px, px, { fit: "inside", withoutEnlargement: true })
-        .avif({ quality: 60, effort: 6 })
-        .toBuffer(),
+  // Generate AVIF and WebP variants for all sizes in parallel
+  const [avifBuffers, webpBuffers] = await Promise.all([
+    Promise.all(
+      SIZES.map(({ px }) =>
+        sharp(buffer)
+          .rotate() // auto-rotate from EXIF
+          .resize(px, px, { fit: "inside", withoutEnlargement: true })
+          .avif({ quality: 60, effort: 6 })
+          .toBuffer(),
+      ),
     ),
-  );
+    Promise.all(
+      SIZES.map(({ px }) =>
+        sharp(buffer)
+          .rotate()
+          .resize(px, px, { fit: "inside", withoutEnlargement: true })
+          .webp({ quality: 75 })
+          .toBuffer(),
+      ),
+    ),
+  ]);
 
-  await Promise.all(
-    SIZES.map(({ name }, i) =>
-      bucket
-        .file(imageGcsPath(productId, uuid, name))
-        .save(avifBuffers[i], {
-          contentType: "image/avif",
-          metadata: {
-            "Cache-Control": "public, max-age=31536000, immutable",
-          },
-        }),
+  // Upload all 6 files (3 sizes × 2 formats) in parallel
+  await Promise.all([
+    ...SIZES.map(({ name }, i) =>
+      bucket.file(imageGcsPath(productId, uuid, name, "avif")).save(avifBuffers[i], {
+        contentType: "image/avif",
+        metadata: { "Cache-Control": "public, max-age=31536000, immutable" },
+      }),
     ),
-  );
+    ...SIZES.map(({ name }, i) =>
+      bucket.file(imageGcsPath(productId, uuid, name, "webp")).save(webpBuffers[i], {
+        contentType: "image/webp",
+        metadata: { "Cache-Control": "public, max-age=31536000, immutable" },
+      }),
+    ),
+  ]);
 
   return {
     thumbUrl: imageServingUrl(productId, uuid, "thumb"),
@@ -176,22 +220,29 @@ router.post(
   },
 );
 
-// GET /images/p/:productId/:uuid/:size.avif  — serve with immutable headers
+// GET /images/p/:productId/:uuid/:size  — serve AVIF or WebP with immutable headers
+// :size examples: "thumb.avif", "medium.webp", "large.avif"
 router.get("/images/p/:productId/:uuid/:size", async (req, res): Promise<void> => {
   const { productId, uuid, size } = req.params;
+
+  const isWebp = size.endsWith(".webp");
+  const isAvif = size.endsWith(".avif");
+  const sizeName = size.replace(/\.(avif|webp)$/, "");
 
   // Basic sanitization — prevent directory traversal
   if (
     !/^[a-zA-Z0-9_-]+$/.test(productId) ||
     !/^[0-9a-f-]{36}$/.test(uuid) ||
-    !["thumb", "medium", "large"].includes(size.replace(".avif", ""))
+    !["thumb", "medium", "large"].includes(sizeName) ||
+    (!isAvif && !isWebp)
   ) {
     res.status(400).json({ error: "Invalid path" });
     return;
   }
 
-  const sizeName = size.replace(".avif", "");
-  const gcsPath = imageGcsPath(productId, uuid, sizeName);
+  const ext = isWebp ? "webp" : "avif";
+  const contentType = isWebp ? "image/webp" : "image/avif";
+  const gcsPath = imageGcsPath(productId, uuid, sizeName, ext);
 
   try {
     const bucket = objectStorageClient.bucket(getBucketId());
@@ -202,7 +253,7 @@ router.get("/images/p/:productId/:uuid/:size", async (req, res): Promise<void> =
       return;
     }
 
-    res.setHeader("Content-Type", "image/avif");
+    res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Vary", "Accept-Encoding");
 

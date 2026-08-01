@@ -7,6 +7,7 @@ import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ProductPicture } from '../components/ui/ProductPicture';
 
 export function ProductDetail() {
   const [, params] = useRoute('/product/:slug');
@@ -83,19 +84,19 @@ export function ProductDetail() {
           {/* Gallery */}
           <div className="space-y-4">
             <div className="aspect-square bg-secondary rounded-3xl overflow-hidden relative">
-              <motion.img 
+              <ProductPicture
                 key={activeImage}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
                 src={activeImage === 0 ? (product.largeUrl ?? gallery[0]) : gallery[activeImage]}
-                srcSet={
+                avifSrcSet={
                   activeImage === 0 && product.thumbUrl && product.mediumUrl && product.largeUrl
                     ? `${product.thumbUrl} 300w, ${product.mediumUrl} 800w, ${product.largeUrl} 1600w`
                     : undefined
                 }
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                alt={product.name} 
+                alt={product.name}
                 className="w-full h-full object-cover"
               />
               {product.badge && (
