@@ -85,6 +85,111 @@ export interface OrderTracking {
   steps: OrderTrackingStep[];
 }
 
+export interface AdminStats {
+  totalProducts: number;
+  totalCategories: number;
+  totalOrders: number;
+  inStockProducts: number;
+  outOfStockProducts: number;
+}
+
+export interface AdminProduct {
+  id: string;
+  slug: string;
+  name: string;
+  shortDescription: string;
+  description: string;
+  price: number;
+  /** @nullable */
+  compareAtPrice?: number | null;
+  currency: string;
+  imageUrl: string;
+  galleryUrls?: string[];
+  categoryId: string;
+  categoryName: string;
+  rating: number;
+  reviewCount: number;
+  inStock: boolean;
+  /** @nullable */
+  badge?: string | null;
+  features?: string[];
+  createdAt: string;
+}
+
+export interface AdminProductListResult {
+  items: AdminProduct[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ProductInput {
+  slug: string;
+  name: string;
+  shortDescription: string;
+  description: string;
+  price: number;
+  /** @nullable */
+  compareAtPrice?: number | null;
+  currency: string;
+  imageUrl: string;
+  galleryUrls?: string[];
+  categoryId: string;
+  inStock: boolean;
+  /** @nullable */
+  badge?: string | null;
+  features?: string[];
+}
+
+export interface ProductUpdate {
+  slug?: string;
+  name?: string;
+  shortDescription?: string;
+  description?: string;
+  price?: number;
+  /** @nullable */
+  compareAtPrice?: number | null;
+  currency?: string;
+  imageUrl?: string;
+  galleryUrls?: string[];
+  categoryId?: string;
+  inStock?: boolean;
+  /** @nullable */
+  badge?: string | null;
+  features?: string[];
+}
+
+export interface CategoryInput {
+  name: string;
+  slug: string;
+  imageUrl: string;
+}
+
+export interface CategoryUpdate {
+  name?: string;
+  slug?: string;
+  imageUrl?: string;
+}
+
+export interface AdminOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  estimatedDelivery: string;
+  steps: OrderTrackingStep[];
+}
+
+export interface AdminOrderListResult {
+  items: AdminOrder[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface OrderStatusUpdate {
+  status: string;
+}
+
 export type ListProductsParams = {
 category?: string;
 search?: string;
@@ -105,4 +210,25 @@ export const ListProductsSort = {
   rating: 'rating',
   newest: 'newest',
 } as const;
+
+export type AdminListProductsParams = {
+search?: string;
+category?: string;
+page?: number;
+pageSize?: number;
+};
+
+export type AdminDeleteProduct200 = {
+  success?: boolean;
+};
+
+export type AdminDeleteCategory200 = {
+  success?: boolean;
+};
+
+export type AdminListOrdersParams = {
+status?: string;
+page?: number;
+pageSize?: number;
+};
 

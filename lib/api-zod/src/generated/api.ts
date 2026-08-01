@@ -195,3 +195,272 @@ export const TrackOrderResponse = zod.object({
 })
 
 
+/**
+ * @summary Dashboard summary stats
+ */
+export const GetAdminStatsResponse = zod.object({
+  "totalProducts": zod.number(),
+  "totalCategories": zod.number(),
+  "totalOrders": zod.number(),
+  "inStockProducts": zod.number(),
+  "outOfStockProducts": zod.number()
+})
+
+
+/**
+ * @summary List all products (admin view, full detail)
+ */
+export const adminListProductsQueryPageDefault = 1;
+export const adminListProductsQueryPageSizeDefault = 20;
+
+export const AdminListProductsQueryParams = zod.object({
+  "search": zod.coerce.string().optional(),
+  "category": zod.coerce.string().optional(),
+  "page": zod.coerce.number().default(adminListProductsQueryPageDefault),
+  "pageSize": zod.coerce.number().default(adminListProductsQueryPageSizeDefault)
+})
+
+export const AdminListProductsResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "shortDescription": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "compareAtPrice": zod.number().nullish(),
+  "currency": zod.string(),
+  "imageUrl": zod.string(),
+  "galleryUrls": zod.array(zod.string()).optional(),
+  "categoryId": zod.string(),
+  "categoryName": zod.string(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "inStock": zod.boolean(),
+  "badge": zod.string().nullish(),
+  "features": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "pageSize": zod.number()
+})
+
+
+/**
+ * @summary Create a new product
+ */
+export const AdminCreateProductBody = zod.object({
+  "slug": zod.string(),
+  "name": zod.string(),
+  "shortDescription": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "compareAtPrice": zod.number().nullish(),
+  "currency": zod.string(),
+  "imageUrl": zod.string(),
+  "galleryUrls": zod.array(zod.string()).optional(),
+  "categoryId": zod.string(),
+  "inStock": zod.boolean(),
+  "badge": zod.string().nullish(),
+  "features": zod.array(zod.string()).optional()
+})
+
+export const AdminCreateProductResponse = zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "shortDescription": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "compareAtPrice": zod.number().nullish(),
+  "currency": zod.string(),
+  "imageUrl": zod.string(),
+  "galleryUrls": zod.array(zod.string()).optional(),
+  "categoryId": zod.string(),
+  "categoryName": zod.string(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "inStock": zod.boolean(),
+  "badge": zod.string().nullish(),
+  "features": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Update an existing product
+ */
+export const AdminUpdateProductParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminUpdateProductBody = zod.object({
+  "slug": zod.string().optional(),
+  "name": zod.string().optional(),
+  "shortDescription": zod.string().optional(),
+  "description": zod.string().optional(),
+  "price": zod.number().optional(),
+  "compareAtPrice": zod.number().nullish(),
+  "currency": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "galleryUrls": zod.array(zod.string()).optional(),
+  "categoryId": zod.string().optional(),
+  "inStock": zod.boolean().optional(),
+  "badge": zod.string().nullish(),
+  "features": zod.array(zod.string()).optional()
+})
+
+export const AdminUpdateProductResponse = zod.object({
+  "id": zod.string(),
+  "slug": zod.string(),
+  "name": zod.string(),
+  "shortDescription": zod.string(),
+  "description": zod.string(),
+  "price": zod.number(),
+  "compareAtPrice": zod.number().nullish(),
+  "currency": zod.string(),
+  "imageUrl": zod.string(),
+  "galleryUrls": zod.array(zod.string()).optional(),
+  "categoryId": zod.string(),
+  "categoryName": zod.string(),
+  "rating": zod.number(),
+  "reviewCount": zod.number(),
+  "inStock": zod.boolean(),
+  "badge": zod.string().nullish(),
+  "features": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a product
+ */
+export const AdminDeleteProductParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminDeleteProductResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List all categories (admin view)
+ */
+export const AdminListCategoriesResponseItem = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "imageUrl": zod.string(),
+  "productCount": zod.number()
+})
+export const AdminListCategoriesResponse = zod.array(AdminListCategoriesResponseItem)
+
+
+/**
+ * @summary Create a new category
+ */
+export const AdminCreateCategoryBody = zod.object({
+  "name": zod.string(),
+  "slug": zod.string(),
+  "imageUrl": zod.string()
+})
+
+export const AdminCreateCategoryResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "imageUrl": zod.string(),
+  "productCount": zod.number()
+})
+
+
+/**
+ * @summary Update a category
+ */
+export const AdminUpdateCategoryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminUpdateCategoryBody = zod.object({
+  "name": zod.string().optional(),
+  "slug": zod.string().optional(),
+  "imageUrl": zod.string().optional()
+})
+
+export const AdminUpdateCategoryResponse = zod.object({
+  "id": zod.string(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "imageUrl": zod.string(),
+  "productCount": zod.number()
+})
+
+
+/**
+ * @summary Delete a category
+ */
+export const AdminDeleteCategoryParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminDeleteCategoryResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
+ * @summary List all orders (admin view)
+ */
+export const adminListOrdersQueryPageDefault = 1;
+export const adminListOrdersQueryPageSizeDefault = 20;
+
+export const AdminListOrdersQueryParams = zod.object({
+  "status": zod.coerce.string().optional(),
+  "page": zod.coerce.number().default(adminListOrdersQueryPageDefault),
+  "pageSize": zod.coerce.number().default(adminListOrdersQueryPageSizeDefault)
+})
+
+export const AdminListOrdersResponse = zod.object({
+  "items": zod.array(zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "status": zod.string(),
+  "estimatedDelivery": zod.string(),
+  "steps": zod.array(zod.object({
+  "label": zod.string(),
+  "completed": zod.boolean(),
+  "date": zod.string().nullable()
+}))
+})),
+  "total": zod.number(),
+  "page": zod.number(),
+  "pageSize": zod.number()
+})
+
+
+/**
+ * @summary Update order status
+ */
+export const AdminUpdateOrderStatusParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminUpdateOrderStatusBody = zod.object({
+  "status": zod.string()
+})
+
+export const AdminUpdateOrderStatusResponse = zod.object({
+  "id": zod.string(),
+  "orderNumber": zod.string(),
+  "status": zod.string(),
+  "estimatedDelivery": zod.string(),
+  "steps": zod.array(zod.object({
+  "label": zod.string(),
+  "completed": zod.boolean(),
+  "date": zod.string().nullable()
+}))
+})
+
+

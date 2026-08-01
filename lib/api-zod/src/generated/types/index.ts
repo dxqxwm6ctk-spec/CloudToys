@@ -6,14 +6,28 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './adminDeleteCategory200';
+export * from './adminDeleteProduct200';
+export * from './adminListOrdersParams';
+export * from './adminListProductsParams';
+export * from './adminOrder';
+export * from './adminOrderListResult';
+export * from './adminProduct';
+export * from './adminProductListResult';
+export * from './adminStats';
 export * from './category';
+export * from './categoryInput';
+export * from './categoryUpdate';
 export * from './healthStatus';
 export * from './listProductsParams';
 export * from './listProductsSort';
+export * from './orderStatusUpdate';
 export * from './orderTracking';
 export * from './orderTrackingStep';
 export * from './product';
 export * from './productBadge';
 export * from './productDetail';
+export * from './productInput';
 export * from './productListResult';
+export * from './productUpdate';
 export * from './review';
