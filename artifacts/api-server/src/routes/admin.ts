@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, ilike, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, sql } from "drizzle-orm";
 import {
   db,
   categoriesTable,
@@ -563,16 +563,22 @@ router.delete("/admin/categories/:id", async (req, res): Promise<void> => {
 
   const categoryId = Number(params.data.id);
 
-  const [{ productCount }] = await db
-    .select({ productCount: sql<number>`count(*)`.mapWith(Number) })
+  // Fetch all products in this category so we can clean up their images
+  const products = await db
+    .select({ id: productsTable.id, thumbUrl: productsTable.thumbUrl })
     .from(productsTable)
     .where(eq(productsTable.categoryId, categoryId));
 
-  if (productCount > 0) {
-    res.status(409).json({
-      error: `Cannot delete category with ${productCount} product${productCount === 1 ? "" : "s"} still assigned to it. Move or delete those products first.`,
-    });
-    return;
+  if (products.length > 0) {
+    const productIds = products.map((p) => p.id);
+    // Remove reviews first (FK constraint)
+    await db.delete(reviewsTable).where(inArray(reviewsTable.productId, productIds));
+    // Remove products
+    await db.delete(productsTable).where(inArray(productsTable.id, productIds));
+    // Clean up images from storage (fire-and-forget)
+    for (const p of products) {
+      deleteProductImageSet(p.thumbUrl).catch(() => {});
+    }
   }
 
   const [deleted] = await db
