@@ -60,7 +60,12 @@ existing one), push the schema to it once before the first request:
 DATABASE_URL="<new-connection-string>" pnpm --filter @workspace/db run push
 ```
 
-## 5. Object storage (product image uploads) — action needed
+## 5. Object storage (product image uploads) — currently disabled outside Replit
+
+> Decision: for now this is left as-is (working on Replit only). Image
+> uploads via `/api/admin/images/upload` and `/api/images/p/...` will fail
+> on Render/Railway until this is revisited — see below when ready.
+
 
 `src/lib/objectStorage.ts` currently authenticates to Google Cloud Storage
 through Replit's built-in Object Storage sidecar
