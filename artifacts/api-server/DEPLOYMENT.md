@@ -42,7 +42,7 @@ builds only this service, but needs its workspace siblings present.
 
 | Variable | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | Yes | Postgres connection string. Reuse the existing database's connection string, or provision Postgres on Render/Railway and run the schema push (step 4). |
+| `DATABASE_URL` | Yes | Supabase Postgres connection string — use the **pooler** connection string (`aws-0-<region>.pooler.supabase.com:6543`), not the direct-connection host (`db.<ref>.supabase.co`), which is IPv6-only and unreachable from Render/Railway/most hosts. |
 | `SESSION_SECRET` | Yes | Signs the admin session cookie. Long random string. |
 | `ADMIN_USERNAME` | Yes | Admin login username. |
 | `ADMIN_PASSWORD` | Yes | Admin login password. |
