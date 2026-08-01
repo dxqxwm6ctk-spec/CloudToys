@@ -1,6 +1,8 @@
 import { Link } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { useListFeaturedProducts, useListBestSellerProducts, useListCategories } from '@workspace/api-client-react';
+import heroBg from '@assets/hero-bg.jpg';
+import aboutBg from '@assets/about-bg.jpg';
 import { ProductCard } from '../components/ui/ProductCard';
 import { CategoryCard } from '../components/ui/CategoryCard';
 import { motion } from 'framer-motion';
@@ -16,7 +18,7 @@ export function Home() {
       <section className="relative h-[85vh] min-h-[600px] flex items-center justify-center overflow-hidden bg-secondary">
         <div className="absolute inset-0 z-0">
           <img 
-            src="/attached_assets/hero-bg.jpg" 
+            src={heroBg}
             alt="Premium Wooden Toys" 
             className="w-full h-full object-cover object-center opacity-90"
           />
@@ -102,12 +104,12 @@ export function Home() {
           <div className="order-2 lg:order-1 grid grid-cols-2 gap-4">
             <div className="space-y-4 mt-12">
               <div className="bg-secondary rounded-2xl aspect-[3/4] overflow-hidden">
-                <img src="/attached_assets/hero-bg.jpg" alt="Quality" className="w-full h-full object-cover grayscale opacity-80 mix-blend-multiply hover:grayscale-0 hover:mix-blend-normal transition-all duration-700" />
+                <img src={heroBg} alt="Quality" className="w-full h-full object-cover grayscale opacity-80 mix-blend-multiply hover:grayscale-0 hover:mix-blend-normal transition-all duration-700" />
               </div>
             </div>
             <div className="space-y-4">
               <div className="bg-primary/10 rounded-2xl aspect-[3/4] overflow-hidden">
-                <img src="/attached_assets/about-bg.jpg" alt="Design" className="w-full h-full object-cover" />
+                <img src={aboutBg} alt="Design" className="w-full h-full object-cover" />
               </div>
             </div>
           </div>

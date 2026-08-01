@@ -1,4 +1,6 @@
 import { PageTransition } from '../components/ui/PageTransition';
+import aboutBg from '@assets/about-bg.jpg';
+import heroBg from '@assets/hero-bg.jpg';
 
 export function About() {
   return (
@@ -7,7 +9,7 @@ export function About() {
       <div className="relative h-[60vh] min-h-[400px] flex items-center justify-center bg-secondary overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img 
-            src="/attached_assets/about-bg.jpg" 
+            src={aboutBg} 
             alt="Our Workshop" 
             className="w-full h-full object-cover opacity-70"
           />
@@ -39,7 +41,7 @@ export function About() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="bg-secondary rounded-2xl aspect-square overflow-hidden">
-              <img src="/attached_assets/hero-bg.jpg" alt="Design detail" className="w-full h-full object-cover" />
+              <img src={heroBg} alt="Design detail" className="w-full h-full object-cover" />
             </div>
             <div>
               <h3 className="font-serif text-2xl font-semibold mb-6">Designed to be kept</h3>
