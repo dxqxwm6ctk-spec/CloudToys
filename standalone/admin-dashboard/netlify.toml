@@ -1,0 +1,24 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cloud Toys Admin — Netlify deployment config (standalone, no monorepo dependency)
+#
+# Setup on Netlify:
+#   1. Drag-and-drop this folder, or connect a repo containing only this folder.
+#   2. Base directory / package directory: leave blank (this folder is the root).
+#   3. Build command: npm run build   (auto-detected from this file)
+#   4. Publish directory: dist/public (auto-detected from this file)
+#   5. In Site configuration > Environment variables, add:
+#        VITE_API_BASE_URL = https://<your-deployed-api-server>
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  command = "npm run build"
+  publish = "dist/public"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA — send all routes to index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200
