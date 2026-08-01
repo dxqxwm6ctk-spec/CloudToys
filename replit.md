@@ -45,6 +45,18 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 
 Cloud Toys is a premium toy store with: full product catalog with search/filter/sort, category browsing, product detail pages with gallery + reviews, add-to-cart and wishlist, checkout flow, order tracking by order number, user account page.
 
+## Payment Methods
+- Seeded in `lib/db/src/schema/payment-methods.ts` (table: `payment_methods`)
+- Admin manages them at `/admin-dashboard/settings/payment-methods` — toggle enabled/disabled
+- Checkout (`artifacts/cloud-toys/src/pages/Checkout.tsx`) fetches enabled methods from `GET /api/orders/payment-methods` and only shows those
+- Admin API: `GET /api/admin/settings/payment-methods`, `PUT /api/admin/settings/payment-methods/:id`
+
+## Order Tracking
+- Orders are now persisted via `POST /api/orders` (called from Checkout) — stores customerName, customerEmail, paymentMethod, steps
+- Admin updates status at `PUT /api/admin/orders/:id/status` — automatically advances the 5 tracking steps (Order Placed → Payment Confirmed → Shipped → Out for Delivery → Delivered)
+- Customer tracks order at `/track-order?number=ORD-...` — reads live from DB
+- Order statuses: `processing`, `shipped`, `out_for_delivery`, `delivered`, `cancelled`
+
 ## Gotchas
 
 - After any change to `lib/api-spec/openapi.yaml`, re-run codegen before building the frontend

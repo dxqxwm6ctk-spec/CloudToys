@@ -5,8 +5,11 @@ import {
   categoriesTable,
   productsTable,
   ordersTable,
+  paymentMethodsTable,
+  type OrderTrackingStep,
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
+import * as z from "zod";
 import {
   GetAdminStatsResponse,
   AdminListProductsQueryParams,
@@ -35,7 +38,59 @@ import {
 
 const router: IRouter = Router();
 
-// ── Helper ─────────────────────────────────────────────────────────────────
+// ── Order-steps helper ─────────────────────────────────────────────────────
+
+const STEP_LABELS = [
+  "Order Placed",
+  "Payment Confirmed",
+  "Shipped",
+  "Out for Delivery",
+  "Delivered",
+];
+
+const STATUS_STEP_COUNT: Record<string, number> = {
+  processing: 2,
+  shipped: 3,
+  out_for_delivery: 4,
+  delivered: 5,
+  cancelled: 0,
+};
+
+function buildSteps(
+  current: OrderTrackingStep[],
+  newStatus: string,
+): OrderTrackingStep[] {
+  const completedCount = STATUS_STEP_COUNT[newStatus] ?? 0;
+  const today = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  if (newStatus === "cancelled") {
+    return STEP_LABELS.map((label, idx) => ({
+      label,
+      completed: false,
+      date: current[idx]?.date ?? null,
+    }));
+  }
+
+  return STEP_LABELS.map((label, idx) => {
+    const wasCompleted = current[idx]?.completed ?? false;
+    const shouldComplete = idx < completedCount;
+    return {
+      label,
+      completed: shouldComplete,
+      date: shouldComplete
+        ? wasCompleted
+          ? (current[idx]?.date ?? today)
+          : today
+        : null,
+    };
+  });
+}
+
+// ── Product helper ─────────────────────────────────────────────────────────
 
 function toAdminProductDto(
   row: Pick<
@@ -546,6 +601,10 @@ router.get("/admin/orders", async (req, res): Promise<void> => {
         status: o.status,
         estimatedDelivery: o.estimatedDelivery,
         steps: o.steps,
+        customerName: o.customerName ?? null,
+        customerEmail: o.customerEmail ?? null,
+        paymentMethod: o.paymentMethod ?? null,
+        createdAt: o.createdAt?.toISOString() ?? null,
       })),
       total: count,
       page,
@@ -566,9 +625,22 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
     return;
   }
 
+  // Fetch current order to get existing steps
+  const [existing] = await db
+    .select()
+    .from(ordersTable)
+    .where(eq(ordersTable.id, Number(params.data.id)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  const newSteps = buildSteps(existing.steps, body.data.status);
+
   const [updated] = await db
     .update(ordersTable)
-    .set({ status: body.data.status })
+    .set({ status: body.data.status, steps: newSteps })
     .where(eq(ordersTable.id, Number(params.data.id)))
     .returning();
 
@@ -584,8 +656,66 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
       status: updated.status,
       estimatedDelivery: updated.estimatedDelivery,
       steps: updated.steps,
+      customerName: updated.customerName ?? null,
+      customerEmail: updated.customerEmail ?? null,
+      paymentMethod: updated.paymentMethod ?? null,
+      createdAt: updated.createdAt?.toISOString() ?? null,
     }),
   );
+});
+
+// ── Payment Methods (admin) ────────────────────────────────────────────────
+
+router.get("/admin/settings/payment-methods", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(paymentMethodsTable)
+    .orderBy(paymentMethodsTable.id);
+
+  res.json(
+    rows.map((m) => ({
+      id: String(m.id),
+      key: m.key,
+      label: m.label,
+      description: m.description ?? null,
+      enabled: m.enabled,
+    })),
+  );
+});
+
+const AdminUpdatePaymentMethodParams = z.object({ id: z.coerce.number() });
+const AdminUpdatePaymentMethodBody = z.object({ enabled: z.boolean() });
+
+router.put("/admin/settings/payment-methods/:id", async (req, res): Promise<void> => {
+  const params = AdminUpdatePaymentMethodParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const body = AdminUpdatePaymentMethodBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const [updated] = await db
+    .update(paymentMethodsTable)
+    .set({ enabled: body.data.enabled })
+    .where(eq(paymentMethodsTable.id, params.data.id))
+    .returning();
+
+  if (!updated) {
+    res.status(404).json({ error: "Payment method not found" });
+    return;
+  }
+
+  res.json({
+    id: String(updated.id),
+    key: updated.key,
+    label: updated.label,
+    description: updated.description ?? null,
+    enabled: updated.enabled,
+  });
 });
 
 export default router;

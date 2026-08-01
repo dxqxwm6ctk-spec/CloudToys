@@ -95,6 +95,39 @@ export interface OrderTracking {
   steps: OrderTrackingStep[];
 }
 
+export interface PaymentMethod {
+  id: string;
+  key: string;
+  label: string;
+  /** @nullable */
+  description?: string | null;
+  enabled: boolean;
+}
+
+export interface PaymentMethodUpdate {
+  enabled: boolean;
+}
+
+export type CreateOrderInputItemsItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+};
+
+export interface CreateOrderInput {
+  customerName: string;
+  customerEmail: string;
+  paymentMethodKey: string;
+  shippingAddress?: string;
+  items: CreateOrderInputItemsItem[];
+}
+
+export interface OrderConfirmation {
+  orderNumber: string;
+  estimatedDelivery: string;
+}
+
 export interface AdminStats {
   totalProducts: number;
   totalCategories: number;
@@ -208,6 +241,14 @@ export interface AdminOrder {
   orderNumber: string;
   status: string;
   estimatedDelivery: string;
+  /** @nullable */
+  customerName?: string | null;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   steps: OrderTrackingStep[];
 }
 

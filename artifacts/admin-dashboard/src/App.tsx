@@ -10,6 +10,7 @@ import ProductsList from '@/pages/products/list';
 import ProductForm from '@/pages/products/form';
 import CategoriesList from '@/pages/categories/list';
 import OrdersList from '@/pages/orders/list';
+import PaymentMethodsSettings from '@/pages/settings/payment-methods';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ function Router() {
         <Route path="/products/:id/edit" component={EditProductRoute} />
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />
+        <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>

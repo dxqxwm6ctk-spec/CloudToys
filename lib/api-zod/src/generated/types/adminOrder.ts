@@ -12,5 +12,13 @@ export interface AdminOrder {
   orderNumber: string;
   status: string;
   estimatedDelivery: string;
+  /** @nullable */
+  customerName?: string | null;
+  /** @nullable */
+  customerEmail?: string | null;
+  /** @nullable */
+  paymentMethod?: string | null;
+  /** @nullable */
+  createdAt?: string | null;
   steps: OrderTrackingStep[];
 }

@@ -1,10 +1,105 @@
 import { Router, type IRouter } from "express";
 import { eq } from "drizzle-orm";
-import { db, ordersTable } from "@workspace/db";
+import { db, ordersTable, paymentMethodsTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
+import * as z from "zod";
 
 const router: IRouter = Router();
 
+// ── Payment methods (public – for checkout) ────────────────────────────────
+router.get("/orders/payment-methods", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(paymentMethodsTable)
+    .orderBy(paymentMethodsTable.id);
+
+  res.json(
+    rows.map((m) => ({
+      id: String(m.id),
+      key: m.key,
+      label: m.label,
+      description: m.description ?? null,
+      enabled: m.enabled,
+    })),
+  );
+});
+
+// ── Create order ───────────────────────────────────────────────────────────
+const CreateOrderBody = z.object({
+  customerName: z.string().min(1),
+  customerEmail: z.string().email(),
+  paymentMethodKey: z.string().min(1),
+  shippingAddress: z.string().optional(),
+  items: z.array(
+    z.object({
+      productId: z.string(),
+      name: z.string(),
+      quantity: z.number().int().positive(),
+      price: z.number().positive(),
+    }),
+  ).min(1),
+});
+
+router.post("/orders", async (req, res): Promise<void> => {
+  const body = CreateOrderBody.safeParse(req.body);
+  if (!body.success) {
+    res.status(400).json({ error: body.error.message });
+    return;
+  }
+
+  const { customerName, customerEmail, paymentMethodKey } = body.data;
+
+  // Validate payment method is enabled
+  const [pm] = await db
+    .select()
+    .from(paymentMethodsTable)
+    .where(eq(paymentMethodsTable.key, paymentMethodKey));
+
+  if (!pm || !pm.enabled) {
+    res.status(400).json({ error: "Selected payment method is not available" });
+    return;
+  }
+
+  // Generate order number
+  const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+  // Estimated delivery: 7 days from now
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 7);
+  const estimatedDelivery = deliveryDate.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const todayStr = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const steps = [
+    { label: "Order Placed", completed: true, date: todayStr },
+    { label: "Payment Confirmed", completed: true, date: todayStr },
+    { label: "Shipped", completed: false, date: null },
+    { label: "Out for Delivery", completed: false, date: null },
+    { label: "Delivered", completed: false, date: null },
+  ];
+
+  await db.insert(ordersTable).values({
+    orderNumber,
+    status: "processing",
+    estimatedDelivery,
+    steps,
+    customerName,
+    customerEmail,
+    paymentMethod: pm.label,
+  });
+
+  res.status(201).json({ orderNumber, estimatedDelivery });
+});
+
+// ── Track order ────────────────────────────────────────────────────────────
 router.get("/orders/:orderNumber/track", async (req, res): Promise<void> => {
   const params = TrackOrderParams.safeParse(req.params);
   if (!params.success) {

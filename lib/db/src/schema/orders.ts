@@ -1,4 +1,4 @@
-import { pgTable, text, serial, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -14,6 +14,11 @@ export const ordersTable = pgTable("orders", {
   status: text("status").notNull(),
   estimatedDelivery: text("estimated_delivery").notNull(),
   steps: jsonb("steps").$type<OrderTrackingStep[]>().notNull().default([]),
+  // Customer info (nullable for legacy seed orders)
+  customerName: text("customer_name"),
+  customerEmail: text("customer_email"),
+  paymentMethod: text("payment_method"),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({

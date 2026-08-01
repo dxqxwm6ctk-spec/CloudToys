@@ -202,6 +202,41 @@ export const GetProductResponse = zod.object({
 
 
 /**
+ * @summary List enabled payment methods for checkout
+ */
+export const ListPaymentMethodsResponseItem = zod.object({
+  "id": zod.string(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean()
+})
+export const ListPaymentMethodsResponse = zod.array(ListPaymentMethodsResponseItem)
+
+
+/**
+ * @summary Place a new order from checkout
+ */
+export const CreateOrderBody = zod.object({
+  "customerName": zod.string(),
+  "customerEmail": zod.string(),
+  "paymentMethodKey": zod.string(),
+  "shippingAddress": zod.string().optional(),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "price": zod.number()
+}))
+})
+
+export const CreateOrderResponse = zod.object({
+  "orderNumber": zod.string(),
+  "estimatedDelivery": zod.string()
+})
+
+
+/**
  * @summary Look up order tracking status by order number
  */
 export const TrackOrderParams = zod.object({
@@ -474,6 +509,10 @@ export const AdminListOrdersResponse = zod.object({
   "orderNumber": zod.string(),
   "status": zod.string(),
   "estimatedDelivery": zod.string(),
+  "customerName": zod.string().nullish(),
+  "customerEmail": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({
   "label": zod.string(),
   "completed": zod.boolean(),
@@ -487,7 +526,7 @@ export const AdminListOrdersResponse = zod.object({
 
 
 /**
- * @summary Update order status
+ * @summary Update order status (auto-advances tracking steps)
  */
 export const AdminUpdateOrderStatusParams = zod.object({
   "id": zod.coerce.string()
@@ -502,11 +541,48 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   "orderNumber": zod.string(),
   "status": zod.string(),
   "estimatedDelivery": zod.string(),
+  "customerName": zod.string().nullish(),
+  "customerEmail": zod.string().nullish(),
+  "paymentMethod": zod.string().nullish(),
+  "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({
   "label": zod.string(),
   "completed": zod.boolean(),
   "date": zod.string().nullable()
 }))
+})
+
+
+/**
+ * @summary List all payment methods (admin)
+ */
+export const AdminListPaymentMethodsResponseItem = zod.object({
+  "id": zod.string(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean()
+})
+export const AdminListPaymentMethodsResponse = zod.array(AdminListPaymentMethodsResponseItem)
+
+
+/**
+ * @summary Enable or disable a payment method
+ */
+export const AdminUpdatePaymentMethodParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminUpdatePaymentMethodBody = zod.object({
+  "enabled": zod.boolean()
+})
+
+export const AdminUpdatePaymentMethodResponse = zod.object({
+  "id": zod.string(),
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string().nullish(),
+  "enabled": zod.boolean()
 })
 
 

@@ -150,6 +150,40 @@ paths:
                 $ref: "#/components/schemas/ProductDetail"
         "404":
           description: Product not found
+  /orders/payment-methods:
+    get:
+      operationId: listPaymentMethods
+      tags: [orders]
+      summary: List enabled payment methods for checkout
+      responses:
+        "200":
+          description: List of enabled payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMethod"
+
+  /orders:
+    post:
+      operationId: createOrder
+      tags: [orders]
+      summary: Place a new order from checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderInput"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderConfirmation"
+
   /orders/{orderNumber}/track:
     get:
       operationId: trackOrder
@@ -394,7 +428,7 @@ paths:
     put:
       operationId: adminUpdateOrderStatus
       tags: [admin]
-      summary: Update order status
+      summary: Update order status (auto-advances tracking steps)
       parameters:
         - name: id
           in: path
@@ -416,6 +450,48 @@ paths:
                 $ref: "#/components/schemas/AdminOrder"
         "404":
           description: Order not found
+
+  /admin/settings/payment-methods:
+    get:
+      operationId: adminListPaymentMethods
+      tags: [admin]
+      summary: List all payment methods (admin)
+      responses:
+        "200":
+          description: List of payment methods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentMethod"
+
+  /admin/settings/payment-methods/{id}:
+    put:
+      operationId: adminUpdatePaymentMethod
+      tags: [admin]
+      summary: Enable or disable a payment method
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentMethodUpdate"
+      responses:
+        "200":
+          description: Updated payment method
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethod"
+        "404":
+          description: Payment method not found
 
 components:
   schemas:
@@ -532,6 +608,48 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrderTrackingStep"
+
+    PaymentMethod:
+      type: object
+      required: [id, key, label, enabled]
+      properties:
+        id: { type: string }
+        key: { type: string }
+        label: { type: string }
+        description: { type: ["string", "null"] }
+        enabled: { type: boolean }
+
+    PaymentMethodUpdate:
+      type: object
+      required: [enabled]
+      properties:
+        enabled: { type: boolean }
+
+    CreateOrderInput:
+      type: object
+      required: [customerName, customerEmail, paymentMethodKey, items]
+      properties:
+        customerName: { type: string }
+        customerEmail: { type: string }
+        paymentMethodKey: { type: string }
+        shippingAddress: { type: string }
+        items:
+          type: array
+          items:
+            type: object
+            required: [productId, name, quantity, price]
+            properties:
+              productId: { type: string }
+              name: { type: string }
+              quantity: { type: number }
+              price: { type: number }
+
+    OrderConfirmation:
+      type: object
+      required: [orderNumber, estimatedDelivery]
+      properties:
+        orderNumber: { type: string }
+        estimatedDelivery: { type: string }
 
     # ── Admin schemas ─────────────────────────────────────────────────────────
     AdminStats:
@@ -660,6 +778,10 @@ components:
         orderNumber: { type: string }
         status: { type: string }
         estimatedDelivery: { type: string }
+        customerName: { type: ["string", "null"] }
+        customerEmail: { type: ["string", "null"] }
+        paymentMethod: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
         steps:
           type: array
           items:

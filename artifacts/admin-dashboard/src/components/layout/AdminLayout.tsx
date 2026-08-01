@@ -11,6 +11,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: '/products', label: 'Products', icon: Package },
     { href: '/categories', label: 'Categories', icon: FolderTree },
     { href: '/orders', label: 'Orders', icon: ShoppingBag },
+    { href: '/settings/payment-methods', label: 'Payment Methods', icon: Settings },
   ];
 
   return (

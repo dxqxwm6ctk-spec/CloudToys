@@ -45,10 +45,19 @@ export default function OrdersList() {
     );
   };
 
+  const STATUS_LABEL: Record<string, string> = {
+    processing: 'Processing',
+    shipped: 'Shipped',
+    out_for_delivery: 'Out for Delivery',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled',
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'processing': return <Package className="w-4 h-4 text-amber-500" />;
       case 'shipped': return <Truck className="w-4 h-4 text-blue-500" />;
+      case 'out_for_delivery': return <Truck className="w-4 h-4 text-indigo-500" />;
       case 'delivered': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />;
       default: return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
@@ -56,11 +65,12 @@ export default function OrdersList() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'processing': return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400";
-      case 'shipped': return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400";
-      case 'delivered': return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400";
-      case 'cancelled': return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400";
-      default: return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300";
+      case 'processing': return "bg-amber-100 text-amber-800 border-amber-200";
+      case 'shipped': return "bg-blue-100 text-blue-800 border-blue-200";
+      case 'out_for_delivery': return "bg-indigo-100 text-indigo-800 border-indigo-200";
+      case 'delivered': return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case 'cancelled': return "bg-red-100 text-red-800 border-red-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
@@ -127,8 +137,8 @@ export default function OrdersList() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {getStatusIcon(order.status)}
-                      <Badge variant="outline" className={`capitalize ${getStatusColor(order.status)}`}>
-                        {order.status}
+                      <Badge variant="outline" className={getStatusColor(order.status)}>
+                        {STATUS_LABEL[order.status] ?? order.status}
                       </Badge>
                     </div>
                   </TableCell>
@@ -146,6 +156,7 @@ export default function OrdersList() {
                       <SelectContent>
                         <SelectItem value="processing">Processing</SelectItem>
                         <SelectItem value="shipped">Shipped</SelectItem>
+                        <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
                         <SelectItem value="delivered">Delivered</SelectItem>
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>

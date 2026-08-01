@@ -13,6 +13,7 @@ import {
   productsTable,
   reviewsTable,
   ordersTable,
+  paymentMethodsTable,
 } from "./schema";
 
 const { Pool } = pg;
@@ -403,6 +404,28 @@ async function seed() {
     .returning({ orderNumber: ordersTable.orderNumber });
 
   console.log(`  ✓ ${orders.length} orders inserted (or already exist)`);
+
+  // ── Payment methods ────────────────────────────────────────────────────────
+  const paymentMethods = await db
+    .insert(paymentMethodsTable)
+    .values([
+      {
+        key: "credit_card",
+        label: "Credit / Debit Card",
+        description: "Visa, Mastercard, and more — secured by 3D Secure",
+        enabled: true,
+      },
+      {
+        key: "cash_on_delivery",
+        label: "Cash on Delivery",
+        description: "Pay in cash when your order arrives",
+        enabled: true,
+      },
+    ])
+    .onConflictDoNothing()
+    .returning({ key: paymentMethodsTable.key });
+
+  console.log(`  ✓ ${paymentMethods.length} payment methods inserted (or already exist)`);
 
   console.log("✅  Seed complete.");
   await pool.end();
