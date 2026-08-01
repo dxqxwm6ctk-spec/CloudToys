@@ -46,8 +46,8 @@ export function ProductCard({ product }: { product: Product }) {
       <div
         className="relative overflow-hidden rounded-[20px] bg-[#F8F6F3] mb-4"
         style={{ aspectRatio: '3/4', boxShadow: hovered ? '0 20px 60px rgba(122,31,61,0.12)' : '0 4px 24px rgba(0,0,0,0.06)', transition: 'box-shadow 0.4s ease' }}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
+        onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHovered(false); }}
       >
         <ProductPicture
           src={product.mediumUrl ?? product.imageUrl}
