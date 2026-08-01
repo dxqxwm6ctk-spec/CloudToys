@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
-import { motion } from 'framer-motion';
-import { Heart, ShoppingCart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, ShoppingBag, Eye } from 'lucide-react';
+import { useState } from 'react';
 import type { Product } from '@workspace/api-client-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
@@ -10,16 +11,14 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
-  
+  const [hovered, setHovered] = useState(false);
+
   const isWishlisted = isInWishlist(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     addToCart(product);
-    toast({
-      title: "Added to cart",
-      description: `${product.name} has been added to your cart.`,
-    });
+    toast({ title: "Added to cart", description: `${product.name} has been added to your cart.` });
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -28,74 +27,104 @@ export function ProductCard({ product }: { product: Product }) {
       removeFromWishlist(product.id);
     } else {
       addToWishlist(product);
-      toast({
-        title: "Added to wishlist",
-        description: `${product.name} has been added to your wishlist.`,
-      });
+      toast({ title: "Saved to wishlist", description: `${product.name} saved.` });
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: product.currency || 'USD',
-    }).format(price);
-  };
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: product.currency || 'USD' }).format(price);
+
+  const discountPct =
+    product.compareAtPrice && product.compareAtPrice > product.price
+      ? Math.round((1 - product.price / product.compareAtPrice) * 100)
+      : null;
 
   return (
     <Link href={`/product/${product.id}`} className="group block">
-      <motion.div 
-        className="relative bg-secondary/30 rounded-2xl overflow-hidden aspect-[4/5] mb-4"
-        whileHover={{ y: -5 }}
-        transition={{ duration: 0.2 }}
+      {/* Image Container */}
+      <div
+        className="relative overflow-hidden rounded-[20px] bg-[#F8F6F3] mb-4"
+        style={{ aspectRatio: '3/4', boxShadow: hovered ? '0 20px 60px rgba(122,31,61,0.12)' : '0 4px 24px rgba(0,0,0,0.06)', transition: 'box-shadow 0.4s ease' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
-        <img
+        <motion.img
           src={product.imageUrl}
           alt={product.name}
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
+          className="w-full h-full object-cover object-center"
+          animate={{ scale: hovered ? 1.06 : 1 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         />
-        
+
+        {/* Gradient overlay on hover */}
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent"
+          animate={{ opacity: hovered ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        />
+
         {/* Badges */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.badge === 'new' && (
-            <span className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-wider">New</span>
+            <span className="bg-[#7A1F3D] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">New</span>
           )}
-          {product.badge === 'sale' && (
-            <span className="bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-wider">Sale</span>
+          {product.badge === 'sale' && discountPct && (
+            <span className="bg-[#C9A227] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">−{discountPct}%</span>
           )}
           {product.badge === 'bestseller' && (
-            <span className="bg-accent text-accent-foreground text-xs font-bold px-2 py-1 rounded-sm uppercase tracking-wider">Bestseller</span>
+            <span className="bg-white/90 text-[#7A1F3D] text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest border border-[#7A1F3D]/20">Best Seller</span>
           )}
         </div>
 
-        {/* Hover Actions */}
-        <div className="absolute inset-x-4 bottom-4 flex justify-between items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0">
-          <button
-            onClick={handleWishlist}
-            className={`w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm hover:scale-110 transition-transform ${isWishlisted ? 'text-primary' : 'text-foreground'}`}
-            aria-label="Wishlist"
-          >
-            <Heart className="w-5 h-5" fill={isWishlisted ? "currentColor" : "none"} />
-          </button>
-          
-          <button
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
-            className="flex-1 ml-4 bg-primary text-primary-foreground h-10 rounded-full text-sm font-medium hover:bg-primary/90 flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {product.inStock ? 'Add to Cart' : 'Out of Stock'}
-          </button>
-        </div>
-      </motion.div>
+        {/* Wishlist button — always visible on mobile, hover on desktop */}
+        <button
+          onClick={handleWishlist}
+          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-md transition-all duration-200 hover:scale-110 ${isWishlisted ? 'text-[#7A1F3D]' : 'text-gray-400 hover:text-[#7A1F3D]'} md:opacity-0 md:group-hover:opacity-100`}
+          aria-label="Wishlist"
+        >
+          <Heart className="w-4 h-4" fill={isWishlisted ? 'currentColor' : 'none'} strokeWidth={2} />
+        </button>
 
-      <div className="space-y-1">
-        <div className="text-xs text-muted-foreground uppercase tracking-widest">{product.categoryName}</div>
-        <h3 className="font-serif font-medium text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">{product.name}</h3>
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-foreground">{formatPrice(product.price)}</span>
-          {product.compareAtPrice && (
-            <span className="text-sm text-muted-foreground line-through">{formatPrice(product.compareAtPrice)}</span>
+        {/* Hover Actions */}
+        <AnimatePresence>
+          {hovered && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="absolute inset-x-3 bottom-3 flex gap-2"
+            >
+              <button
+                onClick={handleAddToCart}
+                disabled={!product.inStock}
+                className="flex-1 bg-white text-[#7A1F3D] h-10 rounded-full text-sm font-semibold hover:bg-[#7A1F3D] hover:text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                {product.inStock ? 'Add to Bag' : 'Out of Stock'}
+              </button>
+              <Link
+                href={`/product/${product.id}`}
+                className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center text-gray-600 hover:text-[#7A1F3D] shadow-lg transition-colors flex-shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Eye className="w-4 h-4" />
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Info */}
+      <div className="px-1 space-y-1.5">
+        <p className="text-[10px] text-[#C9A227] font-semibold uppercase tracking-[0.15em]">{product.categoryName}</p>
+        <h3 className="font-serif text-[15px] font-medium text-gray-900 group-hover:text-[#7A1F3D] transition-colors duration-200 line-clamp-2 leading-snug">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-2 pt-0.5">
+          <span className="text-[15px] font-semibold text-gray-900">{formatPrice(product.price)}</span>
+          {product.compareAtPrice && product.compareAtPrice > product.price && (
+            <span className="text-sm text-gray-400 line-through">{formatPrice(product.compareAtPrice)}</span>
           )}
         </div>
       </div>

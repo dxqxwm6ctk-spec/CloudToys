@@ -1,0 +1,103 @@
+Do NOT rebuild the website from scratch.
+
+The project is already functional. Your task is to redesign and polish the existing UI/UX to make it feel like a premium, handcrafted eCommerce experience.
+
+Current issue:
+The website looks too generic and AI-generated. It feels like a default eCommerce template. I want a unique, premium design.
+
+Goals:
+- Keep the existing functionality.
+- Keep all routes, components, backend, and business logic.
+- Focus ONLY on improving the visual design and user experience.
+
+Design Direction:
+Create a modern luxury toy store inspired by Apple, Aesop, COS, and premium Shopify stores.
+
+Brand:
+- Store Name: Cloud Toys
+- Primary Color: Burgundy (#7A1F3D)
+- Secondary Color: White (#FFFFFF)
+- Accent Color: Soft Gold (#C9A227)
+
+Redesign Requirements:
+
+Hero Section
+- Replace the current hero with a premium full-width layout.
+- Large typography.
+- High-quality lifestyle image.
+- Elegant call-to-action buttons.
+- Smooth Framer Motion animations.
+- Better spacing and composition.
+
+Typography
+- Use premium modern fonts.
+- Improve font hierarchy.
+- Larger headings.
+- Better readability.
+
+Product Cards
+- Completely redesign product cards.
+- Larger product images.
+- Rounded corners (20px).
+- Soft premium shadows.
+- Better spacing.
+- Elegant badges.
+- Smooth hover animations.
+- Add Quick View.
+- Improve Add to Cart button.
+
+Header
+- Premium sticky navigation.
+- Better spacing.
+- Beautiful icons.
+- Luxury search bar.
+- Better mobile menu.
+
+Homepage
+Create a visual flow like a premium brand.
+
+Sections:
+- Hero
+- Categories
+- Featured Products
+- Best Sellers
+- New Arrivals
+- Why Cloud Toys
+- Customer Reviews
+- Newsletter
+- Instagram Gallery
+- Footer
+
+Spacing
+Increase whitespace throughout the website.
+Everything should feel elegant and breathable.
+
+Animations
+Use Framer Motion for:
+- Fade
+- Slide
+- Scale
+- Hover
+- Page transitions
+- Loading skeletons
+
+Images
+Replace placeholder or generic images with realistic premium toy product photography.
+Avoid random stock photos whenever possible.
+All product images should have clean white backgrounds.
+
+Buttons
+Create beautiful premium buttons with hover, elevation, and subtle animation.
+
+Mobile Experience
+Improve mobile layout.
+Optimize spacing and navigation.
+Ensure the site feels like a native premium shopping app.
+
+Important:
+Do NOT rewrite working code unnecessarily.
+Do NOT change backend logic.
+Do NOT change API contracts.
+Only improve the UI/UX while preserving all functionality.
+
+The final result should look like a professionally designed luxury eCommerce website, not an AI-generated template.
