@@ -4,7 +4,8 @@ import { useLocation, Link } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 'lucide-react';
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+import { getApiBase } from '../lib/api-url';
+const BASE = getApiBase();
 
 interface PaymentMethod {
   id: string;

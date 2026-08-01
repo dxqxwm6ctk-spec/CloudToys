@@ -1,0 +1,25 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Cloud Toys — Netlify deployment config
+#
+# Setup on Netlify:
+#   1. Connect your GitHub repo.
+#   2. Set "Base directory" to the repo root (leave blank).
+#   3. Set "Netlify configuration file" path to:  artifacts/cloud-toys/netlify.toml
+#   4. In Site configuration > Environment variables, add:
+#        VITE_API_BASE_URL = https://<your-deployed-api-server>
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+  command = "pnpm --filter @workspace/cloud-toys run build"
+  publish = "artifacts/cloud-toys/dist/public"
+
+[build.environment]
+  PORT     = "3000"
+  BASE_PATH = "/"
+  NODE_VERSION = "20"
+
+# SPA — send all routes to index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

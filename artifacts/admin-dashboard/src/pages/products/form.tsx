@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { getApiBase } from '@/lib/api-url';
 import { Link, useLocation } from 'wouter';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -182,7 +183,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
       formData.append('file', file);
       if (isEdit && id) formData.append('productId', id);
 
-      const response = await fetch('/api/admin/images/upload', {
+      const response = await fetch(`${getApiBase()}/api/admin/images/upload`, {
         method: 'POST',
         body: formData,
       });

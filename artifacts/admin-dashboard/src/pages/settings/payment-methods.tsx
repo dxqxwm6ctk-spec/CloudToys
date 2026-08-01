@@ -13,7 +13,8 @@ interface PaymentMethod {
   enabled: boolean;
 }
 
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+import { getApiBase } from '@/lib/api-url';
+const BASE = getApiBase();
 
 async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
   const res = await fetch(`${BASE}/api/admin/settings/payment-methods`);
