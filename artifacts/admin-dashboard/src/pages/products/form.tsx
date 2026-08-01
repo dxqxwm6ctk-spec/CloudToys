@@ -31,8 +31,16 @@ const productSchema = z.object({
   price: z.coerce.number().positive("Price must be a positive number"),
   compareAtPrice: z.coerce.number().positive("Compare at price must be positive").optional().nullable(),
   currency: z.string().min(3, "Currency code is required").default("USD"),
-  imageUrl: z.string().url("Must be a valid URL"),
-  galleryUrls: z.array(z.object({ value: z.string().url("Must be a valid URL") })).optional(),
+  imageUrl: z.string().refine(
+    (val) => { try { new URL(val); return true; } catch { return val.startsWith('/'); } },
+    "Must be a valid URL"
+  ),
+  galleryUrls: z.array(z.object({
+    value: z.string().refine(
+      (val) => { try { new URL(val); return true; } catch { return val.startsWith('/'); } },
+      "Must be a valid URL"
+    )
+  })).optional(),
   categoryId: z.string().min(1, "Category is required"),
   inStock: z.boolean().default(true),
   badge: z.string().nullable().optional(),
