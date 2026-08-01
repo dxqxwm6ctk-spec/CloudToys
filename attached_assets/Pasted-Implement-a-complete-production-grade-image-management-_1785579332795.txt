@@ -1,0 +1,131 @@
+Implement a complete production-grade image management system for the eCommerce admin panel.
+
+Upload Flow
+
+When an admin uploads a product image (JPG, JPEG, PNG, WebP, HEIC, GIF, or AVIF):
+
+1. Validate the file.
+2. Reject files larger than 10 MB.
+3. Auto-rotate using EXIF metadata.
+4. Preserve transparency if available.
+5. Remove unnecessary metadata (EXIF, GPS, camera information).
+6. Generate a unique filename (UUID).
+
+Image Processing
+
+Use the Sharp library.
+
+Generate AVIF versions only.
+
+Create three optimized sizes:
+
+* Thumbnail → 300px
+* Medium → 800px
+* Large → 1600px
+
+Settings:
+
+* Format: AVIF
+* Quality: 60
+* Effort: 6
+* fit: inside
+* withoutEnlargement: true
+
+Folder Structure
+
+Store images like this:
+
+uploads/
+products/
+{productId}/
+thumb.avif
+medium.avif
+large.avif
+
+Database
+
+Store:
+
+* original filename
+* image alt text
+* thumbnail URL
+* medium URL
+* large URL
+* upload timestamp
+
+Frontend
+
+Never use the large image everywhere.
+
+Use:
+
+* Thumbnail in product cards
+* Medium on category/search pages
+* Large on the product details page
+
+Use responsive images:
+
+* srcset
+* sizes
+* lazy loading
+* decoding=“async”
+
+The browser should automatically choose the correct image size.
+
+Performance
+
+Enable:
+
+* browser caching
+* immutable cache headers
+* compression
+* asynchronous processing
+* streaming with Sharp
+
+Delete temporary files after processing.
+
+Security
+
+Validate MIME type.
+
+Validate extension.
+
+Sanitize filenames.
+
+Prevent directory traversal.
+
+Limit upload rate.
+
+Gracefully handle upload failures.
+
+Admin Dashboard
+
+The workflow must remain unchanged.
+
+Admin clicks:
+
+Upload Image
+
+Select File
+
+Save
+
+Everything else happens automatically.
+
+Existing Images
+
+Create a migration script that scans all current product images and converts them into:
+
+* thumb.avif
+* medium.avif
+* large.avif
+
+Update database URLs automatically.
+
+Future Proof
+
+The architecture must support adding WebP or JPEG fallbacks later without changing the database structure.
+
+Goal:
+
+Build a scalable, production-ready image pipeline comparable to Shopify, capable of serving thousands of products with excellent PageSpeed, low bandwidth usage, and fast loading on both desktop and mobile.

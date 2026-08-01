@@ -33,6 +33,12 @@ export const productsTable = pgTable("products", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  // Optimised image variants — populated after upload via /admin/images/upload
+  thumbUrl: text("thumb_url"),
+  mediumUrl: text("medium_url"),
+  largeUrl: text("large_url"),
+  originalImageFilename: text("original_image_filename"),
+  imageAlt: text("image_alt"),
 });
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
