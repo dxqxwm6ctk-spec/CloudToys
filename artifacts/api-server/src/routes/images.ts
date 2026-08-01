@@ -1,7 +1,7 @@
 /**
  * Image management routes — upload, process, serve
  *
- * POST /admin/images/upload   — accept multipart, process with Sharp, store in GCS
+ * POST /admin/images/upload   — accept multipart, process with Sharp, store in Supabase Storage
  * GET  /images/p/:key         — serve processed AVIF/WebP with immutable cache headers
  */
 import path from "path";
@@ -10,7 +10,7 @@ import { Router, type IRouter } from "express";
 import multer from "multer";
 import sharp from "sharp";
 import rateLimit from "express-rate-limit";
-import { objectStorageClient } from "../lib/objectStorage";
+import { uploadFile, fileExists, downloadFile, deleteByPrefix } from "../lib/supabaseStorage";
 import { db, productsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
@@ -48,13 +48,7 @@ const SIZES: Array<{ name: "thumb" | "medium" | "large"; px: number }> = [
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function getBucketId(): string {
-  const id = process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-  if (!id) throw new Error("DEFAULT_OBJECT_STORAGE_BUCKET_ID not set");
-  return id;
-}
-
-function imageGcsPath(productId: string, uuid: string, size: string, ext: "avif" | "webp"): string {
+function imageObjectPath(productId: string, uuid: string, size: string, ext: "avif" | "webp"): string {
   return `products/${productId}/${uuid}/${size}.${ext}`;
 }
 
@@ -84,8 +78,7 @@ export async function deleteProductImageSet(imageUrl: string | null | undefined)
   if (!parsed) return; // external URL — nothing stored by us
   const { productId, uuid } = parsed;
   try {
-    const bucket = objectStorageClient.bucket(getBucketId());
-    await bucket.deleteFiles({ prefix: `products/${productId}/${uuid}/` });
+    await deleteByPrefix(`products/${productId}/${uuid}/`);
   } catch (err) {
     console.error("[images] deleteProductImageSet failed:", err);
   }
@@ -96,8 +89,6 @@ async function processAndUpload(
   productId: string,
   uuid: string,
 ): Promise<{ thumbUrl: string; mediumUrl: string; largeUrl: string }> {
-  const bucket = objectStorageClient.bucket(getBucketId());
-
   // Generate AVIF variants, WebP variants, and a tiny LQIP in parallel
   const [avifBuffers, webpBuffers, lqipBuffer] = await Promise.all([
     Promise.all(
@@ -131,16 +122,10 @@ async function processAndUpload(
   // Upload all 6 files (3 sizes × 2 formats) in parallel
   await Promise.all([
     ...SIZES.map(({ name }, i) =>
-      bucket.file(imageGcsPath(productId, uuid, name, "avif")).save(avifBuffers[i], {
-        contentType: "image/avif",
-        metadata: { "Cache-Control": "public, max-age=31536000, immutable" },
-      }),
+      uploadFile(imageObjectPath(productId, uuid, name, "avif"), avifBuffers[i], "image/avif"),
     ),
     ...SIZES.map(({ name }, i) =>
-      bucket.file(imageGcsPath(productId, uuid, name, "webp")).save(webpBuffers[i], {
-        contentType: "image/webp",
-        metadata: { "Cache-Control": "public, max-age=31536000, immutable" },
-      }),
+      uploadFile(imageObjectPath(productId, uuid, name, "webp"), webpBuffers[i], "image/webp"),
     ),
   ]);
 
@@ -252,22 +237,22 @@ router.get("/images/p/:productId/:uuid/:size", async (req, res): Promise<void> =
 
   const ext = isWebp ? "webp" : "avif";
   const contentType = isWebp ? "image/webp" : "image/avif";
-  const gcsPath = imageGcsPath(productId, uuid, sizeName, ext);
+  const objectPath = imageObjectPath(productId, uuid, sizeName, ext);
 
   try {
-    const bucket = objectStorageClient.bucket(getBucketId());
-    const file = bucket.file(gcsPath);
-    const [exists] = await file.exists();
+    const exists = await fileExists(objectPath);
     if (!exists) {
       res.status(404).json({ error: "Image not found" });
       return;
     }
 
+    const buffer = await downloadFile(objectPath);
+
     res.setHeader("Content-Type", contentType);
     res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     res.setHeader("Vary", "Accept-Encoding");
 
-    file.createReadStream().pipe(res);
+    res.send(buffer);
   } catch (err) {
     req.log.error({ err }, "Image serve failed");
     res.status(500).json({ error: "Failed to serve image" });

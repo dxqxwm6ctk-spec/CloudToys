@@ -18,11 +18,11 @@ import {
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL must be set before running the seed.");
+if (!process.env.SUPABASE_DB_URL) {
+  throw new Error("SUPABASE_DB_URL must be set before running the seed.");
 }
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL });
 const db = drizzle(pool, { schema });
 
 async function seed() {
