@@ -5,6 +5,7 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 ## Run & Operate
 
 - **Frontend (Cloud Toys):** managed by `artifacts/cloud-toys: web` workflow — `pnpm --filter @workspace/cloud-toys run dev`
+- **Admin Dashboard:** managed by `artifacts/admin-dashboard: web` workflow — `pnpm --filter @workspace/admin-dashboard run dev`
 - **API Server:** managed by `artifacts/api-server: API Server` workflow — `pnpm --filter @workspace/api-server run dev`
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
@@ -13,6 +14,24 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 - `pnpm --filter @workspace/db run seed` — seed demo categories, products, reviews, and a sample order (idempotent — safe to re-run)
 - Required env: `DATABASE_URL` — Postgres connection string (auto-provisioned by Replit)
 - Required env for image uploads: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` — Replit Object Storage (provisioned via the object-storage tool)
+- Required secrets for admin login: `ADMIN_USERNAME`, `ADMIN_PASSWORD` — single shared admin credential, checked with a constant-time comparison in `POST /api/admin/auth/login`
+- Required env for CORS in any multi-domain deployment: `ALLOWED_ORIGINS` — comma-separated list, e.g. `https://cloudtoys.com,https://admin.cloudtoys.com`. Unset = allow all origins (fine for local dev / Replit's same-origin preview proxy, unsafe for production on separate domains)
+
+## Independent deployment (storefront + admin as separate apps)
+
+The storefront and admin dashboard are two fully independent frontends that both call the same API server — no shared code, no cross-links, no routes into each other.
+
+- **Storefront** → deploy to its own domain (e.g. `cloudtoys.com`). Netlify config: `artifacts/cloud-toys/netlify.toml`.
+- **Admin** → deploy to a separate subdomain (e.g. `admin.cloudtoys.com`). Netlify config: `artifacts/admin-dashboard/netlify.toml`. Protected by session-cookie login (see Admin auth below) — never expose it under a path on the storefront domain.
+- **API server** → deploy once (e.g. Replit Deployments), serves both. Set `ALLOWED_ORIGINS` to the storefront + admin production URLs so CORS only allows those two origins. Both frontends read `VITE_API_BASE_URL` (set at build time) to know where the API lives.
+
+## Admin auth
+
+- Session is a signed, `httpOnly`, `Secure`, `SameSite=None` cookie (`admin_session`), signed with `SESSION_SECRET` via `cookie-parser` — works across the admin-subdomain ↔ API cross-origin boundary.
+- Routes: `POST /api/admin/auth/login`, `POST /api/admin/auth/logout`, `GET /api/admin/auth/me` (`artifacts/api-server/src/routes/adminAuth.ts`).
+- `requireAdmin` middleware (`artifacts/api-server/src/middleware/requireAdmin.ts`) guards every other `/api/admin/*` route, mounted in `routes/index.ts` after the auth routes so login/logout stay public.
+- Frontend: `AuthProvider`/`useAuth` (`artifacts/admin-dashboard/src/context/AuthContext.tsx`) gates the whole app in `App.tsx` — shows `pages/login.tsx` until `/api/admin/auth/me` succeeds.
+- Model is a single shared admin credential (env vars), not a per-user accounts table — adequate for one store owner, not for multiple admin users with distinct permissions.
 
 ## Stack
 
@@ -27,7 +46,8 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 ## Where things live
 
 - **Frontend pages:** `artifacts/cloud-toys/src/pages/` — Home, Shop, ProductDetail, Categories, About, Contact, Cart, Checkout, Wishlist, Account, TrackOrder
-- **API routes:** `artifacts/api-server/src/routes/` — catalog.ts, orders.ts, health.ts
+- **Admin pages:** `artifacts/admin-dashboard/src/pages/` — dashboard, products, categories, orders, settings/payment-methods, login
+- **API routes:** `artifacts/api-server/src/routes/` — catalog.ts, orders.ts, health.ts, admin.ts, adminAuth.ts, images.ts
 - **OpenAPI spec:** `lib/api-spec/openapi.yaml` — source of truth for all API contracts
 - **DB schema:** `lib/db/src/schema/` — products.ts, categories.ts, reviews.ts, orders.ts
 - **Theme/tokens:** `artifacts/cloud-toys/src/index.css` — CSS custom properties, brand palette
