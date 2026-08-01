@@ -63,6 +63,10 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_USERNAME = "admin"
+SUPABASE_DB_HOST = "aws-0-eu-west-1.pooler.supabase.com"
+SUPABASE_DB_NAME = "postgres"
+SUPABASE_DB_PORT = "6543"
+SUPABASE_DB_USER = "postgres.jrxcxypnytgbrzosaleq"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-7793dcf0-b0f4-4ab1-8e8e-ae3254302774"
