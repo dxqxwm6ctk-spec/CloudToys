@@ -464,6 +464,9 @@ components:
         galleryUrls:
           type: array
           items: { type: string }
+        thumbUrl: { type: ["string", "null"] }
+        mediumUrl: { type: ["string", "null"] }
+        largeUrl: { type: ["string", "null"] }
         categorySlug: { type: string }
         categoryName: { type: string }
         rating: { type: number }
@@ -555,6 +558,9 @@ components:
         galleryUrls:
           type: array
           items: { type: string }
+        thumbUrl: { type: ["string", "null"] }
+        mediumUrl: { type: ["string", "null"] }
+        largeUrl: { type: ["string", "null"] }
         categoryId: { type: string }
         categoryName: { type: string }
         rating: { type: number }
@@ -593,6 +599,9 @@ components:
         galleryUrls:
           type: array
           items: { type: string }
+        thumbUrl: { type: ["string", "null"] }
+        mediumUrl: { type: ["string", "null"] }
+        largeUrl: { type: ["string", "null"] }
         categoryId: { type: string }
         inStock: { type: boolean }
         badge: { type: ["string", "null"] }
@@ -614,6 +623,9 @@ components:
         galleryUrls:
           type: array
           items: { type: string }
+        thumbUrl: { type: ["string", "null"] }
+        mediumUrl: { type: ["string", "null"] }
+        largeUrl: { type: ["string", "null"] }
         categoryId: { type: string }
         inStock: { type: boolean }
         badge: { type: ["string", "null"] }

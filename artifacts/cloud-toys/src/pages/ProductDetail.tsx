@@ -88,7 +88,13 @@ export function ProductDetail() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                src={gallery[activeImage]} 
+                src={activeImage === 0 ? (product.largeUrl ?? gallery[0]) : gallery[activeImage]}
+                srcSet={
+                  activeImage === 0 && product.thumbUrl && product.mediumUrl && product.largeUrl
+                    ? `${product.thumbUrl} 300w, ${product.mediumUrl} 800w, ${product.largeUrl} 1600w`
+                    : undefined
+                }
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 alt={product.name} 
                 className="w-full h-full object-cover"
               />
@@ -108,7 +114,12 @@ export function ProductDetail() {
                     onClick={() => setActiveImage(idx)}
                     className={`w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-colors ${activeImage === idx ? 'border-primary' : 'border-transparent'}`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <img
+                      src={idx === 0 ? (product.thumbUrl ?? img) : img}
+                      alt=""
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>

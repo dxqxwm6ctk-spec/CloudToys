@@ -31,7 +31,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/products" component={ProductsList} />
-        <Route path="/products/new" component={ProductForm} />
+        <Route path="/products/new">{() => <ProductForm />}</Route>
         <Route path="/products/:id/edit" component={EditProductRoute} />
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />

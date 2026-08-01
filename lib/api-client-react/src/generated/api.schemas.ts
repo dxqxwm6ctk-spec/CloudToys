@@ -40,6 +40,12 @@ export interface Product {
   currency: string;
   imageUrl: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categorySlug: string;
   categoryName: string;
   rating: number;
@@ -105,6 +111,12 @@ export interface AdminProduct {
   currency: string;
   imageUrl: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categoryId: string;
   categoryName: string;
   rating: number;
@@ -134,6 +146,12 @@ export interface ProductInput {
   currency: string;
   imageUrl: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categoryId: string;
   inStock: boolean;
   /** @nullable */
@@ -152,6 +170,12 @@ export interface ProductUpdate {
   currency?: string;
   imageUrl?: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categoryId?: string;
   inStock?: boolean;
   /** @nullable */

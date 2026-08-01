@@ -49,8 +49,15 @@ export function ProductCard({ product }: { product: Product }) {
         onMouseLeave={() => setHovered(false)}
       >
         <motion.img
-          src={product.imageUrl}
+          src={product.mediumUrl ?? product.imageUrl}
+          srcSet={
+            product.thumbUrl && product.mediumUrl && product.largeUrl
+              ? `${product.thumbUrl} 300w, ${product.mediumUrl} 800w, ${product.largeUrl} 1600w`
+              : undefined
+          }
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           alt={product.name}
+          loading="lazy"
           className="w-full h-full object-cover object-center"
           animate={{ scale: hovered ? 1.06 : 1 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}

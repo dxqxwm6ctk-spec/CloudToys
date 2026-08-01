@@ -17,6 +17,12 @@ export interface ProductUpdate {
   currency?: string;
   imageUrl?: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categoryId?: string;
   inStock?: boolean;
   /** @nullable */

@@ -75,7 +75,12 @@ export function Cart() {
               {items.map((item) => (
                 <div key={item.id} className="py-8 flex gap-6 sm:gap-8">
                   <Link href={`/product/${item.id}`} className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-secondary overflow-hidden flex-shrink-0">
-                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <img
+                      src={item.thumbUrl ?? item.imageUrl}
+                      alt={item.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
                   </Link>
                   <div className="flex-1 flex flex-col justify-between">
                     <div className="flex justify-between items-start gap-4">

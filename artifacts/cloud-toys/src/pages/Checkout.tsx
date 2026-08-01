@@ -185,7 +185,12 @@ export function Checkout() {
                 {items.map(item => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-16 rounded-lg bg-white overflow-hidden flex-shrink-0 relative border border-border">
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      <img
+                        src={item.thumbUrl ?? item.imageUrl}
+                        alt={item.name}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                      />
                       <span className="absolute -top-2 -right-2 w-5 h-5 bg-muted text-muted-foreground rounded-full text-[10px] flex items-center justify-center font-bold border border-border">
                         {item.quantity}
                       </span>

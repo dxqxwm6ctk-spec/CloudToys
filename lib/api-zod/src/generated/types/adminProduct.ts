@@ -18,6 +18,12 @@ export interface AdminProduct {
   currency: string;
   imageUrl: string;
   galleryUrls?: string[];
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  mediumUrl?: string | null;
+  /** @nullable */
+  largeUrl?: string | null;
   categoryId: string;
   categoryName: string;
   rating: number;

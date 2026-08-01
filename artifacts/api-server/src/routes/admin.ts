@@ -37,7 +37,29 @@ const router: IRouter = Router();
 // ── Helper ─────────────────────────────────────────────────────────────────
 
 function toAdminProductDto(
-  row: typeof productsTable.$inferSelect & {
+  row: Pick<
+    typeof productsTable.$inferSelect,
+    | "id"
+    | "slug"
+    | "name"
+    | "shortDescription"
+    | "description"
+    | "price"
+    | "compareAtPrice"
+    | "currency"
+    | "imageUrl"
+    | "galleryUrls"
+    | "thumbUrl"
+    | "mediumUrl"
+    | "largeUrl"
+    | "categoryId"
+    | "rating"
+    | "reviewCount"
+    | "inStock"
+    | "badge"
+    | "features"
+    | "createdAt"
+  > & {
     categoryName: string;
   },
 ) {
@@ -53,6 +75,9 @@ function toAdminProductDto(
     currency: row.currency,
     imageUrl: row.imageUrl,
     galleryUrls: row.galleryUrls,
+    thumbUrl: row.thumbUrl ?? null,
+    mediumUrl: row.mediumUrl ?? null,
+    largeUrl: row.largeUrl ?? null,
     categoryId: String(row.categoryId),
     categoryName: row.categoryName,
     rating: Number(row.rating),
@@ -122,6 +147,9 @@ router.get("/admin/products", async (req, res): Promise<void> => {
         currency: productsTable.currency,
         imageUrl: productsTable.imageUrl,
         galleryUrls: productsTable.galleryUrls,
+        thumbUrl: productsTable.thumbUrl,
+        mediumUrl: productsTable.mediumUrl,
+        largeUrl: productsTable.largeUrl,
         categoryId: productsTable.categoryId,
         categoryName: categoriesTable.name,
         rating: productsTable.rating,
@@ -162,7 +190,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
   }
   const {
     slug, name, shortDescription, description, price, compareAtPrice,
-    currency, imageUrl, galleryUrls, categoryId, inStock, badge, features,
+    currency, imageUrl, galleryUrls, thumbUrl, mediumUrl, largeUrl,
+    categoryId, inStock, badge, features,
   } = parsed.data;
 
   const [inserted] = await db
@@ -177,6 +206,9 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       currency: currency ?? "USD",
       imageUrl,
       galleryUrls: galleryUrls ?? [],
+      thumbUrl: thumbUrl ?? null,
+      mediumUrl: mediumUrl ?? null,
+      largeUrl: largeUrl ?? null,
       categoryId: Number(categoryId),
       inStock: inStock ?? true,
       badge: badge ?? null,
@@ -196,6 +228,9 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       categoryName: categoriesTable.name,
       rating: productsTable.rating,
@@ -235,6 +270,9 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   if (d.currency !== undefined) updates.currency = d.currency;
   if (d.imageUrl !== undefined) updates.imageUrl = d.imageUrl;
   if (d.galleryUrls !== undefined) updates.galleryUrls = d.galleryUrls;
+  if (d.thumbUrl !== undefined) updates.thumbUrl = d.thumbUrl;
+  if (d.mediumUrl !== undefined) updates.mediumUrl = d.mediumUrl;
+  if (d.largeUrl !== undefined) updates.largeUrl = d.largeUrl;
   if (d.categoryId !== undefined) updates.categoryId = Number(d.categoryId);
   if (d.inStock !== undefined) updates.inStock = d.inStock;
   if (d.badge !== undefined) updates.badge = d.badge;
@@ -268,6 +306,9 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       categoryName: categoriesTable.name,
       rating: productsTable.rating,

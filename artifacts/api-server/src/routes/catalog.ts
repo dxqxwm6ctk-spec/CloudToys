@@ -20,7 +20,25 @@ import {
 const router: IRouter = Router();
 
 function toProductDto(
-  row: typeof productsTable.$inferSelect & {
+  row: Pick<
+    typeof productsTable.$inferSelect,
+    | "id"
+    | "slug"
+    | "name"
+    | "shortDescription"
+    | "price"
+    | "compareAtPrice"
+    | "currency"
+    | "imageUrl"
+    | "galleryUrls"
+    | "thumbUrl"
+    | "mediumUrl"
+    | "largeUrl"
+    | "rating"
+    | "reviewCount"
+    | "inStock"
+    | "badge"
+  > & {
     categorySlug: string;
     categoryName: string;
   },
@@ -36,6 +54,9 @@ function toProductDto(
     currency: row.currency,
     imageUrl: row.imageUrl,
     galleryUrls: row.galleryUrls,
+    thumbUrl: row.thumbUrl ?? null,
+    mediumUrl: row.mediumUrl ?? null,
+    largeUrl: row.largeUrl ?? null,
     categorySlug: row.categorySlug,
     categoryName: row.categoryName,
     rating: Number(row.rating),
@@ -119,6 +140,9 @@ router.get("/products", async (req, res): Promise<void> => {
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -174,6 +198,9 @@ async function listByBadge(badge: "bestseller" | "new" | null, sortDesc = false)
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -209,6 +236,9 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -261,6 +291,9 @@ router.get("/products/:id", async (req, res): Promise<void> => {
       currency: productsTable.currency,
       imageUrl: productsTable.imageUrl,
       galleryUrls: productsTable.galleryUrls,
+      thumbUrl: productsTable.thumbUrl,
+      mediumUrl: productsTable.mediumUrl,
+      largeUrl: productsTable.largeUrl,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
