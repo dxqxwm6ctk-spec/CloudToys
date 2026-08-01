@@ -467,6 +467,8 @@ components:
         thumbUrl: { type: ["string", "null"] }
         mediumUrl: { type: ["string", "null"] }
         largeUrl: { type: ["string", "null"] }
+        lqip: { type: ["string", "null"] }
+        imageAlt: { type: ["string", "null"] }
         categorySlug: { type: string }
         categoryName: { type: string }
         rating: { type: number }
@@ -561,6 +563,8 @@ components:
         thumbUrl: { type: ["string", "null"] }
         mediumUrl: { type: ["string", "null"] }
         largeUrl: { type: ["string", "null"] }
+        lqip: { type: ["string", "null"] }
+        imageAlt: { type: ["string", "null"] }
         categoryId: { type: string }
         categoryName: { type: string }
         rating: { type: number }

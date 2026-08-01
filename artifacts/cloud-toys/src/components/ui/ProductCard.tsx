@@ -57,7 +57,8 @@ export function ProductCard({ product }: { product: Product }) {
               : undefined
           }
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          alt={product.name}
+          alt={product.imageAlt ?? product.name}
+          lqip={product.lqip}
           loading="lazy"
           className="w-full h-full object-cover object-center"
           animate={{ scale: hovered ? 1.06 : 1 }}

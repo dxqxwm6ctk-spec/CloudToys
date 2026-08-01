@@ -98,8 +98,8 @@ async function processAndUpload(
 ): Promise<{ thumbUrl: string; mediumUrl: string; largeUrl: string }> {
   const bucket = objectStorageClient.bucket(getBucketId());
 
-  // Generate AVIF and WebP variants for all sizes in parallel
-  const [avifBuffers, webpBuffers] = await Promise.all([
+  // Generate AVIF variants, WebP variants, and a tiny LQIP in parallel
+  const [avifBuffers, webpBuffers, lqipBuffer] = await Promise.all([
     Promise.all(
       SIZES.map(({ px }) =>
         sharp(buffer)
@@ -118,7 +118,15 @@ async function processAndUpload(
           .toBuffer(),
       ),
     ),
+    // LQIP: 20×20 WebP at very low quality → base64 data URI (~300–600 bytes)
+    sharp(buffer)
+      .rotate()
+      .resize(20, 20, { fit: "cover" })
+      .webp({ quality: 20 })
+      .toBuffer(),
   ]);
+
+  const lqip = `data:image/webp;base64,${lqipBuffer.toString("base64")}`;
 
   // Upload all 6 files (3 sizes × 2 formats) in parallel
   await Promise.all([
@@ -140,6 +148,7 @@ async function processAndUpload(
     thumbUrl: imageServingUrl(productId, uuid, "thumb"),
     mediumUrl: imageServingUrl(productId, uuid, "medium"),
     largeUrl: imageServingUrl(productId, uuid, "large"),
+    lqip,
   };
 }
 
@@ -202,6 +211,7 @@ router.post(
             thumbUrl: urls.thumbUrl,
             mediumUrl: urls.mediumUrl,
             largeUrl: urls.largeUrl,
+            lqip: urls.lqip,
             originalImageFilename: originalFilename,
             imageAlt: req.body?.altText ?? null,
           })

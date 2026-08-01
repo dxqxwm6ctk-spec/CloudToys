@@ -53,6 +53,8 @@ function toAdminProductDto(
     | "thumbUrl"
     | "mediumUrl"
     | "largeUrl"
+    | "lqip"
+    | "imageAlt"
     | "categoryId"
     | "rating"
     | "reviewCount"
@@ -79,6 +81,8 @@ function toAdminProductDto(
     thumbUrl: row.thumbUrl ?? null,
     mediumUrl: row.mediumUrl ?? null,
     largeUrl: row.largeUrl ?? null,
+    lqip: row.lqip ?? null,
+    imageAlt: row.imageAlt ?? null,
     categoryId: String(row.categoryId),
     categoryName: row.categoryName,
     rating: Number(row.rating),
@@ -151,6 +155,8 @@ router.get("/admin/products", async (req, res): Promise<void> => {
         thumbUrl: productsTable.thumbUrl,
         mediumUrl: productsTable.mediumUrl,
         largeUrl: productsTable.largeUrl,
+        lqip: productsTable.lqip,
+        imageAlt: productsTable.imageAlt,
         categoryId: productsTable.categoryId,
         categoryName: categoriesTable.name,
         rating: productsTable.rating,
@@ -232,6 +238,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       categoryName: categoriesTable.name,
       rating: productsTable.rating,
@@ -325,6 +333,8 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       categoryName: categoriesTable.name,
       rating: productsTable.rating,

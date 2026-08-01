@@ -46,6 +46,10 @@ export interface Product {
   mediumUrl?: string | null;
   /** @nullable */
   largeUrl?: string | null;
+  /** @nullable */
+  lqip?: string | null;
+  /** @nullable */
+  imageAlt?: string | null;
   categorySlug: string;
   categoryName: string;
   rating: number;
@@ -117,6 +121,10 @@ export interface AdminProduct {
   mediumUrl?: string | null;
   /** @nullable */
   largeUrl?: string | null;
+  /** @nullable */
+  lqip?: string | null;
+  /** @nullable */
+  imageAlt?: string | null;
   categoryId: string;
   categoryName: string;
   rating: number;

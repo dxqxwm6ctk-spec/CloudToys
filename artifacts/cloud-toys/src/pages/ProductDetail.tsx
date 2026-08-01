@@ -96,7 +96,8 @@ export function ProductDetail() {
                     : undefined
                 }
                 sizes="(max-width: 1024px) 100vw, 50vw"
-                alt={product.name}
+                alt={product.imageAlt ?? product.name}
+                lqip={activeImage === 0 ? product.lqip : undefined}
                 className="w-full h-full object-cover"
               />
               {product.badge && (

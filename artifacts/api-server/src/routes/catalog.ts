@@ -34,6 +34,8 @@ function toProductDto(
     | "thumbUrl"
     | "mediumUrl"
     | "largeUrl"
+    | "lqip"
+    | "imageAlt"
     | "rating"
     | "reviewCount"
     | "inStock"
@@ -57,6 +59,8 @@ function toProductDto(
     thumbUrl: row.thumbUrl ?? null,
     mediumUrl: row.mediumUrl ?? null,
     largeUrl: row.largeUrl ?? null,
+    lqip: row.lqip ?? null,
+    imageAlt: row.imageAlt ?? null,
     categorySlug: row.categorySlug,
     categoryName: row.categoryName,
     rating: Number(row.rating),
@@ -143,6 +147,8 @@ router.get("/products", async (req, res): Promise<void> => {
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -201,6 +207,8 @@ async function listByBadge(badge: "bestseller" | "new" | null, sortDesc = false)
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -239,6 +247,8 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
@@ -294,6 +304,8 @@ router.get("/products/:id", async (req, res): Promise<void> => {
       thumbUrl: productsTable.thumbUrl,
       mediumUrl: productsTable.mediumUrl,
       largeUrl: productsTable.largeUrl,
+      lqip: productsTable.lqip,
+      imageAlt: productsTable.imageAlt,
       categoryId: productsTable.categoryId,
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
