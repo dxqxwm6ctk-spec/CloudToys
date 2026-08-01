@@ -5,10 +5,8 @@ import * as schema from "./schema";
 const { Pool } = pg;
 
 function getConnectionString(): string {
-  // Prefer a fully-formed URL if provided
-  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
-  // Fall back to assembling from components (useful when the secrets form
-  // truncates long URLs — only the password needs to be a secret)
+  // Prefer component-based config when SUPABASE_DB_PASSWORD is set — this
+  // avoids issues with long URLs being truncated in the secrets form.
   const password = process.env.SUPABASE_DB_PASSWORD;
   const host = process.env.SUPABASE_DB_HOST;
   const user = process.env.SUPABASE_DB_USER;
@@ -17,8 +15,10 @@ function getConnectionString(): string {
   if (password && host && user) {
     return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${dbName}`;
   }
+  // Fall back to a fully-formed URL
+  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
   throw new Error(
-    "Database not configured. Set SUPABASE_DB_URL, or set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD.",
+    "Database not configured. Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, or SUPABASE_DB_URL.",
   );
 }
 

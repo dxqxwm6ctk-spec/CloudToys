@@ -1,3 +1,5 @@
 - [API server zod import](api-server-zod.md) — zod must be in api-server's package.json dependencies or esbuild can't resolve it during bundle
 - [Workflow PORT injection](workflow-port.md) — managed artifact workflows don't auto-inject PORT; must set PORT=XXXXX in the configureWorkflow command explicitly
 - [Orval name conflicts](orval-name-conflicts.md) — orval generates both Zod schemas (api.ts) and TS interfaces (types/); naming a response schema with "Response" suffix can clash — rename if codegen fails with TS2308
+- [Supabase DB connection pattern](supabase-db-connection.md) — use component env vars (SUPABASE_DB_PASSWORD etc.) not SUPABASE_DB_URL; Replit secrets form truncates long URLs
+- [supabase-js WebSocket on Node.js 20](supabase-js-node20-websocket.md) — must polyfill globalThis.WebSocket with `ws` package before importing createClient

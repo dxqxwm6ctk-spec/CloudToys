@@ -1,3 +1,9 @@
+// Polyfill WebSocket for Node.js < 22 (supabase-js v2.111+ requires it)
+import { WebSocket } from "ws";
+if (!("WebSocket" in globalThis)) {
+  // @ts-expect-error — ws is compatible enough for supabase-js realtime
+  globalThis.WebSocket = WebSocket;
+}
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
