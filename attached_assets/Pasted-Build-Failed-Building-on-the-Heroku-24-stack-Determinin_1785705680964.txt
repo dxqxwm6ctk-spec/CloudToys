@@ -1,0 +1,91 @@
+Build Failed
+
+
+-----> Building on the Heroku-24 stack
+-----> Determining which buildpack to use for this app
+-----> Node.js app detected
+       
+-----> Creating runtime environment
+       
+       NPM_CONFIG_LOGLEVEL=error
+       NODE_VERBOSE=false
+       NODE_ENV=production
+       NODE_MODULES_CACHE=true
+-----> Installing binaries
+       engines.node (package.json):   unspecified
+       engines.npm (package.json):    unspecified (use default)
+       engines.pnpm (package.json):   unspecified (use default)
+       
+       No Node.js version specified, resolving current LTS version...
+       Downloading and installing node 24.18.1...
+       Validating checksum
+       Using default npm version: 11.16.0
+       Downloading and installing pnpm (latest)
+       Using pnpm 11.18.0
+ !     Default pnpm version used
+ !     
+ !     A pnpm lockfile (pnpm-lock.yaml) was detected but no specific version of pnpm was defined in package.json in either of the following fields:
+ !     - "packageManager"
+ !     - "engines.pnpm"
+ !     
+ !     Without a specific version defined, this build will use "pnpm@latest" by default. We highly recommend setting an explicit version
+ !     of pnpm to improve the reliability of your builds.
+       
+-----> Installing dependencies
+       Running 'pnpm install' with pnpm-lock.yaml
+       Scope: all 10 workspace projects
+       ? Verifying lockfile against supply-chain policies (532 entries)...
+       Lockfile is up to date, resolution step is skipped
+       Progress: resolved 1, reused 0, downloaded 0, added 0
+       Packages: +505
+       ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+       Progress: resolved 505, reused 0, downloaded 0, added 0
+       Progress: resolved 505, reused 0, downloaded 56, added 0
+       ✓ Lockfile passes supply-chain policies (532 entries in 2.6s)
+       Packages are cloned from the content-addressable store to the virtual store.
+         Content-addressable store is at: /tmp/pnpmcache.9e6gA/v11
+         Virtual store is at:             node_modules/.pnpm
+       Progress: resolved 505, reused 0, downloaded 114, added 4
+       Progress: resolved 505, reused 0, downloaded 433, added 28
+       Progress: resolved 505, reused 0, downloaded 505, added 54
+       Progress: resolved 505, reused 0, downloaded 505, added 61
+       Progress: resolved 505, reused 0, downloaded 505, added 62
+       Progress: resolved 505, reused 0, downloaded 505, added 119
+       Progress: resolved 505, reused 0, downloaded 505, added 138
+       Progress: resolved 505, reused 0, downloaded 505, added 143
+       Progress: resolved 505, reused 0, downloaded 505, added 145
+       Progress: resolved 505, reused 0, downloaded 505, added 159
+       Progress: resolved 505, reused 0, downloaded 505, added 206
+       Progress: resolved 505, reused 0, downloaded 505, added 280
+       Progress: resolved 505, reused 0, downloaded 505, added 352
+       Progress: resolved 505, reused 0, downloaded 505, added 430
+       Progress: resolved 505, reused 0, downloaded 505, added 503
+       Progress: resolved 505, reused 0, downloaded 505, added 505, done
+       
+       dependencies:
+       + @replit/connectors-sdk 0.4.1
+       
+       devDependencies:
+       + prettier 3.9.6
+       + typescript 5.9.3
+       
+       . preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+       . preinstall: Done
+       [ERR_PNPM_IGNORED_BUILDS] Ignored build scripts: esbuild@0.27.3
+       
+       Run "pnpm approve-builds" to pick which dependencies should be allowed to run scripts.
+-----> Build failed
+       
+       We're sorry this build is failing! You can troubleshoot common issues here:
+       https://devcenter.heroku.com/articles/troubleshooting-node-deploys
+       
+       Some possible problems:
+       
+       - Node version not specified in package.json
+         https://devcenter.heroku.com/articles/nodejs-support#specifying-a-node-js-version
+       
+       Love,
+       Heroku
+       
+ !     Push rejected, failed to compile Node.js app.
+ !     Push failed
