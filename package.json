@@ -4,8 +4,7 @@
   "license": "MIT",
   "packageManager": "pnpm@10.26.1",
   "engines": {
-    "node": "20.x",
-    "pnpm": ">=10"
+    "node": "22.x"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["@swc/core", "esbuild", "msw", "unrs-resolver"]

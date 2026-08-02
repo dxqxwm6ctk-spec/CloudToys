@@ -1,0 +1,78 @@
+Receive code from GitHub
+Build main 96897c05
+There was an issue deploying your app. View the build log for details.
+
+-----> Building on the Heroku-24 stack
+-----> Determining which buildpack to use for this app
+-----> Node.js app detected
+       
+-----> Creating runtime environment
+       
+       NPM_CONFIG_LOGLEVEL=error
+       NODE_VERBOSE=false
+       NODE_ENV=production
+       NODE_MODULES_CACHE=true
+-----> Installing binaries
+       engines.node (package.json):   20.x
+       engines.npm (package.json):    unspecified (use default)
+       engines.pnpm (package.json):   >=10
+       packageManager (package.json): pnpm@10.26.1
+ !     Multiple pnpm versions declared
+ !     
+ !     The package.json file indicates the target version of pnpm to install in two fields:
+ !     - "packageManager": "pnpm@10.26.1"
+ !     - "engines.pnpm": ">=10"
+ !     
+ !     If both fields are present, then "packageManager" will take precedence and "pnpm@10.26.1" will be installed.
+ !     
+ !     To ensure we install the version of pnpm you want, remove one of these fields.
+       Resolving node version 20.x...
+ !     Node.js 20.20.2 is now End-of-Life (EOL). It no longer receives security
+ !     updates, bug fixes, or support from the Node.js project and is no longer
+ !     supported on Heroku.
+ !     
+ !     In a future buildpack release, this warning will become a build error. Please
+ !     upgrade to a supported version as soon as possible to avoid build failures.
+ !     
+ !     https://devcenter.heroku.com/articles/nodejs-support#supported-node-js-versions
+       Downloading and installing node 20.20.2...
+       Validating checksum
+       Using default npm version: 10.8.2
+       Downloading and installing pnpm (10.26.1)
+       Using pnpm 10.26.1
+       
+-----> Installing dependencies
+       Running 'pnpm install' with pnpm-lock.yaml
+       
+-----> Build
+       Running build
+       
+       > workspace@0.0.0 build /tmp/build_be0cf439
+       > pnpm run typecheck && pnpm -r --if-present run build
+       
+       
+       > workspace@0.0.0 typecheck /tmp/build_be0cf439
+       > pnpm run typecheck:libs && pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck
+       
+       
+       > workspace@0.0.0 typecheck:libs /tmp/build_be0cf439
+       > tsc --build
+       
+       /tmp/build_be0cf439/artifacts/api-server:
+        ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @workspace/api-server@0.0.0 typecheck: `tsc -p tsconfig.json --noEmit`
+       Exit status 2
+        ELIFECYCLE  Command failed with exit code 2.
+        ELIFECYCLE  Command failed with exit code 2.
+-----> Build failed
+       
+       We're sorry this build is failing! You can troubleshoot common issues here:
+       https://devcenter.heroku.com/articles/troubleshooting-node-deploys
+       
+       If you're stuck, please submit a ticket so we can help:
+       https://help.heroku.com/
+       
+       Love,
+       Heroku
+       
+ !     Push rejected, failed to compile Node.js app.
+ !     Push failed

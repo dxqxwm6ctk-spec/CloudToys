@@ -88,7 +88,7 @@ async function processAndUpload(
   buffer: Buffer,
   productId: string,
   uuid: string,
-): Promise<{ thumbUrl: string; mediumUrl: string; largeUrl: string }> {
+): Promise<{ thumbUrl: string; mediumUrl: string; largeUrl: string; lqip: string }> {
   // Generate AVIF variants, WebP variants, and a tiny LQIP in parallel
   const [avifBuffers, webpBuffers, lqipBuffer] = await Promise.all([
     Promise.all(
