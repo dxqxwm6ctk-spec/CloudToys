@@ -14,9 +14,10 @@
   publish = "artifacts/admin-dashboard/dist/public"
 
 [build.environment]
-  PORT      = "3000"
-  BASE_PATH = "/"
-  NODE_VERSION = "20"
+  PORT         = "3000"
+  BASE_PATH    = "/"
+  NODE_VERSION = "22"
+  PNPM_VERSION = "10.26.1"
 
 # SPA — send all routes to index.html
 [[redirects]]
