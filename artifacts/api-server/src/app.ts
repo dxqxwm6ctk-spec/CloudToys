@@ -1,5 +1,5 @@
 import path from "path";
-import express, { type Express } from "express";
+import express, { type Express, type ErrorRequestHandler } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
@@ -66,5 +66,18 @@ app.use(
   express.static(path.resolve(import.meta.dirname, "..", "public", "images")),
 );
 app.use("/api", router);
+
+// Without this, a rejected CORS origin bubbles up as an unhandled error and
+// Express's default handler returns a plain HTML 500 with no CORS headers —
+// browsers surface that to fetch() callers as an opaque "Failed to fetch"
+// instead of a diagnosable error. Return a clean JSON 403 instead.
+const corsErrorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (err instanceof Error && /not allowed by CORS/.test(err.message)) {
+    res.status(403).json({ error: err.message });
+    return;
+  }
+  next(err);
+};
+app.use(corsErrorHandler);
 
 export default app;
