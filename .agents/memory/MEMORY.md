@@ -3,3 +3,4 @@
 - [Orval name conflicts](orval-name-conflicts.md) — orval generates both Zod schemas (api.ts) and TS interfaces (types/); naming a response schema with "Response" suffix can clash — rename if codegen fails with TS2308
 - [Supabase DB connection pattern](supabase-db-connection.md) — use component env vars (SUPABASE_DB_PASSWORD etc.) not SUPABASE_DB_URL; Replit secrets form truncates long URLs
 - [supabase-js WebSocket on Node.js 20](supabase-js-node20-websocket.md) — must polyfill globalThis.WebSocket with `ws` package before importing createClient
+- [Drizzle schema push drift](drizzle-push-schema-drift.md) — external DB (Supabase) only gets schema changes via manual `drizzle-kit push`; "column does not exist" prod 500s often mean push was never re-run
