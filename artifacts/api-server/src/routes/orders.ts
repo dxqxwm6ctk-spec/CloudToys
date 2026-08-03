@@ -60,9 +60,6 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  // Generate order number
-  const orderNumber = `ORD-${Date.now().toString(36).toUpperCase()}-${Math.floor(1000 + Math.random() * 9000)}`;
-
   // Estimated delivery: 7 days from now
   const deliveryDate = new Date();
   deliveryDate.setDate(deliveryDate.getDate() + 7);
@@ -86,14 +83,31 @@ router.post("/orders", async (req, res): Promise<void> => {
     { label: "Delivered", completed: false, date: null },
   ];
 
-  await db.insert(ordersTable).values({
-    orderNumber,
-    status: "processing",
-    estimatedDelivery,
-    steps,
-    customerName,
-    customerEmail,
-    paymentMethod: pm.label,
+  // Insert with a temporary placeholder (orderNumber is NOT NULL + UNIQUE),
+  // then rewrite it using the row's own serial id so the final order number
+  // is short, sequential, and easy for customers to read back over the
+  // phone or type into the tracking page (e.g. "CT-100042").
+  const orderNumber = await db.transaction(async (tx) => {
+    const [inserted] = await tx
+      .insert(ordersTable)
+      .values({
+        orderNumber: `PENDING-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        status: "processing",
+        estimatedDelivery,
+        steps,
+        customerName,
+        customerEmail,
+        paymentMethod: pm.label,
+      })
+      .returning({ id: ordersTable.id });
+
+    const finalOrderNumber = `CT-${100000 + inserted.id}`;
+    await tx
+      .update(ordersTable)
+      .set({ orderNumber: finalOrderNumber })
+      .where(eq(ordersTable.id, inserted.id));
+
+    return finalOrderNumber;
   });
 
   res.status(201).json({ orderNumber, estimatedDelivery });
