@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { getApiBase } from '@/lib/api-url';
+import { authHeader } from '@/lib/auth-token';
 import { Link, useLocation } from 'wouter';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -187,6 +188,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
       const response = await fetch(`${getApiBase()}/api/admin/images/upload`, {
         method: 'POST',
         credentials: 'include',
+        headers: authHeader(),
         body: formData,
       });
 

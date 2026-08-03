@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { getApiBase } from '@/lib/api-url';
+import { setAuthToken, clearAuthToken, authHeader } from '@/lib/auth-token';
 
 interface AuthState {
   username: string | null;
@@ -18,7 +19,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${BASE}/api/admin/auth/me`, { credentials: 'include' })
+
+    // No stored token and nothing to fall back to except a same-origin
+    // cookie — still worth checking (e.g. Replit preview), so always ask.
+    fetch(`${BASE}/api/admin/auth/me`, { credentials: 'include', headers: authHeader() })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { username: string } | null) => {
         if (!cancelled) setUsername(data?.username ?? null);
@@ -45,7 +49,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const err = await res.json().catch(() => ({}));
       throw new Error((err as { error?: string }).error ?? 'Login failed');
     }
-    const data = (await res.json()) as { username: string };
+    const data = (await res.json()) as { username: string; token?: string };
+    if (data.token) setAuthToken(data.token);
     setUsername(data.username);
   }, []);
 
@@ -53,7 +58,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetch(`${BASE}/api/admin/auth/logout`, {
       method: 'POST',
       credentials: 'include',
+      headers: authHeader(),
     }).catch(() => {});
+    clearAuthToken();
     setUsername(null);
   }, []);
 

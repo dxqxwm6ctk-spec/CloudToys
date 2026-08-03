@@ -6,6 +6,7 @@ import {
   ADMIN_COOKIE_NAME,
   ADMIN_COOKIE_OPTIONS,
   ADMIN_COOKIE_CLEAR_OPTIONS,
+  createAdminToken,
 } from "../lib/adminAuth";
 import { logger } from "../lib/logger";
 
@@ -54,7 +55,8 @@ router.post("/admin/auth/login", (req, res): void => {
   }
 
   res.cookie(ADMIN_COOKIE_NAME, username, ADMIN_COOKIE_OPTIONS);
-  res.json({ username });
+  const token = createAdminToken(username);
+  res.json({ username, token });
 });
 
 // POST /admin/auth/logout — public (clearing an absent/invalid cookie is a no-op)

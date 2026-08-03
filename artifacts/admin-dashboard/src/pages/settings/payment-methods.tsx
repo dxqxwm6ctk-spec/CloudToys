@@ -14,11 +14,13 @@ interface PaymentMethod {
 }
 
 import { getApiBase } from '@/lib/api-url';
+import { authHeader } from '@/lib/auth-token';
 const BASE = getApiBase();
 
 async function fetchPaymentMethods(): Promise<PaymentMethod[]> {
   const res = await fetch(`${BASE}/api/admin/settings/payment-methods`, {
     credentials: 'include',
+    headers: authHeader(),
   });
   if (!res.ok) throw new Error('Failed to load');
   return res.json();
@@ -28,7 +30,7 @@ async function updatePaymentMethod(id: string, enabled: boolean): Promise<Paymen
   const res = await fetch(`${BASE}/api/admin/settings/payment-methods/${id}`, {
     method: 'PUT',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeader() },
     body: JSON.stringify({ enabled }),
   });
   if (!res.ok) throw new Error('Failed to update');
