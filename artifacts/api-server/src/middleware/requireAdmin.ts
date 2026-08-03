@@ -28,8 +28,11 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
       next();
       return;
     }
-    res.status(401).json({ error: "Authentication required" });
-    return;
+    // Bearer token present but invalid/expired (e.g. stale localStorage
+    // token from before a SESSION_SECRET rotation, or past its 7-day TTL).
+    // Fall through to the cookie instead of failing outright — a same-origin
+    // deployment (or a browser that still accepts the cookie) may still have
+    // a valid session even though the stored bearer token doesn't.
   }
 
   const value = req.signedCookies?.[ADMIN_COOKIE_NAME];

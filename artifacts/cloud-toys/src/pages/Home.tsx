@@ -10,7 +10,7 @@ export function Home() {
   const searchParams = new URLSearchParams(window.location.search);
   const categoryParam = searchParams.get('category') || undefined;
 
-  const { data, isLoading } = useListProducts({
+  const { data, isLoading, isError, error, refetch } = useListProducts({
     category: categoryParam,
     sort: 'featured',
     page: 1,
@@ -68,6 +68,19 @@ export function Home() {
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="rounded-xl bg-secondary animate-pulse aspect-[3/4]" />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="text-center py-16 space-y-3">
+            <p className="text-lg font-medium text-destructive">Couldn't load products</p>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              {error instanceof Error ? error.message : 'The store could not reach the server. Check the API connection and try again.'}
+            </p>
+            <button
+              onClick={() => refetch()}
+              className="text-sm text-primary underline"
+            >
+              Try again
+            </button>
           </div>
         ) : data?.items && data.items.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">

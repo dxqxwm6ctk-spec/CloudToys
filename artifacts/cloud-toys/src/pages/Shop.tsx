@@ -17,7 +17,7 @@ export function Shop() {
   const [page, setPage] = useState(1);
   const pageSize = 12;
 
-  const { data, isLoading } = useListProducts({
+  const { data, isLoading, isError, error, refetch } = useListProducts({
     category: categoryParam,
     search: searchParam,
     sort: sortParam,
@@ -147,6 +147,19 @@ export function Shop() {
                   <div className="h-4 bg-secondary rounded w-1/3"></div>
                 </div>
               ))}
+            </div>
+          ) : isError ? (
+            <div className="text-center py-24 space-y-4">
+              <h3 className="text-2xl font-serif font-medium mb-2 text-destructive">Couldn't load products</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                {error instanceof Error ? error.message : 'The store could not reach the server. Check the API connection and try again.'}
+              </p>
+              <button
+                onClick={() => refetch()}
+                className="bg-primary text-primary-foreground px-6 py-3 rounded-full text-sm font-medium hover:bg-primary/90"
+              >
+                Try again
+              </button>
             </div>
           ) : data?.items.length === 0 ? (
             <div className="text-center py-24">
