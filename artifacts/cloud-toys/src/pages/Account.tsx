@@ -1,6 +1,35 @@
 import { PageTransition } from '../components/ui/PageTransition';
-import { User, Package, Settings, LogOut, Heart } from 'lucide-react';
+import { useTrackOrder } from '@workspace/api-client-react';
+import { User, Package, Settings, LogOut, Heart, ChevronRight } from 'lucide-react';
 import { Link } from 'wouter';
+import { getOrderHistory } from '../lib/orderHistory';
+
+function formatPrice(price: number) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+}
+
+function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string; itemCount: number; total: number }) {
+  const { data: tracking, isLoading } = useTrackOrder(orderNumber, {
+    query: { queryKey: ['trackOrder', orderNumber] },
+  });
+  const statusLabel = isLoading ? 'Loading…' : (tracking?.status ?? 'Placed');
+
+  return (
+    <Link
+      href={`/track-order?number=${orderNumber}`}
+      className="flex items-center justify-between gap-4 p-5 rounded-2xl border border-border hover:border-primary/40 transition-colors group"
+    >
+      <div>
+        <p className="font-semibold font-mono text-sm">{orderNumber}</p>
+        <p className="text-xs text-muted-foreground mt-1">{itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatPrice(total)}</p>
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-foreground capitalize">{statusLabel}</span>
+        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+      </div>
+    </Link>
+  );
+}
 
 export function Account() {
   // Mock user data
@@ -9,6 +38,8 @@ export function Account() {
     email: "alex@example.com",
     memberSince: "2023"
   };
+
+  const recentOrders = getOrderHistory().slice(0, 3);
 
   return (
     <PageTransition>
@@ -30,7 +61,7 @@ export function Account() {
                   <User className="w-4 h-4" />
                   Profile
                 </Link>
-                <Link href="/track-order" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/50 text-muted-foreground hover:text-foreground transition-colors">
+                <Link href="/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/50 text-muted-foreground hover:text-foreground transition-colors">
                   <Package className="w-4 h-4" />
                   Orders
                 </Link>
@@ -75,12 +106,27 @@ export function Account() {
             </section>
 
             <section>
-              <h2 className="text-2xl font-serif font-semibold mb-6">Recent Orders</h2>
-              <div className="bg-white border border-border rounded-3xl p-8 text-center text-muted-foreground py-16">
-                <Package className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p>No recent orders found.</p>
-                <Link href="/shop" className="text-primary hover:underline mt-2 inline-block">Start shopping</Link>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-serif font-semibold">Recent Orders</h2>
+                {recentOrders.length > 0 && (
+                  <Link href="/orders" className="text-sm text-primary hover:underline flex items-center gap-1">
+                    View all <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+                )}
               </div>
+              {recentOrders.length === 0 ? (
+                <div className="bg-white border border-border rounded-3xl p-8 text-center text-muted-foreground py-16">
+                  <Package className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  <p>No recent orders found.</p>
+                  <Link href="/shop" className="text-primary hover:underline mt-2 inline-block">Start shopping</Link>
+                </div>
+              ) : (
+                <div className="bg-white border border-border rounded-3xl p-4 space-y-2">
+                  {recentOrders.map((order) => (
+                    <RecentOrderRow key={order.orderNumber} orderNumber={order.orderNumber} itemCount={order.itemCount} total={order.total} />
+                  ))}
+                </div>
+              )}
             </section>
 
           </div>

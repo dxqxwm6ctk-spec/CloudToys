@@ -3,6 +3,8 @@ import { useCart } from '../context/CartContext';
 import { useLocation, Link } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 'lucide-react';
+import { resolveMediaUrl } from '@workspace/api-client-react';
+import { addOrderToHistory } from '../lib/orderHistory';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
@@ -92,6 +94,13 @@ export function Checkout() {
       const data = await res.json() as { orderNumber: string; estimatedDelivery: string };
       setOrderNumber(data.orderNumber);
       setEstimatedDelivery(data.estimatedDelivery);
+      addOrderToHistory({
+        orderNumber: data.orderNumber,
+        estimatedDelivery: data.estimatedDelivery,
+        placedAt: new Date().toISOString(),
+        total,
+        itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+      });
       clearCart();
       setStep(3);
       window.scrollTo(0, 0);
@@ -303,7 +312,7 @@ export function Checkout() {
                 {items.map(item => (
                   <div key={item.id} className="flex gap-4">
                     <div className="w-16 h-16 rounded-lg bg-white overflow-hidden flex-shrink-0 relative border border-border">
-                      <img src={item.thumbUrl ?? item.imageUrl} alt={item.name} loading="lazy" className="w-full h-full object-cover" />
+                      <img src={resolveMediaUrl(item.thumbUrl ?? item.imageUrl)} alt={item.name} loading="lazy" className="w-full h-full object-cover" />
                       <span className="absolute -top-2 -right-2 w-5 h-5 bg-muted text-muted-foreground rounded-full text-[10px] flex items-center justify-center font-bold border border-border">
                         {item.quantity}
                       </span>
