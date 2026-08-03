@@ -283,7 +283,11 @@ export function Checkout() {
                       className="w-full bg-primary text-primary-foreground h-14 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {isPlacingOrder && <Loader2 className="w-5 h-5 animate-spin" />}
-                      {isPlacingOrder ? 'Placing Order…' : `Pay ${formatPrice(total)}`}
+                      {isPlacingOrder
+                        ? 'Placing Order…'
+                        : selectedPayment === 'cash_on_delivery'
+                          ? 'Confirm Order'
+                          : `Pay ${formatPrice(total)}`}
                     </button>
                   </div>
                 </form>
