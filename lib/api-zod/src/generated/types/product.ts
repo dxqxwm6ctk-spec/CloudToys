@@ -33,6 +33,7 @@ export interface Product {
   rating: number;
   reviewCount: number;
   inStock: boolean;
+  stockQuantity: number;
   /** @nullable */
   badge?: ProductBadge;
 }

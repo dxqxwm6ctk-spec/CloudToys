@@ -39,6 +39,7 @@ function toProductDto(
     | "rating"
     | "reviewCount"
     | "inStock"
+    | "stockQuantity"
     | "badge"
   > & {
     categorySlug: string;
@@ -66,6 +67,7 @@ function toProductDto(
     rating: Number(row.rating),
     reviewCount: row.reviewCount,
     inStock: row.inStock,
+    stockQuantity: row.stockQuantity,
     badge: row.badge as "new" | "bestseller" | "sale" | null,
   };
 }
@@ -153,6 +155,7 @@ router.get("/products", async (req, res): Promise<void> => {
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,
@@ -213,6 +216,7 @@ async function listByBadge(badge: "bestseller" | "new" | null, sortDesc = false)
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,
@@ -253,6 +257,7 @@ router.get("/products/featured", async (_req, res): Promise<void> => {
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,
@@ -310,6 +315,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,

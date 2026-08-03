@@ -1,10 +1,12 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
-import { db, ordersTable, paymentMethodsTable } from "@workspace/db";
+import { eq, sql } from "drizzle-orm";
+import { db, ordersTable, paymentMethodsTable, productsTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
 
 const router: IRouter = Router();
+
+class InsufficientStockError extends Error {}
 
 // ── Payment methods (public – for checkout) ────────────────────────────────
 router.get("/orders/payment-methods", async (_req, res): Promise<void> => {
@@ -47,7 +49,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  const { customerName, customerEmail, paymentMethodKey } = body.data;
+  const { customerName, customerEmail, paymentMethodKey, items } = body.data;
 
   // Validate payment method is enabled
   const [pm] = await db
@@ -58,6 +60,20 @@ router.post("/orders", async (req, res): Promise<void> => {
   if (!pm || !pm.enabled) {
     res.status(400).json({ error: "Selected payment method is not available" });
     return;
+  }
+
+  // Combine duplicate line items for the same product before checking stock
+  const quantityByProductId = new Map<number, number>();
+  for (const item of items) {
+    const productId = Number(item.productId);
+    if (!Number.isInteger(productId)) {
+      res.status(400).json({ error: `Invalid product id: ${item.productId}` });
+      return;
+    }
+    quantityByProductId.set(
+      productId,
+      (quantityByProductId.get(productId) ?? 0) + item.quantity,
+    );
   }
 
   // Estimated delivery: 7 days from now
@@ -83,34 +99,73 @@ router.post("/orders", async (req, res): Promise<void> => {
     { label: "Delivered", completed: false, date: null },
   ];
 
-  // Insert with a temporary placeholder (orderNumber is NOT NULL + UNIQUE),
-  // then rewrite it using the row's own serial id so the final order number
-  // is short, sequential, and easy for customers to read back over the
-  // phone or type into the tracking page (e.g. "CT-100042").
-  const orderNumber = await db.transaction(async (tx) => {
-    const [inserted] = await tx
-      .insert(ordersTable)
-      .values({
-        orderNumber: `PENDING-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        status: "processing",
-        estimatedDelivery,
-        steps,
-        customerName,
-        customerEmail,
-        paymentMethod: pm.label,
-      })
-      .returning({ id: ordersTable.id });
+  try {
+    // Insert with a temporary placeholder (orderNumber is NOT NULL + UNIQUE),
+    // then rewrite it using the row's own serial id so the final order number
+    // is short, sequential, and easy for customers to read back over the
+    // phone or type into the tracking page (e.g. "CT-100042").
+    const orderNumber = await db.transaction(async (tx) => {
+      // Lock the affected product rows and decrement stock atomically —
+      // `stockQuantity - qty >= 0` in the WHERE clause means a row that
+      // doesn't have enough stock simply won't update, so we can detect
+      // insufficient stock by checking rowCount instead of racing a
+      // separate SELECT + UPDATE (which two concurrent checkouts could
+      // both pass).
+      for (const [productId, quantity] of quantityByProductId) {
+        const result = await tx
+          .update(productsTable)
+          .set({
+            stockQuantity: sql`${productsTable.stockQuantity} - ${quantity}`,
+            inStock: sql`(${productsTable.stockQuantity} - ${quantity}) > 0`,
+          })
+          .where(
+            sql`${productsTable.id} = ${productId} AND ${productsTable.stockQuantity} >= ${quantity}`,
+          );
 
-    const finalOrderNumber = `CT-${100000 + inserted.id}`;
-    await tx
-      .update(ordersTable)
-      .set({ orderNumber: finalOrderNumber })
-      .where(eq(ordersTable.id, inserted.id));
+        if (result.rowCount === 0) {
+          const [product] = await tx
+            .select({ name: productsTable.name, stockQuantity: productsTable.stockQuantity })
+            .from(productsTable)
+            .where(eq(productsTable.id, productId));
 
-    return finalOrderNumber;
-  });
+          throw new InsufficientStockError(
+            product
+              ? `Only ${product.stockQuantity} left of "${product.name}"`
+              : `Product ${productId} not found`,
+          );
+        }
+      }
 
-  res.status(201).json({ orderNumber, estimatedDelivery });
+      const [inserted] = await tx
+        .insert(ordersTable)
+        .values({
+          orderNumber: `PENDING-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          status: "processing",
+          estimatedDelivery,
+          steps,
+          customerName,
+          customerEmail,
+          paymentMethod: pm.label,
+        })
+        .returning({ id: ordersTable.id });
+
+      const finalOrderNumber = `CT-${100000 + inserted.id}`;
+      await tx
+        .update(ordersTable)
+        .set({ orderNumber: finalOrderNumber })
+        .where(eq(ordersTable.id, inserted.id));
+
+      return finalOrderNumber;
+    });
+
+    res.status(201).json({ orderNumber, estimatedDelivery });
+  } catch (err) {
+    if (err instanceof InsufficientStockError) {
+      res.status(409).json({ error: err.message });
+      return;
+    }
+    throw err;
+  }
 });
 
 // ── Track order ────────────────────────────────────────────────────────────

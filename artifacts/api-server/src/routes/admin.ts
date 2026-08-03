@@ -115,6 +115,7 @@ function toAdminProductDto(
     | "rating"
     | "reviewCount"
     | "inStock"
+    | "stockQuantity"
     | "badge"
     | "features"
     | "createdAt"
@@ -144,6 +145,7 @@ function toAdminProductDto(
     rating: Number(row.rating),
     reviewCount: row.reviewCount,
     inStock: row.inStock,
+    stockQuantity: row.stockQuantity,
     badge: row.badge as "new" | "bestseller" | "sale" | null,
     features: row.features,
     createdAt: row.createdAt.toISOString(),
@@ -157,8 +159,8 @@ router.get("/admin/stats", async (_req, res): Promise<void> => {
     db
       .select({
         total: sql<number>`count(*)`.mapWith(Number),
-        inStock: sql<number>`count(*) filter (where ${productsTable.inStock} = true)`.mapWith(Number),
-        outOfStock: sql<number>`count(*) filter (where ${productsTable.inStock} = false)`.mapWith(Number),
+        inStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} > 0)`.mapWith(Number),
+        outOfStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} <= 0)`.mapWith(Number),
       })
       .from(productsTable),
     db
@@ -218,6 +220,7 @@ router.get("/admin/products", async (req, res): Promise<void> => {
         rating: productsTable.rating,
         reviewCount: productsTable.reviewCount,
         inStock: productsTable.inStock,
+        stockQuantity: productsTable.stockQuantity,
         badge: productsTable.badge,
         features: productsTable.features,
         createdAt: productsTable.createdAt,
@@ -254,7 +257,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
   const {
     slug, name, shortDescription, description, price, compareAtPrice,
     currency, imageUrl, galleryUrls, thumbUrl, mediumUrl, largeUrl,
-    categoryId, inStock, badge, features,
+    categoryId, stockQuantity, badge, features,
   } = parsed.data;
 
   const [inserted] = await db
@@ -273,7 +276,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       mediumUrl: mediumUrl ?? null,
       largeUrl: largeUrl ?? null,
       categoryId: Number(categoryId),
-      inStock: inStock ?? true,
+      stockQuantity,
+      inStock: stockQuantity > 0,
       badge: badge ?? null,
       features: features ?? [],
     })
@@ -301,6 +305,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,
@@ -339,7 +344,10 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   if (d.mediumUrl !== undefined) updates.mediumUrl = d.mediumUrl;
   if (d.largeUrl !== undefined) updates.largeUrl = d.largeUrl;
   if (d.categoryId !== undefined) updates.categoryId = Number(d.categoryId);
-  if (d.inStock !== undefined) updates.inStock = d.inStock;
+  if (d.stockQuantity !== undefined) {
+    updates.stockQuantity = d.stockQuantity;
+    updates.inStock = d.stockQuantity > 0;
+  }
   if (d.badge !== undefined) updates.badge = d.badge;
   if (d.features !== undefined) updates.features = d.features;
 
@@ -396,6 +404,7 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
       rating: productsTable.rating,
       reviewCount: productsTable.reviewCount,
       inStock: productsTable.inStock,
+      stockQuantity: productsTable.stockQuantity,
       badge: productsTable.badge,
       features: productsTable.features,
       createdAt: productsTable.createdAt,

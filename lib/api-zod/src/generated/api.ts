@@ -67,6 +67,7 @@ export const ListProductsResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.union([zod.literal('new'),zod.literal('bestseller'),zod.literal('sale'),zod.literal(null)]).nullish()
 })),
   "total": zod.number(),
@@ -98,6 +99,7 @@ export const ListFeaturedProductsResponseItem = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.union([zod.literal('new'),zod.literal('bestseller'),zod.literal('sale'),zod.literal(null)]).nullish()
 })
 export const ListFeaturedProductsResponse = zod.array(ListFeaturedProductsResponseItem)
@@ -126,6 +128,7 @@ export const ListBestSellerProductsResponseItem = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.union([zod.literal('new'),zod.literal('bestseller'),zod.literal('sale'),zod.literal(null)]).nullish()
 })
 export const ListBestSellerProductsResponse = zod.array(ListBestSellerProductsResponseItem)
@@ -154,6 +157,7 @@ export const ListNewArrivalProductsResponseItem = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.union([zod.literal('new'),zod.literal('bestseller'),zod.literal('sale'),zod.literal(null)]).nullish()
 })
 export const ListNewArrivalProductsResponse = zod.array(ListNewArrivalProductsResponseItem)
@@ -186,6 +190,7 @@ export const GetProductResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.union([zod.literal('new'),zod.literal('bestseller'),zod.literal('sale'),zod.literal(null)]).nullish()
 }).and(zod.object({
   "description": zod.string(),
@@ -302,6 +307,7 @@ export const AdminListProductsResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.string().nullish(),
   "features": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
@@ -329,7 +335,7 @@ export const AdminCreateProductBody = zod.object({
   "mediumUrl": zod.string().nullish(),
   "largeUrl": zod.string().nullish(),
   "categoryId": zod.string(),
-  "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.string().nullish(),
   "features": zod.array(zod.string()).optional()
 })
@@ -355,6 +361,7 @@ export const AdminCreateProductResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.string().nullish(),
   "features": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
@@ -382,7 +389,7 @@ export const AdminUpdateProductBody = zod.object({
   "mediumUrl": zod.string().nullish(),
   "largeUrl": zod.string().nullish(),
   "categoryId": zod.string().optional(),
-  "inStock": zod.boolean().optional(),
+  "stockQuantity": zod.number().optional(),
   "badge": zod.string().nullish(),
   "features": zod.array(zod.string()).optional()
 })
@@ -408,6 +415,7 @@ export const AdminUpdateProductResponse = zod.object({
   "rating": zod.number(),
   "reviewCount": zod.number(),
   "inStock": zod.boolean(),
+  "stockQuantity": zod.number(),
   "badge": zod.string().nullish(),
   "features": zod.array(zod.string()).optional(),
   "createdAt": zod.string()

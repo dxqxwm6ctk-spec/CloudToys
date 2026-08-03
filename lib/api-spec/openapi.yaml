@@ -527,6 +527,7 @@ components:
           rating,
           reviewCount,
           inStock,
+          stockQuantity,
         ]
       properties:
         id: { type: string }
@@ -550,6 +551,7 @@ components:
         rating: { type: number }
         reviewCount: { type: number }
         inStock: { type: boolean }
+        stockQuantity: { type: number }
         badge:
           type: ["string", "null"]
           enum: [new, bestseller, sale, null]
@@ -664,7 +666,7 @@ components:
 
     AdminProduct:
       type: object
-      required: [id, slug, name, shortDescription, description, price, currency, imageUrl, categoryId, categoryName, rating, reviewCount, inStock, createdAt]
+      required: [id, slug, name, shortDescription, description, price, currency, imageUrl, categoryId, categoryName, rating, reviewCount, inStock, stockQuantity, createdAt]
       properties:
         id: { type: string }
         slug: { type: string }
@@ -688,6 +690,7 @@ components:
         rating: { type: number }
         reviewCount: { type: number }
         inStock: { type: boolean }
+        stockQuantity: { type: number }
         badge: { type: ["string", "null"] }
         features:
           type: array
@@ -708,7 +711,7 @@ components:
 
     ProductInput:
       type: object
-      required: [slug, name, shortDescription, description, price, currency, imageUrl, categoryId, inStock]
+      required: [slug, name, shortDescription, description, price, currency, imageUrl, categoryId, stockQuantity]
       properties:
         slug: { type: string }
         name: { type: string }
@@ -725,7 +728,7 @@ components:
         mediumUrl: { type: ["string", "null"] }
         largeUrl: { type: ["string", "null"] }
         categoryId: { type: string }
-        inStock: { type: boolean }
+        stockQuantity: { type: number }
         badge: { type: ["string", "null"] }
         features:
           type: array
@@ -749,7 +752,7 @@ components:
         mediumUrl: { type: ["string", "null"] }
         largeUrl: { type: ["string", "null"] }
         categoryId: { type: string }
-        inStock: { type: boolean }
+        stockQuantity: { type: number }
         badge: { type: ["string", "null"] }
         features:
           type: array

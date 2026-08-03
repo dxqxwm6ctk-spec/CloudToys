@@ -55,6 +55,7 @@ export interface Product {
   rating: number;
   reviewCount: number;
   inStock: boolean;
+  stockQuantity: number;
   /** @nullable */
   badge?: ProductBadge;
 }
@@ -163,6 +164,7 @@ export interface AdminProduct {
   rating: number;
   reviewCount: number;
   inStock: boolean;
+  stockQuantity: number;
   /** @nullable */
   badge?: string | null;
   features?: string[];
@@ -194,7 +196,7 @@ export interface ProductInput {
   /** @nullable */
   largeUrl?: string | null;
   categoryId: string;
-  inStock: boolean;
+  stockQuantity: number;
   /** @nullable */
   badge?: string | null;
   features?: string[];
@@ -218,7 +220,7 @@ export interface ProductUpdate {
   /** @nullable */
   largeUrl?: string | null;
   categoryId?: string;
-  inStock?: boolean;
+  stockQuantity?: number;
   /** @nullable */
   badge?: string | null;
   features?: string[];

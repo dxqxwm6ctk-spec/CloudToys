@@ -33,6 +33,7 @@ export interface AdminProduct {
   rating: number;
   reviewCount: number;
   inStock: boolean;
+  stockQuantity: number;
   /** @nullable */
   badge?: string | null;
   features?: string[];

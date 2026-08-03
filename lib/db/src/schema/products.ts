@@ -27,6 +27,10 @@ export const productsTable = pgTable("products", {
     .references(() => categoriesTable.id),
   rating: numeric("rating", { precision: 2, scale: 1 }).notNull().default("0"),
   reviewCount: integer("review_count").notNull().default(0),
+  // Number of physical units available. inStock is derived from this
+  // (stockQuantity > 0) rather than set independently, so the two can
+  // never disagree.
+  stockQuantity: integer("stock_quantity").notNull().default(0),
   inStock: boolean("in_stock").notNull().default(true),
   badge: text("badge"),
   features: text("features").array().notNull().default([]),
