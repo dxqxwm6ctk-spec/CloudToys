@@ -30,6 +30,27 @@ export function setBaseUrl(url: string | null): void {
 }
 
 /**
+ * Resolve a possibly-relative media/asset URL (e.g. `/api/images/p/...`)
+ * against the configured API base URL.
+ *
+ * The API returns internally-hosted image URLs as root-relative paths.
+ * That's correct when the frontend and API share an origin (local dev,
+ * Replit's path-based preview proxy), but breaks when they're deployed to
+ * different origins (e.g. a Netlify frontend + a separate API host) — the
+ * browser resolves the relative path against the frontend's own origin
+ * instead of the API's, producing a 404 or, worse, an HTML fallback page.
+ *
+ * Absolute URLs (external image hosts) and empty/nullish values pass
+ * through unchanged.
+ */
+export function resolveMediaUrl(url: string): string;
+export function resolveMediaUrl(url: string | null | undefined): string | null | undefined;
+export function resolveMediaUrl(url: string | null | undefined): string | null | undefined {
+  if (!url || !_baseUrl || !url.startsWith("/")) return url;
+  return `${_baseUrl}${url}`;
+}
+
+/**
  * Register a getter that supplies a bearer auth token.  Before every fetch
  * the getter is invoked; when it returns a non-null string, an
  * `Authorization: Bearer <token>` header is attached to the request.

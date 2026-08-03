@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAdminListProducts, useAdminDeleteProduct, getAdminListProductsQueryKey } from '@workspace/api-client-react';
+import { useAdminListProducts, useAdminDeleteProduct, getAdminListProductsQueryKey, resolveMediaUrl } from '@workspace/api-client-react';
 import { Link, useLocation } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -126,7 +126,7 @@ export default function ProductsList() {
                     {product.imageUrl ? (
                       <div className="w-12 h-12 rounded-md overflow-hidden bg-muted border border-border">
                         <img 
-                          src={product.imageUrl} 
+                          src={resolveMediaUrl(product.imageUrl)} 
                           alt={product.name} 
                           className="w-full h-full object-cover"
                         />

@@ -21,6 +21,7 @@
 
 import { forwardRef, useState } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
+import { resolveMediaUrl } from "@workspace/api-client-react";
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -31,6 +32,22 @@ function isInternalUrl(url: string): boolean {
 /** Replace every .avif occurrence with .webp in a URL or srcSet string. */
 function avifToWebp(s: string): string {
   return s.replace(/\.avif\b/g, ".webp");
+}
+
+/**
+ * Resolve every URL in a srcSet string (e.g. "/a.avif 300w, /b.avif 800w")
+ * against the configured API base URL, preserving the width descriptors.
+ */
+function resolveSrcSet(srcSet: string): string {
+  return srcSet
+    .split(",")
+    .map((part) => {
+      const trimmed = part.trim();
+      const spaceIdx = trimmed.indexOf(" ");
+      if (spaceIdx === -1) return resolveMediaUrl(trimmed);
+      return `${resolveMediaUrl(trimmed.slice(0, spaceIdx))}${trimmed.slice(spaceIdx)}`;
+    })
+    .join(", ");
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────
@@ -67,9 +84,11 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
     };
 
     const internal = isInternalUrl(src);
-    const webpSrcSet = avifSrcSet ? avifToWebp(avifSrcSet) : undefined;
+    const resolvedSrc = resolveMediaUrl(src);
+    const webpSrcSet = avifSrcSet ? resolveSrcSet(avifToWebp(avifSrcSet)) : undefined;
+    const resolvedAvifSrcSet = avifSrcSet ? resolveSrcSet(avifSrcSet) : undefined;
     // Fallback <img> src: WebP has ~97% support — better than AVIF as fallback
-    const webpSrc = internal ? avifToWebp(src) : undefined;
+    const webpSrc = internal ? resolveMediaUrl(avifToWebp(src)) : undefined;
 
     /**
      * Blurred LQIP overlay — absolutely positioned so it fills the parent
@@ -101,8 +120,8 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
     const imgEl = internal ? (
       <picture style={{ display: "contents" }}>
         {/* AVIF: best compression, ~93% global support */}
-        {avifSrcSet && (
-          <source type="image/avif" srcSet={avifSrcSet} sizes={sizes} />
+        {resolvedAvifSrcSet && (
+          <source type="image/avif" srcSet={resolvedAvifSrcSet} sizes={sizes} />
         )}
         {/* WebP: ~97% global support — fallback for non-AVIF browsers */}
         {webpSrcSet && (
@@ -111,7 +130,7 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
         {/* Final <img> — browser chooses the best source above, or falls back here */}
         <motion.img
           ref={ref}
-          src={webpSrc ?? src}
+          src={webpSrc ?? resolvedSrc}
           alt={alt}
           onLoad={handleLoad}
           style={{ position: "relative", zIndex: 1 }}
@@ -122,7 +141,7 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
       /* External URL — no format negotiation needed */
       <motion.img
         ref={ref}
-        src={src}
+        src={resolvedSrc}
         alt={alt}
         onLoad={handleLoad}
         style={{ position: "relative", zIndex: 1 }}

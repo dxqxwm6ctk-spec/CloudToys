@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { motion } from 'framer-motion';
-import type { Category } from '@workspace/api-client-react';
+import { resolveMediaUrl, type Category } from '@workspace/api-client-react';
 
 export function CategoryCard({ category }: { category: Category }) {
   return (
@@ -11,7 +11,7 @@ export function CategoryCard({ category }: { category: Category }) {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       >
         <img
-          src={category.imageUrl}
+          src={resolveMediaUrl(category.imageUrl)}
           alt={category.name}
           className="w-full h-full object-cover"
         />

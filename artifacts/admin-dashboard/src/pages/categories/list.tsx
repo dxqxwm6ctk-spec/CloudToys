@@ -4,7 +4,8 @@ import {
   useAdminCreateCategory, 
   useAdminUpdateCategory, 
   useAdminDeleteCategory,
-  getAdminListCategoriesQueryKey 
+  getAdminListCategoriesQueryKey,
+  resolveMediaUrl
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -218,7 +219,7 @@ export default function CategoriesList() {
                   <TableCell>
                     {cat.imageUrl ? (
                       <div className="w-16 h-12 rounded-md overflow-hidden bg-muted border border-border">
-                        <img src={cat.imageUrl} alt={cat.name} className="w-full h-full object-cover" />
+                        <img src={resolveMediaUrl(cat.imageUrl)} alt={cat.name} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-16 h-12 rounded-md bg-muted border border-border flex items-center justify-center">

@@ -10,7 +10,8 @@ import {
   useGetProduct,
   useAdminListCategories,
   getAdminListProductsQueryKey,
-  getGetProductQueryKey
+  getGetProductQueryKey,
+  resolveMediaUrl
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Save, Plus, Trash2, Loader2, Upload } from 'lucide-react';
@@ -358,7 +359,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
                         </FormControl>
                         {field.value && (
                           <div className="mt-2 rounded-lg border border-border p-2 bg-muted/30 max-w-xs">
-                            <img src={field.value} alt="Preview" className="w-full h-auto rounded-md" onError={(e) => {
+                            <img src={resolveMediaUrl(field.value)} alt="Preview" className="w-full h-auto rounded-md" onError={(e) => {
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZWVlIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+SW1hZ2UgTm90IEZvdW5kPC90ZXh0Pjwvc3ZnPg==';
                             }} />
                           </div>
