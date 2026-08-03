@@ -87,8 +87,8 @@ it done before going live with image uploads on Render/Railway.
 Once this service is live at e.g. `https://cloud-toys-api.onrender.com`:
 
 1. Set `VITE_API_BASE_URL=https://cloud-toys-api.onrender.com` as an
-   environment variable on both Netlify sites (`standalone/cloud-toys` and
-   `standalone/admin-dashboard`), then trigger a redeploy — Vite bakes env
+   environment variable on both Netlify sites (`artifacts/cloud-toys` and
+   `artifacts/admin-dashboard`), then trigger a redeploy — Vite bakes env
    vars in at build time, so changing them requires a rebuild.
 2. Set `ALLOWED_ORIGINS` on this service to the two Netlify site URLs
    (exact origins, no trailing slash).
