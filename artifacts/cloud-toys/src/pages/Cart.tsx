@@ -3,6 +3,7 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { Link, useLocation } from 'wouter';
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
+import { resolveMediaUrl } from '@workspace/api-client-react';
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, cartTotal } = useCart();
@@ -76,7 +77,7 @@ export function Cart() {
                 <div key={item.id} className="py-8 flex gap-6 sm:gap-8">
                   <Link href={`/product/${item.id}`} className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl bg-secondary overflow-hidden flex-shrink-0">
                     <img
-                      src={item.thumbUrl ?? item.imageUrl}
+                      src={resolveMediaUrl(item.thumbUrl ?? item.imageUrl)}
                       alt={item.name}
                       loading="lazy"
                       className="w-full h-full object-cover"
