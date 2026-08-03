@@ -23,7 +23,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 
 const productSchema = z.object({
@@ -45,7 +44,7 @@ const productSchema = z.object({
     )
   })).optional(),
   categoryId: z.string().min(1, "Category is required"),
-  inStock: z.boolean().default(true),
+  stockQuantity: z.coerce.number().int("Must be a whole number").min(0, "Cannot be negative"),
   badge: z.string().nullable().optional(),
   features: z.array(z.object({ value: z.string().min(1, "Feature cannot be empty") })).optional(),
 });
@@ -94,7 +93,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
       imageUrl: '',
       galleryUrls: [],
       categoryId: '',
-      inStock: true,
+      stockQuantity: 0,
       badge: null,
       features: [{ value: '' }],
     }
@@ -127,7 +126,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
         imageUrl: existingProduct.imageUrl,
         galleryUrls: (existingProduct.galleryUrls || []).map(url => ({ value: url })),
         categoryId: catId,
-        inStock: existingProduct.inStock,
+        stockQuantity: existingProduct.stockQuantity,
         badge: existingProduct.badge || null,
         features: (existingProduct.features || []).map(f => ({ value: f })),
       });
@@ -517,21 +516,17 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
 
                   <FormField
                     control={form.control}
-                    name="inStock"
+                    name="stockQuantity"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">In Stock</FormLabel>
-                          <FormDescription>
-                            Available for purchase
-                          </FormDescription>
-                        </div>
+                      <FormItem>
+                        <FormLabel>Stock Quantity</FormLabel>
                         <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
+                          <Input type="number" step="1" min="0" {...field} />
                         </FormControl>
+                        <FormDescription>
+                          Units available. Marked out of stock automatically at 0.
+                        </FormDescription>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
