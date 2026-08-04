@@ -191,6 +191,27 @@ router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
   }
 });
 
+// ── Last shipping details (for pre-filling checkout on repeat orders) ──────
+router.get("/orders/last-shipping", requireCustomer, async (req, res): Promise<void> => {
+  const [order] = await db
+    .select({
+      customerName: ordersTable.customerName,
+      customerEmail: ordersTable.customerEmail,
+      shippingAddress: ordersTable.shippingAddress,
+    })
+    .from(ordersTable)
+    .where(eq(ordersTable.userId, req.customer!.id))
+    .orderBy(sql`${ordersTable.createdAt} DESC NULLS LAST`)
+    .limit(1);
+
+  if (!order) {
+    res.json(null);
+    return;
+  }
+
+  res.json(order);
+});
+
 // ── Track order ────────────────────────────────────────────────────────────
 router.get("/orders/:orderNumber/track", async (req, res): Promise<void> => {
   const params = TrackOrderParams.safeParse(req.params);

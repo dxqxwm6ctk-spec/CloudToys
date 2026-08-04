@@ -15,6 +15,7 @@ import {
   clearPendingOrder,
   type PendingOrder,
 } from '../lib/pendingOrder';
+import { parseShippingAddress } from '../lib/parseShippingAddress';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
@@ -49,6 +50,7 @@ export function Checkout() {
   const [orderError, setOrderError] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
   const hasResumedRef = useRef(false);
+  const hasPrefilledRef = useRef(false);
 
   // Shipping form state
   const [email, setEmail] = useState('');
@@ -184,6 +186,52 @@ export function Checkout() {
     const itemCount = pending.items.reduce((sum, i) => sum + i.quantity, 0);
     const orderTotal = pending.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
     void submitOrder(pending, itemCount, orderTotal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user]);
+
+  // Pre-fill shipping details from the customer's last order so returning,
+  // signed-in customers don't have to retype their address. Only runs once,
+  // and only when there's no pending order being resumed (that already
+  // restores the in-progress form) and the fields are still blank (so it
+  // never clobbers something the customer already typed).
+  useEffect(() => {
+    if (authLoading || !user || hasPrefilledRef.current || getPendingOrder()) return;
+    if (firstName || address) return; // already filled in (typed or restored)
+    hasPrefilledRef.current = true;
+
+    (async () => {
+      try {
+        const token = await getAccessToken();
+        if (!token) return;
+        const res = await fetch(`${BASE}/api/orders/last-shipping`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const last = await res.json() as {
+          customerName: string | null;
+          customerEmail: string | null;
+          shippingAddress: string | null;
+        } | null;
+        if (!last) return;
+
+        if (last.customerName) {
+          const [first, ...rest] = last.customerName.trim().split(' ');
+          setFirstName(first ?? '');
+          setLastName(rest.join(' '));
+        }
+        if (last.customerEmail) setEmail(last.customerEmail);
+        if (last.shippingAddress) {
+          const parsed = parseShippingAddress(last.shippingAddress);
+          if (parsed) {
+            setAddress(parsed.address);
+            setGovernorate(parsed.governorate);
+            setArea(parsed.area);
+          }
+        }
+      } catch {
+        // Best-effort pre-fill — leave the form blank on any failure.
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user]);
 
