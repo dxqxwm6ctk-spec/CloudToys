@@ -26,6 +26,10 @@ const basePath = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
   base: basePath,
+  // Also expose SUPABASE_URL / SUPABASE_ANON_KEY to the client (in addition
+  // to the default VITE_ prefix) — the anon key is designed to be public,
+  // and this keeps the same env var names as the API server.
+  envPrefix: ['VITE_', 'SUPABASE_'],
   plugins: [
     react(),
     tailwindcss(),

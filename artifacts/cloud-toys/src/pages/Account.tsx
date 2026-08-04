@@ -1,10 +1,34 @@
 import { PageTransition } from '../components/ui/PageTransition';
 import { useTrackOrder } from '@workspace/api-client-react';
-import { User, Package, Settings, LogOut, Heart, ChevronRight } from 'lucide-react';
+import { User, Package, LogOut, Heart, ChevronRight } from 'lucide-react';
 import { Link } from 'wouter';
 import { getOrderHistory } from '../lib/orderHistory';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 
 import { formatUSD, formatJOD } from '../lib/currency';
+
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+      <path
+        fill="#4285F4"
+        d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11C3.25 21.3 7.31 24 12 24z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.27 14.27a7.2 7.2 0 0 1-.38-2.27c0-.79.14-1.55.38-2.27V6.62H1.27A11.98 11.98 0 0 0 0 12c0 1.93.46 3.76 1.27 5.38l4-3.11z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.62l4 3.11C6.22 6.88 8.87 4.77 12 4.77z"
+      />
+    </svg>
+  );
+}
 
 function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string; itemCount: number; total: number }) {
   const { data: tracking, isLoading } = useTrackOrder(orderNumber, {
@@ -32,14 +56,49 @@ function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string
 }
 
 export function Account() {
-  // Mock user data
-  const user = {
-    name: "Alex Smith",
-    email: "alex@example.com",
-    memberSince: "2023"
-  };
+  const { user, isLoading, signInWithGoogle, signOut } = useCustomerAuth();
 
   const recentOrders = getOrderHistory().slice(0, 3);
+
+  const displayName =
+    (user?.user_metadata?.full_name as string | undefined) ??
+    (user?.user_metadata?.name as string | undefined) ??
+    user?.email?.split('@')[0] ??
+    'Guest';
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="container mx-auto px-4 py-24 flex justify-center">
+          <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </PageTransition>
+    );
+  }
+
+  if (!user) {
+    return (
+      <PageTransition>
+        <div className="container mx-auto px-4 py-24 flex justify-center">
+          <div className="w-full max-w-sm text-center">
+            <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+              <User className="w-7 h-7" />
+            </div>
+            <h1 className="font-serif text-3xl font-bold mb-2">My Account</h1>
+            <p className="text-muted-foreground mb-8">Sign in to view your profile, orders, and wishlist.</p>
+            <button
+              onClick={() => signInWithGoogle()}
+              className="w-full flex items-center justify-center gap-2 bg-white border border-border rounded-full px-6 py-3 font-medium hover:bg-secondary/50 transition-colors"
+            >
+              <GoogleIcon />
+              Sign in with Google
+            </button>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   return (
     <PageTransition>
@@ -50,10 +109,14 @@ export function Account() {
           {/* Sidebar */}
           <aside className="md:col-span-4 lg:col-span-3">
             <div className="bg-secondary/30 rounded-3xl p-6 border border-border">
-              <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4 text-xl font-serif font-bold">
-                {user.name.charAt(0)}
-              </div>
-              <h2 className="font-serif text-xl font-semibold mb-1">{user.name}</h2>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={displayName} className="w-16 h-16 rounded-full mb-4 object-cover" />
+              ) : (
+                <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-4 text-xl font-serif font-bold">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <h2 className="font-serif text-xl font-semibold mb-1">{displayName}</h2>
               <p className="text-sm text-muted-foreground mb-8">{user.email}</p>
 
               <nav className="space-y-2">
@@ -69,7 +132,10 @@ export function Account() {
                   <Heart className="w-4 h-4" />
                   Wishlist
                 </Link>
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+                <button
+                  onClick={() => signOut()}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                >
                   <LogOut className="w-4 h-4" />
                   Sign Out
                 </button>
@@ -84,19 +150,14 @@ export function Account() {
               <h2 className="text-2xl font-serif font-semibold mb-6">Personal Information</h2>
               <div className="bg-white border border-border rounded-3xl p-8 max-w-2xl">
                 <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">First Name</label>
-                      <input type="text" defaultValue="Alex" className="w-full bg-secondary border-transparent rounded-lg px-4 py-3 focus:bg-white focus:border-primary/20 outline-none transition-all" />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Last Name</label>
-                      <input type="text" defaultValue="Smith" className="w-full bg-secondary border-transparent rounded-lg px-4 py-3 focus:bg-white focus:border-primary/20 outline-none transition-all" />
-                    </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-muted-foreground">Display Name</label>
+                    <input type="text" defaultValue={displayName} className="w-full bg-secondary border-transparent rounded-lg px-4 py-3 focus:bg-white focus:border-primary/20 outline-none transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-muted-foreground">Email Address</label>
-                    <input type="email" defaultValue={user.email} className="w-full bg-secondary border-transparent rounded-lg px-4 py-3 focus:bg-white focus:border-primary/20 outline-none transition-all" />
+                    <input type="email" defaultValue={user.email ?? ''} disabled className="w-full bg-secondary border-transparent rounded-lg px-4 py-3 outline-none transition-all opacity-60 cursor-not-allowed" />
+                    <p className="text-xs text-muted-foreground">Managed by your Google account</p>
                   </div>
                   <button className="bg-primary text-primary-foreground px-6 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors">
                     Save Changes

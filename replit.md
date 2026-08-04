@@ -34,6 +34,8 @@ Premium eCommerce website for a toy store — 11 pages with full cart, wishlist,
 - Required env for image uploads: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` — Replit Object Storage (provisioned via the object-storage tool)
 - Required secrets for admin login: `ADMIN_USERNAME`, `ADMIN_PASSWORD` — single shared admin credential, checked with a constant-time comparison in `POST /api/admin/auth/login`
 - Required env for CORS in any multi-domain deployment: `ALLOWED_ORIGINS` — comma-separated list, e.g. `https://cloudtoys.com,https://admin.cloudtoys.com`. Unset = allow all origins (fine for local dev / Replit's same-origin preview proxy, unsafe for production on separate domains)
+- Required env for Google sign-in (customer storefront + admin): `SUPABASE_URL`, `SUPABASE_ANON_KEY` — read by both frontends (Vite `envPrefix` includes `SUPABASE_`, so no `VITE_` prefix needed) and by the API server. The Google provider itself must be enabled in the Supabase dashboard (Authentication → Providers → Google) with a Google Cloud OAuth Client ID/Secret — that's owned by the user, not configurable from here.
+- Required env for admin Google sign-in specifically: `ADMIN_ALLOWED_EMAILS` — comma-separated allowlist of Google account emails permitted to reach the admin dashboard via `POST /api/admin/auth/google`. Admin identity is still a simple allowlist, not a per-user accounts table — see "Customer & Admin auth" below.
 
 ## Independent deployment (storefront + admin as separate apps)
 
@@ -95,6 +97,14 @@ Cloud Toys is a premium toy store with: full product catalog with search/filter/
 - Admin updates status at `PUT /api/admin/orders/:id/status` — automatically advances the 5 tracking steps (Order Placed → Payment Confirmed → Shipped → Out for Delivery → Delivered)
 - Customer tracks order at `/track-order?number=ORD-...` — reads live from DB
 - Order statuses: `processing`, `shipped`, `out_for_delivery`, `delivered`, `cancelled`
+
+## Customer & Admin auth (Google sign-in via Supabase)
+
+- **Customer (storefront):** `artifacts/cloud-toys/src/context/CustomerAuthContext.tsx` wraps the app and exposes `useCustomerAuth()` (`user`, `signInWithGoogle`, `signOut`). Uses `supabase-js` directly in the browser — Supabase handles the OAuth redirect and session storage itself, no backend call needed to establish a customer session. `Account.tsx` shows a "Sign in with Google" screen when signed out.
+- **Verifying a customer session server-side:** `artifacts/api-server/src/lib/supabaseAuth.ts` — `requireCustomer` / `attachCustomerIfPresent` middleware verify the Supabase access token (sent as `Authorization: Bearer <token>`) and attach `req.customer`. Currently used by `routes/orders.ts`.
+- **Admin dashboard:** still gated by its own session (`admin_session` cookie + bearer token, `lib/adminAuth.ts`) — Google sign-in is an additional way to *obtain* that session, not a replacement for it. Flow: admin clicks "Sign in with Google" → Supabase OAuth redirect → `AuthContext` picks up the resulting Supabase session → exchanges it via `POST /api/admin/auth/google` → the API verifies the Supabase token, checks the email against `ADMIN_ALLOWED_EMAILS`, and if allowed, issues the same cookie/token as password login.
+- Admin identity is intentionally still a simple email allowlist (`ADMIN_ALLOWED_EMAILS`), not a per-admin accounts table — adding real multi-admin accounts (roles, audit trail, revocation without redeploying) would be a bigger restructuring; see follow-up tasks.
+- Both frontends read `SUPABASE_URL` / `SUPABASE_ANON_KEY` via Vite's `envPrefix: ['VITE_', 'SUPABASE_']` (see each app's `vite.config.ts`) — no `VITE_` prefix needed on those two.
 
 ## Gotchas
 
