@@ -6,6 +6,8 @@ import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { addOrderToHistory } from '../lib/orderHistory';
 import { formatUSD, formatJOD } from '../lib/currency';
+import { JORDAN_GOVERNORATES } from '../lib/jordan-locations';
+import { SearchableSelect } from '../components/ui/SearchableSelect';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
@@ -32,9 +34,12 @@ export function Checkout() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
-  const [zip, setZip] = useState('');
+  const [governorate, setGovernorate] = useState('');
+  const [area, setArea] = useState('');
+
+  const areaOptions = (JORDAN_GOVERNORATES.find(g => g.value === governorate)?.areas ?? [])
+    .map(a => ({ value: a, label: a }));
+  const governorateLabel = JORDAN_GOVERNORATES.find(g => g.value === governorate)?.label ?? '';
 
   // Payment
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -62,6 +67,7 @@ export function Checkout() {
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!governorate || !area) return;
     setStep(2);
     window.scrollTo(0, 0);
   };
@@ -79,7 +85,7 @@ export function Checkout() {
           customerName: `${firstName} ${lastName}`.trim(),
           customerEmail: email,
           paymentMethodKey: selectedPayment,
-          shippingAddress: `${address}, ${city} ${state} ${zip}`.trim(),
+          shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
           items: items.map(i => ({
             productId: i.id,
             name: i.name,
@@ -188,14 +194,32 @@ export function Checkout() {
                       <input required type="text" placeholder="Last name" value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
                     </div>
                     <input required type="text" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} className="w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    <div className="grid grid-cols-3 gap-4">
-                      <input required type="text" placeholder="City" value={city} onChange={e => setCity(e.target.value)} className="col-span-1 w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                      <input required type="text" placeholder="State" value={state} onChange={e => setState(e.target.value)} className="col-span-1 w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                      <input required type="text" placeholder="ZIP code" value={zip} onChange={e => setZip(e.target.value)} className="col-span-1 w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <SearchableSelect
+                        value={governorate}
+                        onChange={(val) => { setGovernorate(val); setArea(''); }}
+                        options={JORDAN_GOVERNORATES.map(g => ({ value: g.value, label: g.label }))}
+                        placeholder="المحافظة"
+                        searchPlaceholder="ابحث عن محافظة..."
+                        emptyText="لم يتم العثور على محافظة"
+                      />
+                      <SearchableSelect
+                        value={area}
+                        onChange={setArea}
+                        options={areaOptions}
+                        placeholder={governorate ? 'المنطقة' : 'اختر المحافظة أولاً'}
+                        searchPlaceholder="ابحث عن منطقة..."
+                        emptyText="لم يتم العثور على منطقة"
+                        disabled={!governorate}
+                      />
                     </div>
                   </div>
                   <div className="pt-6">
-                    <button type="submit" className="w-full bg-primary text-primary-foreground h-14 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors">
+                    <button
+                      type="submit"
+                      disabled={!governorate || !area}
+                      className="w-full bg-primary text-primary-foreground h-14 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
                       Continue to Payment
                     </button>
                   </div>
@@ -219,7 +243,7 @@ export function Checkout() {
                   </div>
                   <div className="flex justify-between pt-4">
                     <span className="text-muted-foreground">Ship to</span>
-                    <span className="text-right truncate max-w-[200px] sm:max-w-xs">{address}, {city} {state} {zip}</span>
+                    <span className="text-right truncate max-w-[200px] sm:max-w-xs">{address}, {area}, {governorateLabel}</span>
                     <button onClick={() => setStep(1)} className="text-primary hover:underline">Change</button>
                   </div>
                 </div>
