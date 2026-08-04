@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrency } from '@/context/CurrencyContext';
 
 export default function ProductsList() {
   const [search, setSearch] = React.useState('');
@@ -54,20 +55,7 @@ export default function ProductsList() {
     });
   };
 
-  const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD'
-    }).format(price);
-  };
-
-  const { formatJOD } = (() => {
-    const USD_TO_JOD = 0.709;
-    return {
-      formatJOD: (amount: number) =>
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'JOD', minimumFractionDigits: 3 }).format(amount * USD_TO_JOD),
-    };
-  })();
+  const { renderPrice } = useCurrency();
 
   return (
     <div className="space-y-6">
@@ -153,8 +141,7 @@ export default function ProductsList() {
                     {product.categoryName}
                   </TableCell>
                   <TableCell className="font-medium">
-                    <div>{formatPrice(product.price, product.currency)}</div>
-                    <div className="text-xs text-muted-foreground">{formatJOD(product.price)}</div>
+                    {renderPrice(product.price)}
                   </TableCell>
                   <TableCell>
                     {product.inStock ? (

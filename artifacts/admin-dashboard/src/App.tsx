@@ -6,6 +6,7 @@ import { Route, Switch, Router as WouterRouter, useParams } from 'wouter';
 import { Loader2 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { CurrencyProvider } from '@/context/CurrencyContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
@@ -70,7 +71,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <AuthProvider>
-            <Gate />
+            <CurrencyProvider>
+              <Gate />
+            </CurrencyProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

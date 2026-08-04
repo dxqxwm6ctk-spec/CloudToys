@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatUSD, formatJOD } from '@/lib/currency';
+import { useCurrency } from '@/context/CurrencyContext';
 import { useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -46,6 +46,7 @@ export default function OrdersList() {
   const [selectedOrder, setSelectedOrder] = React.useState<AdminOrder | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { renderPrice } = useCurrency();
   
   const { data, isLoading } = useAdminListOrders({
     page,
@@ -182,10 +183,7 @@ export default function OrdersList() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {order.total != null ? (
-                      <div>
-                        <div>{formatUSD(Number(order.total))}</div>
-                        <div className="text-xs text-muted-foreground">{formatJOD(Number(order.total))}</div>
-                      </div>
+                      <div>{renderPrice(Number(order.total))}</div>
                     ) : '—'}
                   </TableCell>
                   <TableCell className="text-right">
@@ -385,12 +383,10 @@ export default function OrdersList() {
                                 <TableCell className="text-sm font-medium py-3">{item.name}</TableCell>
                                 <TableCell className="text-sm text-center py-3">{item.quantity}</TableCell>
                                 <TableCell className="text-sm text-right py-3">
-                                  <div>{formatUSD(Number(item.price))}</div>
-                                  <div className="text-xs text-muted-foreground">{formatJOD(Number(item.price))}</div>
+                                  {renderPrice(Number(item.price))}
                                 </TableCell>
                                 <TableCell className="text-sm text-right py-3 font-medium">
-                                  <div>{formatUSD(Number(item.price) * item.quantity)}</div>
-                                  <div className="text-xs text-muted-foreground">{formatJOD(Number(item.price) * item.quantity)}</div>
+                                  {renderPrice(Number(item.price) * item.quantity)}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -408,13 +404,8 @@ export default function OrdersList() {
                   <div className="bg-muted/40 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Order Total</span>
-                      <div className="text-right">
-                        <div className="text-xl font-bold">
-                          {selectedOrder.total != null ? formatUSD(Number(selectedOrder.total)) : '—'}
-                        </div>
-                        {selectedOrder.total != null && (
-                          <div className="text-sm text-muted-foreground">{formatJOD(Number(selectedOrder.total))}</div>
-                        )}
+                      <div className="text-right text-xl font-bold">
+                        {selectedOrder.total != null ? renderPrice(Number(selectedOrder.total)) : '—'}
                       </div>
                     </div>
                     {selectedOrder.items && selectedOrder.items.length > 0 && (
