@@ -25,3 +25,4 @@ export * from "./payment-methods";
 export * from "./admin-settings";
 export * from "./shipping-zones";
 export * from "./profiles";
+export * from "./newsletter-subscribers";
