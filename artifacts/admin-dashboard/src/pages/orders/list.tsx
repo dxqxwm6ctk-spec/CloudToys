@@ -13,14 +13,29 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Package, Truck, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
+import {
+  Package,
+  Truck,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  User,
+  Mail,
+  CreditCard,
+  MapPin,
+  Calendar,
+  Clock,
+  ShoppingCart,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import type { AdminOrder } from '@workspace/api-client-react';
 
@@ -83,6 +98,12 @@ export default function OrdersList() {
     }
   };
 
+  const formatOrderDate = (order: AdminOrder) => {
+    if (order.createdAt) return format(new Date(order.createdAt), 'MMM d, yyyy');
+    if (order.steps[0]?.date) return format(new Date(order.steps[0].date), 'MMM d, yyyy');
+    return 'Unknown';
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -113,6 +134,7 @@ export default function OrdersList() {
             <TableRow>
               <TableHead>Order #</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Est. Delivery</TableHead>
               <TableHead className="text-right">Total</TableHead>
@@ -126,6 +148,7 @@ export default function OrdersList() {
                 <TableRow key={i} className="animate-pulse">
                   <TableCell><div className="h-4 bg-muted rounded w-24" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
+                  <TableCell><div className="h-4 bg-muted rounded w-28" /></TableCell>
                   <TableCell><div className="h-6 bg-muted rounded-full w-24" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-16 ml-auto" /></TableCell>
@@ -135,7 +158,7 @@ export default function OrdersList() {
               ))
             ) : data?.items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -143,10 +166,8 @@ export default function OrdersList() {
               data?.items.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell className="font-medium font-mono">{order.orderNumber}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {/* Fallback to tracking steps for a date since API doesn't return created date on list */}
-                    {order.steps[0]?.date ? format(new Date(order.steps[0].date), 'MMM d, yyyy') : 'Unknown'}
-                  </TableCell>
+                  <TableCell className="text-muted-foreground">{formatOrderDate(order)}</TableCell>
+                  <TableCell className="text-muted-foreground">{order.customerName ?? '—'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {getStatusIcon(order.status)}
@@ -159,7 +180,7 @@ export default function OrdersList() {
                     {format(new Date(order.estimatedDelivery), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {order.total != null ? `$${order.total.toFixed(2)}` : '—'}
+                    {order.total != null ? `$${Number(order.total).toFixed(2)}` : '—'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -221,91 +242,179 @@ export default function OrdersList() {
         </div>
       )}
 
-      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
-        <DialogContent className="max-w-lg">
+      {/* Order Detail Sheet */}
+      <Sheet open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <SheetContent className="w-full sm:max-w-xl p-0 flex flex-col" side="right">
           {selectedOrder && (
             <>
-              <DialogHeader>
-                <DialogTitle className="font-mono">{selectedOrder.orderNumber}</DialogTitle>
-                <DialogDescription>
-                  Placed {selectedOrder.steps[0]?.date
-                    ? format(new Date(selectedOrder.steps[0].date), 'MMM d, yyyy')
-                    : 'Unknown date'}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
+              <SheetHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-muted-foreground">Customer</p>
-                    <p className="font-medium">{selectedOrder.customerName ?? '—'}</p>
+                    <SheetTitle className="font-mono text-lg">{selectedOrder.orderNumber}</SheetTitle>
+                    <SheetDescription className="flex items-center gap-1.5 mt-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Placed on {formatOrderDate(selectedOrder)}
+                    </SheetDescription>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Email</p>
-                    <p className="font-medium break-all">{selectedOrder.customerEmail ?? '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Payment method</p>
-                    <p className="font-medium">{selectedOrder.paymentMethod ?? '—'}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Status</p>
-                    <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
-                      {STATUS_LABEL[selectedOrder.status] ?? selectedOrder.status}
-                    </Badge>
-                  </div>
-                  {selectedOrder.shippingAddress && (
-                    <div className="col-span-2">
-                      <p className="text-muted-foreground">Shipping address</p>
-                      <p className="font-medium">{selectedOrder.shippingAddress}</p>
-                    </div>
-                  )}
+                  <Badge variant="outline" className={`${getStatusColor(selectedOrder.status)} shrink-0 flex items-center gap-1.5`}>
+                    {getStatusIcon(selectedOrder.status)}
+                    {STATUS_LABEL[selectedOrder.status] ?? selectedOrder.status}
+                  </Badge>
                 </div>
+              </SheetHeader>
 
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Items</p>
-                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
-                    <div className="border border-border rounded-lg overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Product</TableHead>
-                            <TableHead className="text-right">Qty</TableHead>
-                            <TableHead className="text-right">Price</TableHead>
-                            <TableHead className="text-right">Subtotal</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedOrder.items.map((item, i) => (
-                            <TableRow key={i}>
-                              <TableCell>{item.name}</TableCell>
-                              <TableCell className="text-right">{item.quantity}</TableCell>
-                              <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
-                              <TableCell className="text-right">
-                                ${(item.price * item.quantity).toFixed(2)}
-                              </TableCell>
-                            </TableRow>
+              <ScrollArea className="flex-1">
+                <div className="px-6 py-5 space-y-6">
+
+                  {/* Customer Information */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">Customer Information</h3>
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-3 text-sm">
+                        <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <span className="text-muted-foreground">Name: </span>
+                          <span className="font-medium">{selectedOrder.customerName ?? '—'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <span className="text-muted-foreground">Email: </span>
+                          <span className="font-medium break-all">{selectedOrder.customerEmail ?? '—'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <CreditCard className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div>
+                          <span className="text-muted-foreground">Payment: </span>
+                          <span className="font-medium">{selectedOrder.paymentMethod ?? '—'}</span>
+                        </div>
+                      </div>
+                      {selectedOrder.shippingAddress && (
+                        <div className="flex items-start gap-3 text-sm">
+                          <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-muted-foreground">Address: </span>
+                            <span className="font-medium">{selectedOrder.shippingAddress}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+
+                  <Separator />
+
+                  {/* Delivery Info */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">Delivery</h3>
+                    <div className="flex items-center gap-3 text-sm">
+                      <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <div>
+                        <span className="text-muted-foreground">Estimated delivery: </span>
+                        <span className="font-medium">
+                          {format(new Date(selectedOrder.estimatedDelivery), 'MMMM d, yyyy')}
+                        </span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <Separator />
+
+                  {/* Tracking Steps */}
+                  {selectedOrder.steps && selectedOrder.steps.length > 0 && (
+                    <>
+                      <section>
+                        <h3 className="text-sm font-semibold text-foreground mb-4 uppercase tracking-wide">Tracking</h3>
+                        <ol className="relative border-l border-border ml-2 space-y-4">
+                          {selectedOrder.steps.map((step, i) => (
+                            <li key={i} className="ml-5">
+                              <span className={`absolute -left-2 flex h-4 w-4 items-center justify-center rounded-full ring-2 ring-background ${
+                                step.completed
+                                  ? 'bg-emerald-500'
+                                  : 'bg-muted border border-border'
+                              }`}>
+                                {step.completed && (
+                                  <CheckCircle2 className="w-3 h-3 text-white" />
+                                )}
+                              </span>
+                              <div className="flex flex-col">
+                                <span className={`text-sm font-medium ${step.completed ? 'text-foreground' : 'text-muted-foreground'}`}>
+                                  {step.label}
+                                </span>
+                                {step.date && (
+                                  <span className="text-xs text-muted-foreground mt-0.5">
+                                    {format(new Date(step.date), 'MMM d, yyyy · h:mm a')}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
                           ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground italic">
-                      No item detail recorded for this order (placed before item tracking was added).
-                    </p>
+                        </ol>
+                      </section>
+                      <Separator />
+                    </>
                   )}
-                </div>
 
-                <div className="flex justify-end border-t border-border pt-3">
-                  <p className="text-base font-semibold">
-                    Total: {selectedOrder.total != null ? `$${selectedOrder.total.toFixed(2)}` : '—'}
-                  </p>
+                  {/* Order Items */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4" />
+                      Items Ordered
+                    </h3>
+                    {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                      <div className="border border-border rounded-lg overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-muted/40">
+                              <TableHead className="text-xs">Product</TableHead>
+                              <TableHead className="text-xs text-center w-16">Qty</TableHead>
+                              <TableHead className="text-xs text-right w-24">Unit Price</TableHead>
+                              <TableHead className="text-xs text-right w-24">Subtotal</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {selectedOrder.items.map((item, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="text-sm font-medium py-3">{item.name}</TableCell>
+                                <TableCell className="text-sm text-center py-3">{item.quantity}</TableCell>
+                                <TableCell className="text-sm text-right py-3">${Number(item.price).toFixed(2)}</TableCell>
+                                <TableCell className="text-sm text-right py-3 font-medium">
+                                  ${(Number(item.price) * item.quantity).toFixed(2)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        No item detail recorded for this order (placed before item tracking was added).
+                      </p>
+                    )}
+                  </section>
+
+                  {/* Order Total */}
+                  <div className="bg-muted/40 rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Order Total</span>
+                      <span className="text-xl font-bold">
+                        {selectedOrder.total != null ? `$${Number(selectedOrder.total).toFixed(2)}` : '—'}
+                      </span>
+                    </div>
+                    {selectedOrder.items && selectedOrder.items.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {selectedOrder.items.reduce((sum, item) => sum + item.quantity, 0)} item(s)
+                      </p>
+                    )}
+                  </div>
+
                 </div>
-              </div>
+              </ScrollArea>
             </>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
