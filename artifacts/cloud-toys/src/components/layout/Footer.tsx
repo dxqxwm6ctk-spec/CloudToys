@@ -1,7 +1,16 @@
 import { Link } from 'wouter';
-import { Instagram, Twitter, Facebook, Mail, MapPin, Phone } from 'lucide-react';
+import { Instagram, Facebook, Mail, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { useContactInfo } from '@/hooks/useContactInfo';
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
+      <path d="M12.004 2C6.486 2 2 6.486 2 12.004c0 1.987.579 3.837 1.578 5.395L2 22l4.735-1.545a9.955 9.955 0 0 0 5.269 1.505h.004c5.518 0 10.004-4.486 10.004-10.004 0-2.674-1.04-5.19-2.929-7.079A9.936 9.936 0 0 0 12.004 2Zm0 18.192a8.157 8.157 0 0 1-4.166-1.14l-.299-.178-2.812.918.928-2.75-.194-.283a8.166 8.166 0 0 1-1.267-4.377c0-4.517 3.677-8.192 8.196-8.192a8.14 8.14 0 0 1 5.796 2.402 8.145 8.145 0 0 1 2.399 5.795c0 4.518-3.678 8.195-8.201 8.195Z" />
+    </svg>
+  );
+}
 
 export function Footer() {
   const [email, setEmail] = useState('');
@@ -64,7 +73,7 @@ export function Footer() {
           <div className="flex gap-3">
             {[
               { Icon: Instagram, href: 'https://www.instagram.com/cloud_toys99?igsh=YmwxeG1jZHRzM3Ex' },
-              { Icon: Twitter, href: '#' },
+              { Icon: WhatsAppIcon, href: 'https://wa.me/201550355315' },
               { Icon: Facebook, href: '#' },
             ].map(({ Icon, href }, i) => (
               <a
