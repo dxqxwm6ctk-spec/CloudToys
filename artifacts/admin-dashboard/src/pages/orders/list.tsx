@@ -300,9 +300,9 @@ export default function OrdersList() {
                       {selectedOrder.shippingAddress && (
                         <div className="flex items-start gap-3 text-sm">
                           <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                          <div>
+                          <div className="min-w-0">
                             <span className="text-muted-foreground">Address: </span>
-                            <span className="font-medium">{selectedOrder.shippingAddress}</span>
+                            <span className="font-medium break-words" dir="auto">{selectedOrder.shippingAddress}</span>
                           </div>
                         </div>
                       )}
