@@ -62,11 +62,22 @@ export function Header() {
   // Live search — navigate as the user types, without needing to press Enter.
   useEffect(() => {
     const trimmed = searchQuery.trim();
-    if (!trimmed) return;
-    const timeout = setTimeout(() => {
-      setLocation(`/shop?search=${encodeURIComponent(trimmed)}`, { replace: true });
-    }, 350);
-    return () => clearTimeout(timeout);
+
+    if (trimmed) {
+      const timeout = setTimeout(() => {
+        setLocation(`/shop?search=${encodeURIComponent(trimmed)}`, { replace: true });
+      }, 350);
+      return () => clearTimeout(timeout);
+    }
+
+    // Text was cleared — drop back to the main listing instead of staying
+    // stuck on the (now empty) search results.
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('search')) {
+      params.delete('search');
+      const query = params.toString();
+      setLocation(query ? `/shop?${query}` : '/shop', { replace: true });
+    }
   }, [searchQuery, setLocation]);
 
   return (
