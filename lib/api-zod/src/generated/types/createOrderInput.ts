@@ -5,12 +5,12 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { CreateOrderInputItemsItem } from './createOrderInputItemsItem';
+import type { OrderItem } from './orderItem';
 
 export interface CreateOrderInput {
   customerName: string;
   customerEmail: string;
   paymentMethodKey: string;
   shippingAddress?: string;
-  items: CreateOrderInputItemsItem[];
+  items: OrderItem[];
 }

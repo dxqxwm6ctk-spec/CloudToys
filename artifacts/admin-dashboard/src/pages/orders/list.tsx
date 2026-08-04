@@ -12,13 +12,22 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Package, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Package, Truck, CheckCircle2, AlertCircle, Eye } from 'lucide-react';
 import { format } from 'date-fns';
+import type { AdminOrder } from '@workspace/api-client-react';
 
 export default function OrdersList() {
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [page, setPage] = React.useState(1);
+  const [selectedOrder, setSelectedOrder] = React.useState<AdminOrder | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -106,6 +115,8 @@ export default function OrdersList() {
               <TableHead>Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Est. Delivery</TableHead>
+              <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Details</TableHead>
               <TableHead className="text-right">Update Status</TableHead>
             </TableRow>
           </TableHeader>
@@ -117,12 +128,14 @@ export default function OrdersList() {
                   <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
                   <TableCell><div className="h-6 bg-muted rounded-full w-24" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
+                  <TableCell><div className="h-4 bg-muted rounded w-16 ml-auto" /></TableCell>
+                  <TableCell><div className="h-8 bg-muted rounded w-16 ml-auto" /></TableCell>
                   <TableCell><div className="h-10 bg-muted rounded w-32 ml-auto" /></TableCell>
                 </TableRow>
               ))
             ) : data?.items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -144,6 +157,18 @@ export default function OrdersList() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {format(new Date(order.estimatedDelivery), 'MMM d, yyyy')}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {order.total != null ? `$${order.total.toFixed(2)}` : '—'}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      <Eye className="w-3.5 h-3.5 mr-1.5" /> View
+                    </Button>
                   </TableCell>
                   <TableCell className="text-right">
                     <Select 
@@ -195,6 +220,92 @@ export default function OrdersList() {
           </div>
         </div>
       )}
+
+      <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-w-lg">
+          {selectedOrder && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-mono">{selectedOrder.orderNumber}</DialogTitle>
+                <DialogDescription>
+                  Placed {selectedOrder.steps[0]?.date
+                    ? format(new Date(selectedOrder.steps[0].date), 'MMM d, yyyy')
+                    : 'Unknown date'}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Customer</p>
+                    <p className="font-medium">{selectedOrder.customerName ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Email</p>
+                    <p className="font-medium break-all">{selectedOrder.customerEmail ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Payment method</p>
+                    <p className="font-medium">{selectedOrder.paymentMethod ?? '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Status</p>
+                    <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
+                      {STATUS_LABEL[selectedOrder.status] ?? selectedOrder.status}
+                    </Badge>
+                  </div>
+                  {selectedOrder.shippingAddress && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Shipping address</p>
+                      <p className="font-medium">{selectedOrder.shippingAddress}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">Items</p>
+                  {selectedOrder.items && selectedOrder.items.length > 0 ? (
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Product</TableHead>
+                            <TableHead className="text-right">Qty</TableHead>
+                            <TableHead className="text-right">Price</TableHead>
+                            <TableHead className="text-right">Subtotal</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {selectedOrder.items.map((item, i) => (
+                            <TableRow key={i}>
+                              <TableCell>{item.name}</TableCell>
+                              <TableCell className="text-right">{item.quantity}</TableCell>
+                              <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                              <TableCell className="text-right">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">
+                      No item detail recorded for this order (placed before item tracking was added).
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex justify-end border-t border-border pt-3">
+                  <p className="text-base font-semibold">
+                    Total: {selectedOrder.total != null ? `$${selectedOrder.total.toFixed(2)}` : '—'}
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

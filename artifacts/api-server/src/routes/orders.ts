@@ -49,7 +49,9 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  const { customerName, customerEmail, paymentMethodKey, items } = body.data;
+  const { customerName, customerEmail, paymentMethodKey, shippingAddress, items } =
+    body.data;
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   // Validate payment method is enabled
   const [pm] = await db
@@ -146,6 +148,9 @@ router.post("/orders", async (req, res): Promise<void> => {
           customerName,
           customerEmail,
           paymentMethod: pm.label,
+          shippingAddress: shippingAddress ?? null,
+          items,
+          total: String(total),
         })
         .returning({ id: ordersTable.id });
 

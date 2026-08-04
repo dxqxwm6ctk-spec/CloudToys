@@ -627,6 +627,15 @@ components:
       properties:
         enabled: { type: boolean }
 
+    OrderItem:
+      type: object
+      required: [productId, name, quantity, price]
+      properties:
+        productId: { type: string }
+        name: { type: string }
+        quantity: { type: number }
+        price: { type: number }
+
     CreateOrderInput:
       type: object
       required: [customerName, customerEmail, paymentMethodKey, items]
@@ -638,13 +647,7 @@ components:
         items:
           type: array
           items:
-            type: object
-            required: [productId, name, quantity, price]
-            properties:
-              productId: { type: string }
-              name: { type: string }
-              quantity: { type: number }
-              price: { type: number }
+            $ref: "#/components/schemas/OrderItem"
 
     OrderConfirmation:
       type: object
@@ -784,11 +787,17 @@ components:
         customerName: { type: ["string", "null"] }
         customerEmail: { type: ["string", "null"] }
         paymentMethod: { type: ["string", "null"] }
+        shippingAddress: { type: ["string", "null"] }
+        total: { type: ["number", "null"] }
         createdAt: { type: ["string", "null"] }
         steps:
           type: array
           items:
             $ref: "#/components/schemas/OrderTrackingStep"
+        items:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/OrderItem"
 
     AdminOrderListResult:
       type: object

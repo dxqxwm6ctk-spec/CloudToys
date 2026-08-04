@@ -109,7 +109,7 @@ export interface PaymentMethodUpdate {
   enabled: boolean;
 }
 
-export type CreateOrderInputItemsItem = {
+export type OrderItem = {
   productId: string;
   name: string;
   quantity: number;
@@ -121,7 +121,7 @@ export interface CreateOrderInput {
   customerEmail: string;
   paymentMethodKey: string;
   shippingAddress?: string;
-  items: CreateOrderInputItemsItem[];
+  items: OrderItem[];
 }
 
 export interface OrderConfirmation {
@@ -250,8 +250,14 @@ export interface AdminOrder {
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
+  shippingAddress?: string | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
   createdAt?: string | null;
   steps: OrderTrackingStep[];
+  /** @nullable */
+  items?: OrderItem[] | null;
 }
 
 export interface AdminOrderListResult {

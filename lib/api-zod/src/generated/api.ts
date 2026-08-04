@@ -520,12 +520,20 @@ export const AdminListOrdersResponse = zod.object({
   "customerName": zod.string().nullish(),
   "customerEmail": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
+  "shippingAddress": zod.string().nullish(),
+  "total": zod.number().nullish(),
   "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({
   "label": zod.string(),
   "completed": zod.boolean(),
   "date": zod.string().nullable()
-}))
+})),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "price": zod.number()
+})).nullish()
 })),
   "total": zod.number(),
   "page": zod.number(),

@@ -19,7 +19,7 @@ export * from './category';
 export * from './categoryInput';
 export * from './categoryUpdate';
 export * from './createOrderInput';
-export * from './createOrderInputItemsItem';
+export * from './orderItem';
 export * from './healthStatus';
 export * from './listProductsParams';
 export * from './listProductsSort';

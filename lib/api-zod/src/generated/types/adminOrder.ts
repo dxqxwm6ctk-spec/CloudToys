@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OrderTrackingStep } from './orderTrackingStep';
+import type { OrderItem } from './orderItem';
 
 export interface AdminOrder {
   id: string;
@@ -19,6 +20,12 @@ export interface AdminOrder {
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */
+  shippingAddress?: string | null;
+  /** @nullable */
+  total?: number | null;
+  /** @nullable */
   createdAt?: string | null;
   steps: OrderTrackingStep[];
+  /** @nullable */
+  items?: OrderItem[] | null;
 }

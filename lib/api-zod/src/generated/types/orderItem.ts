@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type CreateOrderInputItemsItem = {
+export interface OrderItem {
   productId: string;
   name: string;
   quantity: number;
   price: number;
-};
+}
