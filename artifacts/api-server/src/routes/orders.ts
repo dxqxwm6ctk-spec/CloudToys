@@ -58,7 +58,7 @@ const CreateOrderBody = z.object({
   ).min(1),
 });
 
-router.post("/orders", async (req, res): Promise<void> => {
+router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
   const body = CreateOrderBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: body.error.message });
@@ -164,6 +164,7 @@ router.post("/orders", async (req, res): Promise<void> => {
           steps,
           customerName,
           customerEmail,
+          userId: req.customer!.id,
           paymentMethod: pm.label,
           shippingAddress: shippingAddress ?? null,
           items,

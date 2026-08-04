@@ -5,8 +5,10 @@ import { supabase } from '../lib/supabaseClient';
 interface CustomerAuthState {
   user: User | null;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (redirectPath?: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Current Supabase access token, if signed in — for Authorization headers. */
+  getAccessToken: () => Promise<string | null>;
 }
 
 const CustomerAuthContext = createContext<CustomerAuthState | null>(null);
@@ -35,10 +37,10 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (redirectPath: string = '/account') => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/account` },
+      options: { redirectTo: `${window.location.origin}${redirectPath}` },
     });
   }, []);
 
@@ -47,8 +49,13 @@ export function CustomerAuthProvider({ children }: { children: React.ReactNode }
     setUser(null);
   }, []);
 
+  const getAccessToken = useCallback(async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }, []);
+
   return (
-    <CustomerAuthContext.Provider value={{ user, isLoading, signInWithGoogle, signOut }}>
+    <CustomerAuthContext.Provider value={{ user, isLoading, signInWithGoogle, signOut, getAccessToken }}>
       {children}
     </CustomerAuthContext.Provider>
   );

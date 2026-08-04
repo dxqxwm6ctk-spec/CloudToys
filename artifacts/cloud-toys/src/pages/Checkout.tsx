@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { useLocation, Link } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 'lucide-react';
@@ -8,9 +9,26 @@ import { addOrderToHistory } from '../lib/orderHistory';
 import { formatJOD } from '../lib/currency';
 import { JORDAN_GOVERNORATES } from '../lib/jordan-locations';
 import { SearchableSelect } from '../components/ui/SearchableSelect';
+import {
+  savePendingOrder,
+  getPendingOrder,
+  clearPendingOrder,
+  type PendingOrder,
+} from '../lib/pendingOrder';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
+
+function GoogleIcon() {
+  return (
+    <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11C3.25 21.3 7.31 24 12 24z" />
+      <path fill="#FBBC05" d="M5.27 14.27a7.2 7.2 0 0 1-.38-2.27c0-.79.14-1.55.38-2.27V6.62H1.27A11.98 11.98 0 0 0 0 12c0 1.93.46 3.76 1.27 5.38l4-3.11z" />
+      <path fill="#EA4335" d="M12 4.77c1.76 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.7 1.27 6.62l4 3.11C6.22 6.88 8.87 4.77 12 4.77z" />
+    </svg>
+  );
+}
 
 interface PaymentMethod {
   id: string;
@@ -22,12 +40,15 @@ interface PaymentMethod {
 
 export function Checkout() {
   const { items, cartTotal, clearCart } = useCart();
+  const { user, isLoading: authLoading, signInWithGoogle, getAccessToken } = useCustomerAuth();
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1); // 1: Shipping, 2: Payment, 3: Success
   const [orderNumber, setOrderNumber] = useState('');
   const [estimatedDelivery, setEstimatedDelivery] = useState('');
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const hasResumedRef = useRef(false);
 
   // Shipping form state
   const [email, setEmail] = useState('');
@@ -88,26 +109,41 @@ export function Checkout() {
     window.scrollTo(0, 0);
   };
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedPayment) return;
+  /** Restore checkout form fields from a saved pending order (used when
+   *  resuming after a "Sign in with Google" redirect). */
+  const restoreFormFromPendingOrder = (pending: PendingOrder) => {
+    setEmail(pending.form.email);
+    setFirstName(pending.form.firstName);
+    setLastName(pending.form.lastName);
+    setAddress(pending.form.address);
+    setGovernorate(pending.form.governorate);
+    setArea(pending.form.area);
+    setSelectedPayment(pending.form.selectedPayment);
+    setStep(2);
+  };
+
+  const submitOrder = async (order: PendingOrder, itemCount: number, orderTotal: number) => {
     setIsPlacingOrder(true);
     setOrderError('');
     try {
+      const token = await getAccessToken();
+      if (!token) {
+        // Session didn't come back with the redirect (expired, blocked
+        // popup, etc.) — ask the customer to sign in again.
+        throw new Error('Please sign in to place your order.');
+      }
       const res = await fetch(`${BASE}/api/orders`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          customerName: `${firstName} ${lastName}`.trim(),
-          customerEmail: email,
-          paymentMethodKey: selectedPayment,
-          shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
-          items: items.map(i => ({
-            productId: i.id,
-            name: i.name,
-            quantity: i.quantity,
-            price: i.price,
-          })),
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          paymentMethodKey: order.paymentMethodKey,
+          shippingAddress: order.shippingAddress,
+          items: order.items,
         }),
       });
       if (!res.ok) {
@@ -121,9 +157,10 @@ export function Checkout() {
         orderNumber: data.orderNumber,
         estimatedDelivery: data.estimatedDelivery,
         placedAt: new Date().toISOString(),
-        total,
-        itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+        total: orderTotal,
+        itemCount,
       });
+      clearPendingOrder();
       clearCart();
       setStep(3);
       window.scrollTo(0, 0);
@@ -132,6 +169,62 @@ export function Checkout() {
     } finally {
       setIsPlacingOrder(false);
     }
+  };
+
+  // Resume a checkout that was interrupted by the "Sign in with Google"
+  // redirect: once the customer is back and authenticated, submit the saved
+  // order automatically instead of making them fill the form out again.
+  useEffect(() => {
+    if (authLoading || hasResumedRef.current) return;
+    const pending = getPendingOrder();
+    if (!pending) return;
+    if (!user) return; // still not signed in — leave the pending order saved
+    hasResumedRef.current = true;
+    restoreFormFromPendingOrder(pending);
+    const itemCount = pending.items.reduce((sum, i) => sum + i.quantity, 0);
+    const orderTotal = pending.items.reduce((sum, i) => sum + i.price * i.quantity, 0);
+    void submitOrder(pending, itemCount, orderTotal);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, user]);
+
+  const buildOrderPayload = (): PendingOrder => ({
+    customerName: `${firstName} ${lastName}`.trim(),
+    customerEmail: email,
+    paymentMethodKey: selectedPayment,
+    shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
+    items: items.map(i => ({
+      productId: String(i.id),
+      name: i.name,
+      quantity: i.quantity,
+      price: i.price,
+    })),
+    form: { email, firstName, lastName, address, governorate, area, selectedPayment },
+  });
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPayment) return;
+
+    const order = buildOrderPayload();
+
+    if (!user) {
+      // Not signed in — save the order exactly as filled out, then send the
+      // customer to Google sign-in. They're brought straight back to
+      // /checkout and the order is submitted automatically (see the resume
+      // effect above), so nothing needs to be re-entered.
+      savePendingOrder(order);
+      setIsSigningIn(true);
+      setOrderError('');
+      try {
+        await signInWithGoogle('/checkout');
+      } catch {
+        setIsSigningIn(false);
+        setOrderError('Could not start sign-in. Please try again.');
+      }
+      return;
+    }
+
+    await submitOrder(order, items.reduce((sum, i) => sum + i.quantity, 0), total);
   };
 
   if (step === 3) {
@@ -318,6 +411,12 @@ export function Checkout() {
                     )}
                   </div>
 
+                  {!authLoading && !user && (
+                    <p className="text-sm text-muted-foreground bg-secondary/50 p-3 rounded-lg">
+                      Sign in with Google to place your order — your shipping and payment details are already saved, so you won't need to re-enter anything.
+                    </p>
+                  )}
+
                   {orderError && (
                     <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">{orderError}</p>
                   )}
@@ -325,15 +424,20 @@ export function Checkout() {
                   <div className="pt-6">
                     <button
                       type="submit"
-                      disabled={isPlacingOrder || paymentMethods.length === 0}
+                      disabled={isPlacingOrder || isSigningIn || paymentMethods.length === 0}
                       className="w-full bg-primary text-primary-foreground h-14 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      {isPlacingOrder && <Loader2 className="w-5 h-5 animate-spin" />}
-                      {isPlacingOrder
-                        ? 'Placing Order…'
-                        : selectedPayment === 'cash_on_delivery'
-                          ? 'Confirm Order'
-                          : `Pay ${formatJOD(total)}`}
+                      {(isPlacingOrder || isSigningIn) && <Loader2 className="w-5 h-5 animate-spin" />}
+                      {!authLoading && !user && !isSigningIn && <GoogleIcon />}
+                      {isSigningIn
+                        ? 'Redirecting to Google…'
+                        : isPlacingOrder
+                          ? 'Placing Order…'
+                          : !authLoading && !user
+                            ? 'Sign in with Google to Order'
+                            : selectedPayment === 'cash_on_delivery'
+                              ? 'Confirm Order'
+                              : `Pay ${formatJOD(total)}`}
                     </button>
                   </div>
                 </form>
