@@ -76,6 +76,14 @@ export function ProductDetail() {
     }).format(price);
   };
 
+  const { formatJOD } = (() => {
+    const USD_TO_JOD = 0.709;
+    return {
+      formatJOD: (amount: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'JOD', minimumFractionDigits: 3 }).format(amount * USD_TO_JOD),
+    };
+  })();
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 py-12 md:py-24">
@@ -144,7 +152,10 @@ export function ProductDetail() {
               </div>
 
               <div className="flex items-baseline gap-4">
-                <span className="text-3xl font-medium text-foreground">{formatPrice(product.price)}</span>
+                <div>
+                  <span className="text-3xl font-medium text-foreground">{formatPrice(product.price)}</span>
+                  <div className="text-sm text-muted-foreground mt-0.5">{formatJOD(product.price)}</div>
+                </div>
                 {product.compareAtPrice && (
                   <span className="text-xl text-muted-foreground line-through">{formatPrice(product.compareAtPrice)}</span>
                 )}

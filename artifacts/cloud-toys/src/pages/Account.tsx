@@ -4,9 +4,7 @@ import { User, Package, Settings, LogOut, Heart, ChevronRight } from 'lucide-rea
 import { Link } from 'wouter';
 import { getOrderHistory } from '../lib/orderHistory';
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
-}
+import { formatUSD, formatJOD } from '../lib/currency';
 
 function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string; itemCount: number; total: number }) {
   const { data: tracking, isLoading } = useTrackOrder(orderNumber, {
@@ -21,7 +19,9 @@ function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string
     >
       <div>
         <p className="font-semibold font-mono text-sm">{orderNumber}</p>
-        <p className="text-xs text-muted-foreground mt-1">{itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatPrice(total)}</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatUSD(total)} <span className="opacity-70">/ {formatJOD(total)}</span>
+        </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-foreground capitalize">{statusLabel}</span>

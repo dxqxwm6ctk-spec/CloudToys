@@ -61,6 +61,14 @@ export default function ProductsList() {
     }).format(price);
   };
 
+  const { formatJOD } = (() => {
+    const USD_TO_JOD = 0.709;
+    return {
+      formatJOD: (amount: number) =>
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'JOD', minimumFractionDigits: 3 }).format(amount * USD_TO_JOD),
+    };
+  })();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -145,7 +153,8 @@ export default function ProductsList() {
                     {product.categoryName}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {formatPrice(product.price, product.currency)}
+                    <div>{formatPrice(product.price, product.currency)}</div>
+                    <div className="text-xs text-muted-foreground">{formatJOD(product.price)}</div>
                   </TableCell>
                   <TableCell>
                     {product.inStock ? (

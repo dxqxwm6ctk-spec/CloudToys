@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatUSD, formatJOD } from '@/lib/currency';
 import { useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -180,7 +181,12 @@ export default function OrdersList() {
                     {format(new Date(order.estimatedDelivery), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    {order.total != null ? `$${Number(order.total).toFixed(2)}` : '—'}
+                    {order.total != null ? (
+                      <div>
+                        <div>{formatUSD(Number(order.total))}</div>
+                        <div className="text-xs text-muted-foreground">{formatJOD(Number(order.total))}</div>
+                      </div>
+                    ) : '—'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -378,9 +384,13 @@ export default function OrdersList() {
                               <TableRow key={i}>
                                 <TableCell className="text-sm font-medium py-3">{item.name}</TableCell>
                                 <TableCell className="text-sm text-center py-3">{item.quantity}</TableCell>
-                                <TableCell className="text-sm text-right py-3">${Number(item.price).toFixed(2)}</TableCell>
+                                <TableCell className="text-sm text-right py-3">
+                                  <div>{formatUSD(Number(item.price))}</div>
+                                  <div className="text-xs text-muted-foreground">{formatJOD(Number(item.price))}</div>
+                                </TableCell>
                                 <TableCell className="text-sm text-right py-3 font-medium">
-                                  ${(Number(item.price) * item.quantity).toFixed(2)}
+                                  <div>{formatUSD(Number(item.price) * item.quantity)}</div>
+                                  <div className="text-xs text-muted-foreground">{formatJOD(Number(item.price) * item.quantity)}</div>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -398,9 +408,14 @@ export default function OrdersList() {
                   <div className="bg-muted/40 rounded-lg p-4">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Order Total</span>
-                      <span className="text-xl font-bold">
-                        {selectedOrder.total != null ? `$${Number(selectedOrder.total).toFixed(2)}` : '—'}
-                      </span>
+                      <div className="text-right">
+                        <div className="text-xl font-bold">
+                          {selectedOrder.total != null ? formatUSD(Number(selectedOrder.total)) : '—'}
+                        </div>
+                        {selectedOrder.total != null && (
+                          <div className="text-sm text-muted-foreground">{formatJOD(Number(selectedOrder.total))}</div>
+                        )}
+                      </div>
                     </div>
                     {selectedOrder.items && selectedOrder.items.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">

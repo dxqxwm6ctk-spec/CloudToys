@@ -4,9 +4,7 @@ import { Package, ChevronRight } from 'lucide-react';
 import { Link } from 'wouter';
 import { getOrderHistory, type OrderHistoryEntry } from '../lib/orderHistory';
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
-}
+import { formatUSD, formatJOD } from '../lib/currency';
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -33,7 +31,7 @@ function OrderRow({ order }: { order: OrderHistoryEntry }) {
         <div>
           <p className="font-semibold font-mono">{order.orderNumber}</p>
           <p className="text-sm text-muted-foreground">
-            {formatDate(order.placedAt)} · {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'} · {formatPrice(order.total)}
+            {formatDate(order.placedAt)} · {order.itemCount} {order.itemCount === 1 ? 'item' : 'items'} · {formatUSD(order.total)} <span className="opacity-70">/ {formatJOD(order.total)}</span>
           </p>
         </div>
       </div>

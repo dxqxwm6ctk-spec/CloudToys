@@ -5,6 +5,7 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 'lucide-react';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { addOrderToHistory } from '../lib/orderHistory';
+import { formatUSD, formatJOD } from '../lib/currency';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
@@ -109,10 +110,6 @@ export function Checkout() {
     } finally {
       setIsPlacingOrder(false);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
   };
 
   if (step === 3) {
@@ -296,7 +293,7 @@ export function Checkout() {
                         ? 'Placing Order…'
                         : selectedPayment === 'cash_on_delivery'
                           ? 'Confirm Order'
-                          : `Pay ${formatPrice(total)}`}
+                          : `Pay ${formatUSD(total)}`}
                     </button>
                   </div>
                 </form>
@@ -319,7 +316,7 @@ export function Checkout() {
                     </div>
                     <div className="flex-1 flex flex-col justify-center">
                       <span className="text-sm font-medium line-clamp-1">{item.name}</span>
-                      <span className="text-sm text-muted-foreground">{formatPrice(item.price)}</span>
+                      <span className="text-sm text-muted-foreground">{formatUSD(item.price)}</span>
                     </div>
                   </div>
                 ))}
@@ -327,16 +324,16 @@ export function Checkout() {
               <div className="space-y-3 text-sm mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatPrice(cartTotal)}</span>
+                  <span className="font-medium">{formatUSD(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{shipping === 0 ? 'Free' : formatPrice(shipping)}</span>
+                  <span className="font-medium">{shipping === 0 ? 'Free' : formatUSD(shipping)}</span>
                 </div>
               </div>
-              <div className="flex justify-between items-baseline">
+              <div className="flex justify-between items-start">
                 <span className="text-lg font-medium">Total</span>
-                <span className="text-3xl font-serif font-semibold">{formatPrice(total)}</span>
+                <div className="text-right"><div className="text-3xl font-serif font-semibold">{formatUSD(total)}</div><div className="text-sm text-muted-foreground">{formatJOD(total)}</div></div>
               </div>
             </div>
           </div>

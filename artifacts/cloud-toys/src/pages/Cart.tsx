@@ -4,6 +4,7 @@ import { Link, useLocation } from 'wouter';
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { useState } from 'react';
 import { resolveMediaUrl } from '@workspace/api-client-react';
+import { formatUSD, formatJOD } from '../lib/currency';
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, cartTotal } = useCart();
@@ -15,13 +16,6 @@ export function Cart() {
   const currentShipping = isFreeShipping ? 0 : shipping;
   const total = cartTotal + currentShipping;
   const amountToFreeShipping = Math.max(0, freeShippingThreshold - cartTotal);
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
 
   if (items.length === 0) {
     return (
@@ -62,7 +56,7 @@ export function Cart() {
               {isFreeShipping ? (
                 <p className="text-sm font-medium text-primary mb-2">You've unlocked free shipping!</p>
               ) : (
-                <p className="text-sm font-medium mb-2">You're {formatPrice(amountToFreeShipping)} away from free shipping.</p>
+                <p className="text-sm font-medium mb-2">You're {formatUSD(amountToFreeShipping)} away from free shipping.</p>
               )}
               <div className="w-full bg-white border border-border rounded-full h-2.5 overflow-hidden">
                 <div 
@@ -91,7 +85,10 @@ export function Cart() {
                           {item.name}
                         </Link>
                       </div>
-                      <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                      <div className="text-right">
+                        <div className="font-medium">{formatUSD(item.price * item.quantity)}</div>
+                        <div className="text-xs text-muted-foreground">{formatJOD(item.price * item.quantity)}</div>
+                      </div>
                     </div>
                     
                     <div className="flex items-center justify-between mt-4">
@@ -132,11 +129,14 @@ export function Cart() {
               <div className="space-y-4 text-sm mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatPrice(cartTotal)}</span>
+                  <div className="text-right">
+                    <div className="font-medium">{formatUSD(cartTotal)}</div>
+                    <div className="text-xs text-muted-foreground">{formatJOD(cartTotal)}</div>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{isFreeShipping ? 'Free' : formatPrice(shipping)}</span>
+                  <span className="font-medium">{isFreeShipping ? 'Free' : formatUSD(shipping)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
@@ -144,9 +144,12 @@ export function Cart() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-baseline mb-8">
+              <div className="flex justify-between items-start mb-8">
                 <span className="text-lg font-medium">Total</span>
-                <span className="text-3xl font-serif font-semibold">{formatPrice(total)}</span>
+                <div className="text-right">
+                  <div className="text-3xl font-serif font-semibold">{formatUSD(total)}</div>
+                  <div className="text-sm text-muted-foreground">{formatJOD(total)}</div>
+                </div>
               </div>
 
               <button 

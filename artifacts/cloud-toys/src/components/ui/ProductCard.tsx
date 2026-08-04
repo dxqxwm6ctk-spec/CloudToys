@@ -1,4 +1,5 @@
 import { Link } from 'wouter';
+import { formatJOD } from '../../lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { useState } from 'react';
@@ -135,6 +136,7 @@ export function ProductCard({ product }: { product: Product }) {
             <span className="text-sm text-gray-400 line-through">{formatPrice(product.compareAtPrice)}</span>
           )}
         </div>
+        <div className="text-[11px] text-gray-400">{formatJOD(product.price)}</div>
       </div>
     </Link>
   );
