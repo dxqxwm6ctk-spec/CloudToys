@@ -19,7 +19,7 @@ export const productsTable = pgTable("products", {
   description: text("description").notNull(),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   compareAtPrice: numeric("compare_at_price", { precision: 10, scale: 2 }),
-  currency: text("currency").notNull().default("USD"),
+  currency: text("currency").notNull().default("JOD"),
   imageUrl: text("image_url").notNull(),
   galleryUrls: text("gallery_urls").array().notNull().default([]),
   categoryId: integer("category_id")

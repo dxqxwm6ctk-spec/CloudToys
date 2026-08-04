@@ -32,7 +32,7 @@ const productSchema = z.object({
   description: z.string().min(20, "Full description is required"),
   price: z.coerce.number().positive("Price must be a positive number"),
   compareAtPrice: z.coerce.number().positive("Compare at price must be positive").optional().nullable(),
-  currency: z.string().min(3, "Currency code is required").default("USD"),
+  currency: z.string().min(3, "Currency code is required").default("JOD"),
   imageUrl: z.string().refine(
     (val) => { try { new URL(val); return true; } catch { return val.startsWith('/'); } },
     "Must be a valid URL"
@@ -95,7 +95,7 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
       description: '',
       price: 0,
       compareAtPrice: null,
-      currency: 'USD',
+      currency: 'JOD',
       imageUrl: '',
       galleryUrls: [],
       categoryId: '',
@@ -616,14 +616,43 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
                 <CardContent className="space-y-4">
                   <FormField
                     control={form.control}
+                    name="currency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="JOD">JOD — دينار أردني</SelectItem>
+                            <SelectItem value="USD">USD — US Dollar</SelectItem>
+                            <SelectItem value="EUR">EUR — Euro</SelectItem>
+                            <SelectItem value="GBP">GBP — British Pound</SelectItem>
+                            <SelectItem value="SAR">SAR — ريال سعودي</SelectItem>
+                            <SelectItem value="AED">AED — درهم إماراتي</SelectItem>
+                            <SelectItem value="EGP">EGP — جنيه مصري</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="price"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Price</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                            <Input type="number" step="0.01" className="pl-7" {...field} />
+                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs font-medium">
+                              {form.watch('currency') || 'JOD'}
+                            </span>
+                            <Input type="number" step="0.01" className="pl-14" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -639,11 +668,13 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
                         <FormLabel>Compare at price</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
+                            <span className="absolute left-3 top-2.5 text-muted-foreground text-xs font-medium">
+                              {form.watch('currency') || 'JOD'}
+                            </span>
                             <Input 
                               type="number" 
                               step="0.01" 
-                              className="pl-7" 
+                              className="pl-14" 
                               {...field} 
                               value={field.value === null ? '' : field.value}
                               onChange={(e) => {
