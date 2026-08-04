@@ -63,13 +63,15 @@ export function Footer() {
           </p>
           <div className="flex gap-3">
             {[
-              { Icon: Instagram, href: '#' },
+              { Icon: Instagram, href: 'https://www.instagram.com/cloud_toys99?igsh=YmwxeG1jZHRzM3Ex' },
               { Icon: Twitter, href: '#' },
               { Icon: Facebook, href: '#' },
             ].map(({ Icon, href }, i) => (
               <a
                 key={i}
                 href={href}
+                target={href.startsWith('http') ? '_blank' : undefined}
+                rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
                 className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center text-white/50 hover:text-white hover:border-white/40 transition-all duration-200"
               >
                 <Icon className="w-4 h-4" />
