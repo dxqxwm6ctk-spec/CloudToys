@@ -1,9 +1,26 @@
 import { Link, useLocation } from 'wouter';
-import { ShoppingBag, Heart, Search, User, Menu, X, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Heart, Search, User, Menu, X, ChevronRight, Mail, Phone, MapPin } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useWishlist } from '../../context/WishlistContext';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useContactInfo } from '@/hooks/useContactInfo';
+
+const SIDEBAR_SHOP_LINKS = [
+  { label: 'All Products', href: '/shop' },
+  { label: 'Categories', href: '/categories' },
+  { label: 'New Arrivals', href: '/shop?sort=newest' },
+  { label: 'Best Sellers', href: '/shop?sort=best-sellers' },
+  { label: 'Featured', href: '/shop?sort=featured' },
+];
+
+const SIDEBAR_SUPPORT_LINKS = [
+  { label: 'Contact Us', href: '/contact' },
+  { label: 'Track Order', href: '/track-order' },
+  { label: 'Shipping Policy', href: '#' },
+  { label: 'Returns', href: '#' },
+  { label: 'FAQ', href: '#' },
+];
 
 const NAV_LINKS = [
   { label: 'Shop All', href: '/shop' },
@@ -15,6 +32,7 @@ export function Header() {
   const [, setLocation] = useLocation();
   const { itemCount: cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
+  const contact = useContactInfo();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -206,7 +224,7 @@ export function Header() {
               </form>
 
               {/* Nav Links */}
-              <nav className="flex-1 px-4 pt-6 space-y-1 overflow-y-auto">
+              <nav className="flex-1 px-4 pt-6 pb-6 space-y-1 overflow-y-auto">
                 {[
                   { label: 'Home', href: '/' },
                   { label: 'Shop All', href: '/shop' },
@@ -224,6 +242,55 @@ export function Header() {
                     <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-[#7A1F3D]" />
                   </Link>
                 ))}
+
+                {/* Shop links (moved here from the footer, which is hidden on Home) */}
+                <div className="pt-5 mt-3 border-t border-gray-100">
+                  <h4 className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Shop</h4>
+                  {SIDEBAR_SHOP_LINKS.map(link => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 text-sm text-gray-600 hover:text-[#7A1F3D] transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Support links */}
+                <div className="pt-5 mt-3 border-t border-gray-100">
+                  <h4 className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Support</h4>
+                  {SIDEBAR_SUPPORT_LINKS.map(link => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block px-3 py-2 text-sm text-gray-600 hover:text-[#7A1F3D] transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Contact info */}
+                <div className="pt-5 mt-3 border-t border-gray-100">
+                  <h4 className="px-3 pb-2 text-xs font-semibold uppercase tracking-widest text-gray-400">Contact</h4>
+                  <ul className="space-y-3 px-3">
+                    <li className="flex items-start gap-3 text-sm text-gray-600">
+                      <Mail className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
+                      {contact.email}
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-600">
+                      <Phone className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
+                      {contact.phone}
+                    </li>
+                    <li className="flex items-start gap-3 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
+                      {contact.address}
+                    </li>
+                  </ul>
+                </div>
               </nav>
 
               {/* Bottom actions */}

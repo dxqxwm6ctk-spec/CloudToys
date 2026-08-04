@@ -10,9 +10,10 @@ export function Layout({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, [location]);
 
-  // The Shop (product browsing) page hides the footer so the newsletter/
-  // links block doesn't interrupt scrolling through the product grid.
-  const hideFooter = location.startsWith('/shop');
+  // The Home page hides the footer so browsing the product feed isn't
+  // interrupted by the newsletter/links block — that info now lives in
+  // the sidebar (mobile menu) instead.
+  const hideFooter = location === '/';
 
   return (
     <div className="min-h-screen flex flex-col">
