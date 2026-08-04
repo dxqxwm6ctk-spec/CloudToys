@@ -68,7 +68,7 @@ function toProductDto(
     reviewCount: row.reviewCount,
     inStock: row.inStock,
     stockQuantity: row.stockQuantity,
-    badge: row.badge as "new" | "bestseller" | "sale" | null,
+    badge: (row.badge || null) as "new" | "bestseller" | "sale" | null,
   };
 }
 

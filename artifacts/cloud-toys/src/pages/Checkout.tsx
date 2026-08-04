@@ -5,7 +5,7 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 'lucide-react';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { addOrderToHistory } from '../lib/orderHistory';
-import { formatUSD, formatJOD } from '../lib/currency';
+import { formatJOD } from '../lib/currency';
 import { JORDAN_GOVERNORATES } from '../lib/jordan-locations';
 import { SearchableSelect } from '../components/ui/SearchableSelect';
 
@@ -317,7 +317,7 @@ export function Checkout() {
                         ? 'Placing Order…'
                         : selectedPayment === 'cash_on_delivery'
                           ? 'Confirm Order'
-                          : `Pay ${formatUSD(total)}`}
+                          : `Pay ${formatJOD(total)}`}
                     </button>
                   </div>
                 </form>
@@ -340,7 +340,7 @@ export function Checkout() {
                     </div>
                     <div className="flex-1 flex flex-col justify-center">
                       <span className="text-sm font-medium line-clamp-1">{item.name}</span>
-                      <span className="text-sm text-muted-foreground">{formatUSD(item.price)}</span>
+                      <span className="text-sm text-muted-foreground">{formatJOD(item.price)}</span>
                     </div>
                   </div>
                 ))}
@@ -348,16 +348,16 @@ export function Checkout() {
               <div className="space-y-3 text-sm mb-6 pb-6 border-b border-border">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatUSD(cartTotal)}</span>
+                  <span className="font-medium">{formatJOD(cartTotal)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{shipping === 0 ? 'Free' : formatUSD(shipping)}</span>
+                  <span className="font-medium">{shipping === 0 ? 'Free' : formatJOD(shipping)}</span>
                 </div>
               </div>
               <div className="flex justify-between items-start">
                 <span className="text-lg font-medium">Total</span>
-                <div className="text-right"><div className="text-3xl font-serif font-semibold">{formatUSD(total)}</div><div className="text-sm text-muted-foreground">{formatJOD(total)}</div></div>
+                <div className="text-right"><div className="text-3xl font-serif font-semibold">{formatJOD(total)}</div></div>
               </div>
             </div>
           </div>

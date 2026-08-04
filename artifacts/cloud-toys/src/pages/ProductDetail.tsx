@@ -6,6 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
+import { formatJOD } from '../lib/currency';
 import { motion } from 'framer-motion';
 import { ProductPicture } from '../components/ui/ProductPicture';
 
@@ -69,20 +70,7 @@ export function ProductDetail() {
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: product.currency || 'USD',
-    }).format(price);
-  };
-
-  const { formatJOD } = (() => {
-    const USD_TO_JOD = 0.709;
-    return {
-      formatJOD: (amount: number) =>
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'JOD', minimumFractionDigits: 3 }).format(amount * USD_TO_JOD),
-    };
-  })();
+  const formatPrice = (price: number) => formatJOD(price);
 
   return (
     <PageTransition>
