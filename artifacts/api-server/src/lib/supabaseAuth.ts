@@ -39,9 +39,12 @@ export async function verifySupabaseToken(
   }
 }
 
-declare module "express-serve-static-core" {
-  interface Request {
-    customer?: AuthenticatedUser;
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      customer?: AuthenticatedUser;
+    }
   }
 }
 
