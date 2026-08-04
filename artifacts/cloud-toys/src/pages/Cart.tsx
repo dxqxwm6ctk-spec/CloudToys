@@ -2,18 +2,40 @@ import { useCart } from '../context/CartContext';
 import { PageTransition } from '../components/ui/PageTransition';
 import { Link, useLocation } from 'wouter';
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { formatJOD } from '../lib/currency';
+import { getApiBase } from '../lib/api-url';
+
+const BASE = getApiBase();
+
+interface ShippingZone {
+  id: string;
+  name: string;
+  governorates: string[];
+  price: number;
+  isDefault: boolean;
+}
+
+function useDefaultShippingPrice() {
+  const { data } = useQuery<ShippingZone[]>({
+    queryKey: ['shipping-zones'],
+    queryFn: () => fetch(`${BASE}/api/shipping/zones`).then((r) => r.json()),
+    staleTime: 5 * 60 * 1000,
+  });
+  if (!data || data.length === 0) return 15; // final fallback
+  const def = data.find((z) => z.isDefault);
+  return def ? def.price : data[0].price;
+}
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, cartTotal } = useCart();
   const [, setLocation] = useLocation();
-  const [shipping] = useState(15.00);
+  const defaultShipping = useDefaultShippingPrice();
   const freeShippingThreshold = 150;
 
   const isFreeShipping = cartTotal >= freeShippingThreshold;
-  const currentShipping = isFreeShipping ? 0 : shipping;
+  const currentShipping = isFreeShipping ? 0 : defaultShipping;
   const total = cartTotal + currentShipping;
   const amountToFreeShipping = Math.max(0, freeShippingThreshold - cartTotal);
 
@@ -134,7 +156,7 @@ export function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{isFreeShipping ? 'Free' : formatJOD(shipping)}</span>
+                  <span className="font-medium">{isFreeShipping ? 'Free' : formatJOD(defaultShipping)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>

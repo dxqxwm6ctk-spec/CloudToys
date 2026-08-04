@@ -46,7 +46,23 @@ export function Checkout() {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [loadingMethods, setLoadingMethods] = useState(false);
 
-  const shipping = cartTotal >= 150 ? 0 : 15;
+  // Dynamic shipping price based on selected governorate
+  const [shippingPrice, setShippingPrice] = useState<number>(15);
+  const [loadingShipping, setLoadingShipping] = useState(false);
+
+  useEffect(() => {
+    if (!governorate) return;
+    setLoadingShipping(true);
+    fetch(`${BASE}/api/shipping/lookup?governorate=${governorate}`)
+      .then((r) => r.json())
+      .then((data: { price: number | null }) => {
+        if (data.price !== null) setShippingPrice(data.price);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingShipping(false));
+  }, [governorate]);
+
+  const shipping = cartTotal >= 150 ? 0 : shippingPrice;
   const total = cartTotal + shipping;
 
   // Load payment methods when entering payment step
@@ -350,9 +366,13 @@ export function Checkout() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-medium">{formatJOD(cartTotal)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{shipping === 0 ? 'Free' : formatJOD(shipping)}</span>
+                  {loadingShipping ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <span className="font-medium">{shipping === 0 ? 'Free' : formatJOD(shipping)}</span>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-start">

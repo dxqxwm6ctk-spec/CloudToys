@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import healthRouter from "./health";
 import catalogRouter from "./catalog";
 import ordersRouter from "./orders";
+import shippingRouter from "./shipping";
 import adminAuthRouter from "./adminAuth";
 import adminRouter from "./admin";
 import imagesRouter from "./images";
@@ -12,6 +13,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use(catalogRouter);
 router.use(ordersRouter);
+router.use(shippingRouter);
 
 // Auth routes first: /admin/auth/login and /admin/auth/logout must stay
 // public. Everything else under /admin/* (including image uploads) requires

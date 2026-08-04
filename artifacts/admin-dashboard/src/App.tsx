@@ -17,6 +17,7 @@ import OrdersList from '@/pages/orders/list';
 import PaymentMethodsSettings from '@/pages/settings/payment-methods';
 import DeliverySettings from '@/pages/settings/delivery';
 import ContactSettings from '@/pages/settings/contact';
+import ShippingZonesSettings from '@/pages/settings/shipping-zones';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +46,7 @@ function Router() {
         <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />
         <Route path="/settings/delivery" component={DeliverySettings} />
         <Route path="/settings/contact" component={ContactSettings} />
+        <Route path="/settings/shipping-zones" component={ShippingZonesSettings} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>
