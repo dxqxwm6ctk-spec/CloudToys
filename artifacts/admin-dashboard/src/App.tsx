@@ -15,6 +15,8 @@ import ProductForm from '@/pages/products/form';
 import CategoriesList from '@/pages/categories/list';
 import OrdersList from '@/pages/orders/list';
 import PaymentMethodsSettings from '@/pages/settings/payment-methods';
+import DeliverySettings from '@/pages/settings/delivery';
+import ContactSettings from '@/pages/settings/contact';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +43,8 @@ function Router() {
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />
         <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />
+        <Route path="/settings/delivery" component={DeliverySettings} />
+        <Route path="/settings/contact" component={ContactSettings} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>

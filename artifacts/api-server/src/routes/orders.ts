@@ -1,12 +1,25 @@
 import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
-import { db, ordersTable, paymentMethodsTable, productsTable } from "@workspace/db";
+import { db, ordersTable, paymentMethodsTable, productsTable, adminSettingsTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
 
 const router: IRouter = Router();
 
 class InsufficientStockError extends Error {}
+
+const DELIVERY_DAYS_KEY = "default_delivery_days";
+const DEFAULT_DELIVERY_DAYS = 7;
+
+/** Admin-configurable default delivery window (days), falling back to 7 if unset. */
+async function getDefaultDeliveryDays(): Promise<number> {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, DELIVERY_DAYS_KEY));
+  const days = row ? Number(row.value) : DEFAULT_DELIVERY_DAYS;
+  return Number.isFinite(days) && days > 0 ? days : DEFAULT_DELIVERY_DAYS;
+}
 
 // ── Payment methods (public – for checkout) ────────────────────────────────
 router.get("/orders/payment-methods", async (_req, res): Promise<void> => {
@@ -78,9 +91,10 @@ router.post("/orders", async (req, res): Promise<void> => {
     );
   }
 
-  // Estimated delivery: 7 days from now
+  // Estimated delivery: admin-configurable number of days from now (defaults to 7)
+  const defaultDeliveryDays = await getDefaultDeliveryDays();
   const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 7);
+  deliveryDate.setDate(deliveryDate.getDate() + defaultDeliveryDays);
   const estimatedDelivery = deliveryDate.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",

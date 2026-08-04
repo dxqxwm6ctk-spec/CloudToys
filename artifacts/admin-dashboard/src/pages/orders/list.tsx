@@ -40,10 +40,28 @@ import {
 import { format } from 'date-fns';
 import type { AdminOrder } from '@workspace/api-client-react';
 
+// Admin-selectable delivery durations, counted from today.
+const DELIVERY_DURATION_OPTIONS = [
+  { days: 2, label: '2 days (express)' },
+  { days: 3, label: '3 days' },
+  { days: 5, label: '5 days' },
+  { days: 7, label: '7 days (standard)' },
+  { days: 10, label: '10 days' },
+  { days: 14, label: '14 days' },
+  { days: 21, label: '21 days' },
+];
+
+function formatDeliveryDate(daysFromNow: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export default function OrdersList() {
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
   const [page, setPage] = React.useState(1);
   const [selectedOrder, setSelectedOrder] = React.useState<AdminOrder | null>(null);
+  const [deliveryDuration, setDeliveryDuration] = React.useState<string>('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { renderPrice } = useCurrency();
@@ -66,6 +84,24 @@ export default function OrdersList() {
         },
         onError: () => {
           toast({ title: "Failed to update order", variant: "destructive" });
+        }
+      }
+    );
+  };
+
+  const handleDeliveryDurationChange = (order: AdminOrder, days: string) => {
+    setDeliveryDuration(days);
+    const estimatedDelivery = formatDeliveryDate(Number(days));
+    updateStatus.mutate(
+      { id: order.id, data: { status: order.status, estimatedDelivery } },
+      {
+        onSuccess: () => {
+          toast({ title: "Delivery time updated", description: `New estimate: ${estimatedDelivery}` });
+          queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
+          setSelectedOrder((prev) => (prev ? { ...prev, estimatedDelivery } : prev));
+        },
+        onError: () => {
+          toast({ title: "Failed to update delivery time", variant: "destructive" });
         }
       }
     );
@@ -190,7 +226,7 @@ export default function OrdersList() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => { setSelectedOrder(order); setDeliveryDuration(''); }}
                     >
                       <Eye className="w-3.5 h-3.5 mr-1.5" /> View
                     </Button>
@@ -312,7 +348,7 @@ export default function OrdersList() {
                   {/* Delivery Info */}
                   <section>
                     <h3 className="text-sm font-semibold text-foreground mb-3 uppercase tracking-wide">Delivery</h3>
-                    <div className="flex items-center gap-3 text-sm">
+                    <div className="flex items-center gap-3 text-sm mb-3">
                       <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div>
                         <span className="text-muted-foreground">Estimated delivery: </span>
@@ -320,6 +356,25 @@ export default function OrdersList() {
                           {format(new Date(selectedOrder.estimatedDelivery), 'MMMM d, yyyy')}
                         </span>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2 pl-7">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Set delivery time:</span>
+                      <Select
+                        value={deliveryDuration}
+                        onValueChange={(val) => handleDeliveryDurationChange(selectedOrder, val)}
+                        disabled={updateStatus.isPending}
+                      >
+                        <SelectTrigger className="h-8 w-[180px]">
+                          <SelectValue placeholder="Choose duration…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DELIVERY_DURATION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.days} value={String(opt.days)}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </section>
 

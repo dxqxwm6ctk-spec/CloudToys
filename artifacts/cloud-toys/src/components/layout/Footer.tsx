@@ -1,10 +1,12 @@
 import { Link } from 'wouter';
 import { Instagram, Twitter, Facebook, Mail, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
+import { useContactInfo } from '@/hooks/useContactInfo';
 
 export function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const contact = useContactInfo();
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,15 +120,15 @@ export function Footer() {
           <ul className="space-y-4">
             <li className="flex items-start gap-3 text-sm text-white/50">
               <Mail className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
-              hello@cloudtoys.com
+              {contact.email}
             </li>
             <li className="flex items-start gap-3 text-sm text-white/50">
               <Phone className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
-              +1 (555) 000-1234
+              {contact.phone}
             </li>
             <li className="flex items-start gap-3 text-sm text-white/50">
               <MapPin className="w-4 h-4 text-[#C9A227] flex-shrink-0 mt-0.5" />
-              San Francisco, CA 94102
+              {contact.address}
             </li>
           </ul>
         </div>

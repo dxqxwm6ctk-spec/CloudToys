@@ -67,6 +67,12 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
     mediumUrl: string;
     largeUrl: string;
   } | null>(null);
+
+  // Additional (gallery) images: capped at a sane number and each row gets
+  // its own upload button + file input, mirroring the primary image control.
+  const MAX_GALLERY_IMAGES = 8;
+  const galleryFileInputRefs = useRef<Record<number, HTMLInputElement | null>>({});
+  const [uploadingGalleryIndex, setUploadingGalleryIndex] = useState<number | null>(null);
   
   const createProduct = useAdminCreateProduct();
   const updateProduct = useAdminUpdateProduct();
@@ -213,6 +219,40 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleGalleryFileUpload = async (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingGalleryIndex(index);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      if (isEdit && id) formData.append('productId', id);
+
+      const response = await fetch(`${getApiBase()}/api/admin/images/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeader(),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? 'Upload failed');
+      }
+
+      const result = (await response.json()) as { mediumUrl: string };
+      form.setValue(`galleryUrls.${index}.value`, result.mediumUrl, { shouldValidate: true });
+      toast({ title: 'Image uploaded', description: 'Optimised AVIF variant generated.' });
+    } catch (err) {
+      toast({ title: 'Upload failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setUploadingGalleryIndex(null);
+      const input = galleryFileInputRefs.current[index];
+      if (input) input.value = '';
     }
   };
 
@@ -374,18 +414,53 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
                   />
 
                   <div>
-                    <FormLabel className="mb-2 block">Gallery Images</FormLabel>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <FormLabel className="mb-0">Additional Images</FormLabel>
+                      <span className="text-xs text-muted-foreground">{galleryFields.length} / {MAX_GALLERY_IMAGES}</span>
+                    </div>
+                    <FormDescription className="mb-3">
+                      Extra photos shown alongside the primary image — a second image, a third, and so on. Up to {MAX_GALLERY_IMAGES}.
+                    </FormDescription>
                     <div className="space-y-3">
                       {galleryFields.map((field, index) => (
                         <div key={field.id} className="flex gap-2 items-start">
+                          {/* Hidden file input for this row */}
+                          <input
+                            ref={(el) => { galleryFileInputRefs.current[index] = el; }}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/gif"
+                            className="hidden"
+                            onChange={(e) => handleGalleryFileUpload(index, e)}
+                          />
                           <FormField
                             control={form.control}
                             name={`galleryUrls.${index}.value`}
                             render={({ field }) => (
                               <FormItem className="flex-1">
-                                <FormControl>
-                                  <Input placeholder="https://..." {...field} />
-                                </FormControl>
+                                <div className="flex gap-2">
+                                  <FormControl>
+                                    <Input placeholder={`Image ${index + 2} URL — or upload a file`} {...field} />
+                                  </FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    disabled={uploadingGalleryIndex === index}
+                                    onClick={() => galleryFileInputRefs.current[index]?.click()}
+                                    title="Upload file"
+                                  >
+                                    {uploadingGalleryIndex === index
+                                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                                      : <Upload className="w-4 h-4" />}
+                                  </Button>
+                                </div>
+                                {field.value && (
+                                  <div className="mt-2 rounded-lg border border-border p-2 bg-muted/30 max-w-[120px]">
+                                    <img src={resolveMediaUrl(field.value)} alt={`Preview ${index + 2}`} className="w-full h-auto rounded-md" onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = 'none';
+                                    }} />
+                                  </div>
+                                )}
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -405,9 +480,10 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
                         variant="outline" 
                         size="sm" 
                         onClick={() => appendGallery({ value: '' })}
+                        disabled={galleryFields.length >= MAX_GALLERY_IMAGES}
                         className="mt-2"
                       >
-                        <Plus className="w-4 h-4 mr-2" /> Add Gallery Image
+                        <Plus className="w-4 h-4 mr-2" /> Add Another Image
                       </Button>
                     </div>
                   </div>

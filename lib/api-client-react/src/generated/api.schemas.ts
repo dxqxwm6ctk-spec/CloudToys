@@ -269,6 +269,7 @@ export interface AdminOrderListResult {
 
 export interface OrderStatusUpdate {
   status: string;
+  estimatedDelivery?: string;
 }
 
 export type ListProductsParams = {

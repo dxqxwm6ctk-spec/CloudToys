@@ -678,9 +678,14 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
 
   const newSteps = buildSteps(existing.steps, body.data.status);
 
+  const updates: Record<string, unknown> = { status: body.data.status, steps: newSteps };
+  if (body.data.estimatedDelivery !== undefined) {
+    updates.estimatedDelivery = body.data.estimatedDelivery;
+  }
+
   const [updated] = await db
     .update(ordersTable)
-    .set({ status: body.data.status, steps: newSteps })
+    .set(updates)
     .where(eq(ordersTable.id, Number(params.data.id)))
     .returning();
 
@@ -730,6 +735,84 @@ router.put("/admin/settings/currency", async (req, res): Promise<void> => {
       set: { value: parsed.data.value },
     });
   res.json({ value: parsed.data.value });
+});
+
+// ── Admin Settings (default delivery duration) ────────────────────────────
+
+const DELIVERY_DAYS_KEY = "default_delivery_days";
+const DEFAULT_DELIVERY_DAYS = 7;
+
+router.get("/admin/settings/delivery", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, DELIVERY_DAYS_KEY));
+  const days = row ? Number(row.value) : DEFAULT_DELIVERY_DAYS;
+  res.json({ days: Number.isFinite(days) && days > 0 ? days : DEFAULT_DELIVERY_DAYS });
+});
+
+router.put("/admin/settings/delivery", async (req, res): Promise<void> => {
+  const parsed = z.object({ days: z.coerce.number().int().min(1).max(90) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  await db
+    .insert(adminSettingsTable)
+    .values({ key: DELIVERY_DAYS_KEY, value: String(parsed.data.days) })
+    .onConflictDoUpdate({
+      target: adminSettingsTable.key,
+      set: { value: String(parsed.data.days) },
+    });
+  res.json({ days: parsed.data.days });
+});
+
+// ── Admin Settings (contact info) ──────────────────────────────────────────
+
+const CONTACT_INFO_KEY = "contact_info";
+const DEFAULT_CONTACT_INFO = {
+  email: "Alhasanfarg3@gmail.com",
+  phone: "+962770600234",
+  address: "Amman, Jordan",
+};
+
+router.get("/admin/settings/contact", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, CONTACT_INFO_KEY));
+  if (!row) {
+    res.json(DEFAULT_CONTACT_INFO);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_CONTACT_INFO, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_CONTACT_INFO);
+  }
+});
+
+const AdminUpdateContactInfoBody = z.object({
+  email: z.string().email(),
+  phone: z.string().min(1),
+  address: z.string().min(1),
+});
+
+router.put("/admin/settings/contact", async (req, res): Promise<void> => {
+  const parsed = AdminUpdateContactInfoBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const value = JSON.stringify(parsed.data);
+  await db
+    .insert(adminSettingsTable)
+    .values({ key: CONTACT_INFO_KEY, value })
+    .onConflictDoUpdate({
+      target: adminSettingsTable.key,
+      set: { value },
+    });
+  res.json(parsed.data);
 });
 
 // ── Payment Methods (admin) ────────────────────────────────────────────────

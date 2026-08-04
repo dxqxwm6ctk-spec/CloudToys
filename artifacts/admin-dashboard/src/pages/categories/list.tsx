@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { 
   useAdminListCategories, 
   useAdminCreateCategory, 
@@ -18,8 +18,10 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Edit2, Trash2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getApiBase } from '@/lib/api-url';
+import { authHeader } from '@/lib/auth-token';
 import {
   Dialog,
   DialogContent,
@@ -32,12 +34,15 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const categorySchema = z.object({
   name: z.string().min(2, "Name is required"),
   slug: z.string().min(2, "Slug is required").regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers, hyphens only"),
-  imageUrl: z.string().url("Must be a valid URL"),
+  imageUrl: z.string().refine(
+    (val) => { try { new URL(val); return true; } catch { return val.startsWith('/'); } },
+    "Must be a valid URL"
+  ),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -53,6 +58,8 @@ export default function CategoriesList() {
 
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingId, setEditingId] = React.useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
@@ -112,6 +119,38 @@ export default function CategoriesList() {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${getApiBase()}/api/admin/images/upload`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: authHeader(),
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? 'Upload failed');
+      }
+
+      const result = (await response.json()) as { mediumUrl: string };
+      form.setValue('imageUrl', result.mediumUrl, { shouldValidate: true });
+      toast({ title: 'Image uploaded', description: 'Optimised AVIF variant generated.' });
+    } catch (err) {
+      toast({ title: 'Upload failed', description: err instanceof Error ? err.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const isSaving = createCategory.isPending || updateCategory.isPending;
 
   return (
@@ -161,13 +200,45 @@ export default function CategoriesList() {
                     </FormItem>
                   )}
                 />
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif,image/heic,image/heif,image/gif"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
                 <FormField
                   control={form.control}
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl><Input {...field} placeholder="https://..." /></FormControl>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <FormLabel className="mb-0">Image</FormLabel>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={isUploading}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {isUploading
+                            ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            : <Upload className="w-3.5 h-3.5 mr-1.5" />}
+                          {isUploading ? 'Processing…' : 'Upload file'}
+                        </Button>
+                      </div>
+                      <FormControl><Input {...field} placeholder="https://... or upload a file above" /></FormControl>
+                      {field.value && (
+                        <div className="mt-2 rounded-lg border border-border p-2 bg-muted/30 max-w-xs">
+                          <img src={resolveMediaUrl(field.value)} alt="Preview" className="w-full h-auto rounded-md" onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }} />
+                        </div>
+                      )}
+                      <FormDescription>
+                        Upload a file (converted to AVIF automatically) or paste a URL directly.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

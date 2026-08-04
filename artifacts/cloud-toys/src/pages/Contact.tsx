@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { PageTransition } from '../components/ui/PageTransition';
 import { useToast } from '@/hooks/use-toast';
+import { useContactInfo } from '@/hooks/useContactInfo';
 import { Mail, MapPin, Phone } from 'lucide-react';
 
 export function Contact() {
   const { toast } = useToast();
+  const contact = useContactInfo();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -41,7 +43,7 @@ export function Contact() {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Email us</h3>
-                  <p className="text-muted-foreground">hello@cloudtoys.com</p>
+                  <p className="text-muted-foreground">{contact.email}</p>
                   <p className="text-sm text-muted-foreground mt-1">We aim to respond within 24 hours.</p>
                 </div>
               </div>
@@ -52,7 +54,7 @@ export function Contact() {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Call us</h3>
-                  <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                  <p className="text-muted-foreground">{contact.phone}</p>
                   <p className="text-sm text-muted-foreground mt-1">Mon-Fri, 9am to 5pm EST</p>
                 </div>
               </div>
@@ -63,7 +65,7 @@ export function Contact() {
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Studio</h3>
-                  <p className="text-muted-foreground">123 Design Avenue<br/>Brooklyn, NY 11201</p>
+                  <p className="text-muted-foreground">{contact.address}</p>
                 </div>
               </div>
             </div>

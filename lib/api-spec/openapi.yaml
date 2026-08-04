@@ -816,3 +816,4 @@ components:
       required: [status]
       properties:
         status: { type: string }
+        estimatedDelivery: { type: string }

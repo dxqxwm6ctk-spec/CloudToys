@@ -8,4 +8,5 @@
 
 export interface OrderStatusUpdate {
   status: string;
+  estimatedDelivery?: string;
 }

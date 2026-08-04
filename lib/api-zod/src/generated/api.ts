@@ -549,7 +549,8 @@ export const AdminUpdateOrderStatusParams = zod.object({
 })
 
 export const AdminUpdateOrderStatusBody = zod.object({
-  "status": zod.string()
+  "status": zod.string(),
+  "estimatedDelivery": zod.string().optional()
 })
 
 export const AdminUpdateOrderStatusResponse = zod.object({

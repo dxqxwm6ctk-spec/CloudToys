@@ -5,6 +5,7 @@ import {
   categoriesTable,
   productsTable,
   reviewsTable,
+  adminSettingsTable,
 } from "@workspace/db";
 import {
   ListCategoriesResponse,
@@ -71,6 +72,31 @@ function toProductDto(
     badge: (row.badge || null) as "new" | "bestseller" | "sale" | null,
   };
 }
+
+// ── Public site settings (contact info) ────────────────────────────────────
+
+const CONTACT_INFO_KEY = "contact_info";
+const DEFAULT_CONTACT_INFO = {
+  email: "Alhasanfarg3@gmail.com",
+  phone: "+962770600234",
+  address: "Amman, Jordan",
+};
+
+router.get("/settings/contact", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, CONTACT_INFO_KEY));
+  if (!row) {
+    res.json(DEFAULT_CONTACT_INFO);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_CONTACT_INFO, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_CONTACT_INFO);
+  }
+});
 
 router.get("/categories", async (req, res): Promise<void> => {
   req.log.info("Listing categories");
