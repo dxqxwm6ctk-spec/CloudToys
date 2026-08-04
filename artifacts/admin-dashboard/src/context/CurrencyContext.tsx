@@ -1,28 +1,56 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { formatUSD, formatJOD } from '@/lib/currency';
+import { getApiBase } from '@/lib/api-url';
+import { authHeader } from '@/lib/auth-token';
 
 export type CurrencyMode = 'USD' | 'JOD';
 
 interface CurrencyContextValue {
   mode: CurrencyMode;
   setMode: (mode: CurrencyMode) => void;
-  /** Renders a price according to the current mode */
   renderPrice: (usdAmount: number) => React.ReactNode;
 }
 
 const CurrencyContext = createContext<CurrencyContextValue | null>(null);
 
-const STORAGE_KEY = 'admin-currency-mode';
+async function fetchCurrencyMode(): Promise<CurrencyMode> {
+  try {
+    const res = await fetch(`${getApiBase()}/api/admin/settings/currency`, {
+      credentials: 'include',
+      headers: { ...authHeader() },
+    });
+    if (!res.ok) return 'USD';
+    const data = await res.json();
+    return data.value === 'JOD' ? 'JOD' : 'USD';
+  } catch {
+    return 'USD';
+  }
+}
+
+async function saveCurrencyMode(mode: CurrencyMode): Promise<void> {
+  try {
+    await fetch(`${getApiBase()}/api/admin/settings/currency`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...authHeader() },
+      body: JSON.stringify({ value: mode }),
+    });
+  } catch {
+    // best-effort
+  }
+}
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<CurrencyMode>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'JOD' ? 'JOD' : 'USD';
-  });
+  const [mode, setModeState] = useState<CurrencyMode>('USD');
+
+  // Load preference from DB on mount
+  useEffect(() => {
+    fetchCurrencyMode().then(setModeState);
+  }, []);
 
   const setMode = (next: CurrencyMode) => {
     setModeState(next);
-    localStorage.setItem(STORAGE_KEY, next);
+    saveCurrencyMode(next);
   };
 
   const renderPrice = (usdAmount: number): React.ReactNode => {

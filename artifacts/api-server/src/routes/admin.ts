@@ -7,6 +7,7 @@ import {
   reviewsTable,
   ordersTable,
   paymentMethodsTable,
+  adminSettingsTable,
   type OrderTrackingStep,
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
@@ -701,6 +702,34 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
       createdAt: updated.createdAt?.toISOString() ?? null,
     }),
   );
+});
+
+// ── Admin Settings (currency mode) ────────────────────────────────────────
+
+const CURRENCY_KEY = "currency_mode";
+
+router.get("/admin/settings/currency", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, CURRENCY_KEY));
+  res.json({ value: row?.value ?? "USD" });
+});
+
+router.put("/admin/settings/currency", async (req, res): Promise<void> => {
+  const parsed = z.object({ value: z.enum(["USD", "JOD"]) }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  await db
+    .insert(adminSettingsTable)
+    .values({ key: CURRENCY_KEY, value: parsed.data.value })
+    .onConflictDoUpdate({
+      target: adminSettingsTable.key,
+      set: { value: parsed.data.value },
+    });
+  res.json({ value: parsed.data.value });
 });
 
 // ── Payment Methods (admin) ────────────────────────────────────────────────
