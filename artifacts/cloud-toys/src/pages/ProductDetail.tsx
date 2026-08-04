@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRoute } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { useGetProduct } from '@workspace/api-client-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
-import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatJOD } from '../lib/currency';
 import { motion } from 'framer-motion';
 import { ProductPicture } from '../components/ui/ProductPicture';
@@ -21,6 +21,7 @@ export function ProductDetail() {
 
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   if (isLoading) {
     return (
@@ -49,6 +50,25 @@ export function ProductDetail() {
 
   const isWishlisted = isInWishlist(product.id);
   const gallery = [product.imageUrl, ...(product.galleryUrls || [])];
+
+  const showPrevImage = () => setActiveImage((i) => (i > 0 ? i - 1 : gallery.length - 1));
+  const showNextImage = () => setActiveImage((i) => (i < gallery.length - 1 ? i + 1 : 0));
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const SWIPE_THRESHOLD = 50;
+    if (deltaX < -SWIPE_THRESHOLD) {
+      showNextImage();
+    } else if (deltaX > SWIPE_THRESHOLD) {
+      showPrevImage();
+    }
+    touchStartX.current = null;
+  };
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -79,7 +99,11 @@ export function ProductDetail() {
           
           {/* Gallery */}
           <div className="space-y-4">
-            <div className="aspect-square bg-secondary rounded-3xl overflow-hidden relative">
+            <div
+              className="aspect-square bg-secondary rounded-3xl overflow-hidden relative touch-pan-y"
+              onTouchStart={gallery.length > 1 ? handleTouchStart : undefined}
+              onTouchEnd={gallery.length > 1 ? handleTouchEnd : undefined}
+            >
               <ProductPicture
                 key={activeImage}
                 initial={{ opacity: 0 }}
@@ -94,7 +118,7 @@ export function ProductDetail() {
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 alt={product.imageAlt ?? product.name}
                 lqip={activeImage === 0 ? product.lqip : undefined}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover select-none"
               />
               {product.badge && (
                 <div className="absolute top-6 left-6">
@@ -102,6 +126,32 @@ export function ProductDetail() {
                     {product.badge}
                   </span>
                 </div>
+              )}
+              {gallery.length > 1 && (
+                <>
+                  <button
+                    onClick={showPrevImage}
+                    aria-label="Previous image"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-foreground flex items-center justify-center shadow-md backdrop-blur-sm transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={showNextImage}
+                    aria-label="Next image"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/80 hover:bg-white text-foreground flex items-center justify-center shadow-md backdrop-blur-sm transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                    {gallery.map((_, idx) => (
+                      <span
+                        key={idx}
+                        className={`h-1.5 rounded-full transition-all ${activeImage === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
             {gallery.length > 1 && (
