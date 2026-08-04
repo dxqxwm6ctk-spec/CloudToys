@@ -16,14 +16,14 @@ export interface PendingOrderItem {
 
 export interface PendingOrder {
   customerName: string;
-  customerEmail: string;
+  customerPhone: string;
   paymentMethodKey: string;
   shippingAddress: string;
   items: PendingOrderItem[];
   // Form fields needed to redisplay the checkout page if auto-submit fails
   // (e.g. an item went out of stock while the customer was signing in).
   form: {
-    email: string;
+    phone: string;
     firstName: string;
     lastName: string;
     address: string;

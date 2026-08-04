@@ -224,7 +224,7 @@ export const ListPaymentMethodsResponse = zod.array(ListPaymentMethodsResponseIt
  */
 export const CreateOrderBody = zod.object({
   "customerName": zod.string(),
-  "customerEmail": zod.string(),
+  "customerPhone": zod.string(),
   "paymentMethodKey": zod.string(),
   "shippingAddress": zod.string().optional(),
   "items": zod.array(zod.object({
@@ -518,7 +518,7 @@ export const AdminListOrdersResponse = zod.object({
   "status": zod.string(),
   "estimatedDelivery": zod.string(),
   "customerName": zod.string().nullish(),
-  "customerEmail": zod.string().nullish(),
+  "customerPhone": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
   "total": zod.number().nullish(),
@@ -559,14 +559,22 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   "status": zod.string(),
   "estimatedDelivery": zod.string(),
   "customerName": zod.string().nullish(),
-  "customerEmail": zod.string().nullish(),
+  "customerPhone": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
+  "shippingAddress": zod.string().nullish(),
+  "total": zod.number().nullish(),
   "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({
   "label": zod.string(),
   "completed": zod.boolean(),
   "date": zod.string().nullable()
-}))
+})),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "price": zod.number()
+})).nullish()
 })
 
 

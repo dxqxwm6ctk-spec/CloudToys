@@ -30,7 +30,7 @@ import {
   AlertCircle,
   Eye,
   User,
-  Mail,
+  Phone,
   CreditCard,
   MapPin,
   Calendar,
@@ -318,10 +318,10 @@ export default function OrdersList() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
-                        <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
                         <div>
-                          <span className="text-muted-foreground">Email: </span>
-                          <span className="font-medium break-all">{selectedOrder.customerEmail ?? '—'}</span>
+                          <span className="text-muted-foreground">Phone: </span>
+                          <span className="font-medium break-all" dir="ltr">{selectedOrder.customerPhone ?? '—'}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-sm">

@@ -9,7 +9,7 @@ import type { OrderItem } from './orderItem';
 
 export interface CreateOrderInput {
   customerName: string;
-  customerEmail: string;
+  customerPhone: string;
   paymentMethodKey: string;
   shippingAddress?: string;
   items: OrderItem[];

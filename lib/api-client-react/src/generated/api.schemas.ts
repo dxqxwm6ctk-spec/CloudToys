@@ -109,16 +109,16 @@ export interface PaymentMethodUpdate {
   enabled: boolean;
 }
 
-export type OrderItem = {
+export interface OrderItem {
   productId: string;
   name: string;
   quantity: number;
   price: number;
-};
+}
 
 export interface CreateOrderInput {
   customerName: string;
-  customerEmail: string;
+  customerPhone: string;
   paymentMethodKey: string;
   shippingAddress?: string;
   items: OrderItem[];
@@ -246,7 +246,7 @@ export interface AdminOrder {
   /** @nullable */
   customerName?: string | null;
   /** @nullable */
-  customerEmail?: string | null;
+  customerPhone?: string | null;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */

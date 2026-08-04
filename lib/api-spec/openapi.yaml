@@ -638,10 +638,10 @@ components:
 
     CreateOrderInput:
       type: object
-      required: [customerName, customerEmail, paymentMethodKey, items]
+      required: [customerName, customerPhone, paymentMethodKey, items]
       properties:
         customerName: { type: string }
-        customerEmail: { type: string }
+        customerPhone: { type: string }
         paymentMethodKey: { type: string }
         shippingAddress: { type: string }
         items:
@@ -785,7 +785,7 @@ components:
         status: { type: string }
         estimatedDelivery: { type: string }
         customerName: { type: ["string", "null"] }
-        customerEmail: { type: ["string", "null"] }
+        customerPhone: { type: ["string", "null"] }
         paymentMethod: { type: ["string", "null"] }
         shippingAddress: { type: ["string", "null"] }
         total: { type: ["number", "null"] }

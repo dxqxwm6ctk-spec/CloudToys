@@ -93,7 +93,7 @@ Cloud Toys is a premium toy store with: full product catalog with search/filter/
 - Admin API: `GET /api/admin/settings/payment-methods`, `PUT /api/admin/settings/payment-methods/:id`
 
 ## Order Tracking
-- Orders are now persisted via `POST /api/orders` (called from Checkout) — stores customerName, customerEmail, paymentMethod, steps
+- Orders are now persisted via `POST /api/orders` (called from Checkout) — stores customerName, customerPhone (Jordanian mobile, validated both client- and server-side), paymentMethod, steps
 - Admin updates status at `PUT /api/admin/orders/:id/status` — automatically advances the 5 tracking steps (Order Placed → Payment Confirmed → Shipped → Out for Delivery → Delivered)
 - Customer tracks order at `/track-order?number=ORD-...` — reads live from DB
 - Order statuses: `processing`, `shipped`, `out_for_delivery`, `delivered`, `cancelled`

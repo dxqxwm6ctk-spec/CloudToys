@@ -5,8 +5,8 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import type { OrderTrackingStep } from './orderTrackingStep';
 import type { OrderItem } from './orderItem';
+import type { OrderTrackingStep } from './orderTrackingStep';
 
 export interface AdminOrder {
   id: string;
@@ -16,7 +16,7 @@ export interface AdminOrder {
   /** @nullable */
   customerName?: string | null;
   /** @nullable */
-  customerEmail?: string | null;
+  customerPhone?: string | null;
   /** @nullable */
   paymentMethod?: string | null;
   /** @nullable */

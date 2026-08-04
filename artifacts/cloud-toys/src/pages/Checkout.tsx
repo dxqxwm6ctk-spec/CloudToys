@@ -16,6 +16,7 @@ import {
   type PendingOrder,
 } from '../lib/pendingOrder';
 import { parseShippingAddress } from '../lib/parseShippingAddress';
+import { isValidJordanPhone, normalizePhoneInput } from '../lib/phone';
 
 import { getApiBase } from '../lib/api-url';
 const BASE = getApiBase();
@@ -53,7 +54,9 @@ export function Checkout() {
   const hasPrefilledRef = useRef(false);
 
   // Shipping form state
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const phoneValid = isValidJordanPhone(phone);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
@@ -106,7 +109,8 @@ export function Checkout() {
 
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!governorate || !area) return;
+    setPhoneTouched(true);
+    if (!governorate || !area || !phoneValid) return;
     setStep(2);
     window.scrollTo(0, 0);
   };
@@ -114,7 +118,7 @@ export function Checkout() {
   /** Restore checkout form fields from a saved pending order (used when
    *  resuming after a "Sign in with Google" redirect). */
   const restoreFormFromPendingOrder = (pending: PendingOrder) => {
-    setEmail(pending.form.email);
+    setPhone(pending.form.phone);
     setFirstName(pending.form.firstName);
     setLastName(pending.form.lastName);
     setAddress(pending.form.address);
@@ -142,7 +146,7 @@ export function Checkout() {
         },
         body: JSON.stringify({
           customerName: order.customerName,
-          customerEmail: order.customerEmail,
+          customerPhone: order.customerPhone,
           paymentMethodKey: order.paymentMethodKey,
           shippingAddress: order.shippingAddress,
           items: order.items,
@@ -209,7 +213,7 @@ export function Checkout() {
         if (!res.ok) return;
         const last = await res.json() as {
           customerName: string | null;
-          customerEmail: string | null;
+          customerPhone: string | null;
           shippingAddress: string | null;
         } | null;
         if (!last) return;
@@ -219,7 +223,7 @@ export function Checkout() {
           setFirstName(first ?? '');
           setLastName(rest.join(' '));
         }
-        if (last.customerEmail) setEmail(last.customerEmail);
+        if (last.customerPhone) setPhone(last.customerPhone);
         if (last.shippingAddress) {
           const parsed = parseShippingAddress(last.shippingAddress);
           if (parsed) {
@@ -237,7 +241,7 @@ export function Checkout() {
 
   const buildOrderPayload = (): PendingOrder => ({
     customerName: `${firstName} ${lastName}`.trim(),
-    customerEmail: email,
+    customerPhone: normalizePhoneInput(phone),
     paymentMethodKey: selectedPayment,
     shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
     items: items.map(i => ({
@@ -246,7 +250,7 @@ export function Checkout() {
       quantity: i.quantity,
       price: i.price,
     })),
-    form: { email, firstName, lastName, address, governorate, area, selectedPayment },
+    form: { phone, firstName, lastName, address, governorate, area, selectedPayment },
   });
 
   const handlePaymentSubmit = async (e: React.FormEvent) => {
@@ -342,7 +346,28 @@ export function Checkout() {
                 <form onSubmit={handleShippingSubmit} className="space-y-6">
                   <div className="space-y-4">
                     <h3 className="font-medium text-lg">Contact Details</h3>
-                    <input required type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-white border border-border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <div>
+                      <input
+                        required
+                        type="tel"
+                        inputMode="tel"
+                        placeholder="Phone number (07XXXXXXXX)"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        onBlur={() => setPhoneTouched(true)}
+                        dir="ltr"
+                        className={`w-full bg-white border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 ${
+                          phoneTouched && !phoneValid
+                            ? 'border-destructive focus:ring-destructive/20'
+                            : 'border-border focus:ring-primary/20'
+                        }`}
+                      />
+                      {phoneTouched && !phoneValid && (
+                        <p className="text-xs text-destructive mt-1.5">
+                          Enter a valid Jordanian mobile number, e.g. 0791234567
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-4 pt-6">
                     <h3 className="font-medium text-lg">Shipping Address</h3>
@@ -374,7 +399,7 @@ export function Checkout() {
                   <div className="pt-6">
                     <button
                       type="submit"
-                      disabled={!governorate || !area}
+                      disabled={!governorate || !area || !phoneValid}
                       className="w-full bg-primary text-primary-foreground h-14 rounded-full font-medium text-lg hover:bg-primary/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       Continue to Payment
@@ -395,7 +420,7 @@ export function Checkout() {
                 <div className="bg-secondary/30 rounded-2xl border border-border p-6 mb-8 text-sm">
                   <div className="flex justify-between pb-4 border-b border-border">
                     <span className="text-muted-foreground">Contact</span>
-                    <span>{email}</span>
+                    <span dir="ltr">{phone}</span>
                     <button onClick={() => setStep(1)} className="text-primary hover:underline">Change</button>
                   </div>
                   <div className="flex justify-between pt-4">

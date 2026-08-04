@@ -43,9 +43,11 @@ router.get("/orders/payment-methods", async (_req, res): Promise<void> => {
 });
 
 // ── Create order ───────────────────────────────────────────────────────────
+const JORDAN_PHONE_REGEX = /^(?:\+962|00962|0)?7[789]\d{7}$/;
+
 const CreateOrderBody = z.object({
   customerName: z.string().min(1),
-  customerEmail: z.string().email(),
+  customerPhone: z.string().regex(JORDAN_PHONE_REGEX, "Enter a valid Jordanian mobile number"),
   paymentMethodKey: z.string().min(1),
   shippingAddress: z.string().optional(),
   items: z.array(
@@ -65,7 +67,7 @@ router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
     return;
   }
 
-  const { customerName, customerEmail, paymentMethodKey, shippingAddress, items } =
+  const { customerName, customerPhone, paymentMethodKey, shippingAddress, items } =
     body.data;
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -163,7 +165,7 @@ router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
           estimatedDelivery,
           steps,
           customerName,
-          customerEmail,
+          customerPhone,
           userId: req.customer!.id,
           paymentMethod: pm.label,
           shippingAddress: shippingAddress ?? null,
@@ -196,7 +198,7 @@ router.get("/orders/last-shipping", requireCustomer, async (req, res): Promise<v
   const [order] = await db
     .select({
       customerName: ordersTable.customerName,
-      customerEmail: ordersTable.customerEmail,
+      customerPhone: ordersTable.customerPhone,
       shippingAddress: ordersTable.shippingAddress,
     })
     .from(ordersTable)
