@@ -112,9 +112,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = useCallback(async () => {
     setGoogleError(null);
+    // Fixed to the admin origin (not `window.location.href`, which would vary
+    // by path/query) so it can be registered as an exact entry in Supabase's
+    // Redirect URLs allow-list. If a redirectTo isn't in that allow-list,
+    // Supabase silently falls back to the project's Site URL instead of
+    // erroring — which is what sends admin logins to the storefront when the
+    // storefront happens to be the configured Site URL.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.href },
+      options: { redirectTo: window.location.origin },
     });
     if (error) setGoogleError(error.message);
     // On success the browser navigates away to Google — nothing else to do here.
