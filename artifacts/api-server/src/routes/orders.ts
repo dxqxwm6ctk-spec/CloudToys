@@ -1,8 +1,11 @@
 import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
-import { db, ordersTable, paymentMethodsTable, productsTable, adminSettingsTable } from "@workspace/db";
+import { db, ordersTable, paymentMethodsTable, productsTable, adminSettingsTable, profilesTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
+import { requireCustomer } from "../lib/supabaseAuth";
+import { verifyTurnstileToken } from "../lib/turnstile";
+import { buildSteps } from "../lib/orderStatus";
 
 const router: IRouter = Router();
 

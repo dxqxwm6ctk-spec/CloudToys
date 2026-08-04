@@ -1,4 +1,4 @@
-import { pgTable, text, serial, jsonb, numeric, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, jsonb, numeric, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -24,7 +24,11 @@ export const ordersTable = pgTable("orders", {
   // Customer info (nullable for legacy seed orders)
   customerName: text("customer_name"),
   customerEmail: text("customer_email"),
+  customerPhone: text("customer_phone"),
   paymentMethod: text("payment_method"),
+  // Links the order to the authenticated customer account (Supabase Auth
+  // user id). Null for orders placed before accounts existed.
+  userId: uuid("user_id"),
   // Line items + total as placed at checkout (nullable — orders created
   // before this field existed have no recorded item detail).
   items: jsonb("items").$type<OrderLineItem[]>(),

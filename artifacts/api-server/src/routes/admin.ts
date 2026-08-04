@@ -8,9 +8,9 @@ import {
   ordersTable,
   paymentMethodsTable,
   adminSettingsTable,
-  type OrderTrackingStep,
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
+import { buildSteps } from "../lib/orderStatus";
 import * as z from "zod";
 import {
   GetAdminStatsResponse,
@@ -39,58 +39,6 @@ import {
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
-
-// ── Order-steps helper ─────────────────────────────────────────────────────
-
-const STEP_LABELS = [
-  "Order Placed",
-  "Payment Confirmed",
-  "Shipped",
-  "Out for Delivery",
-  "Delivered",
-];
-
-const STATUS_STEP_COUNT: Record<string, number> = {
-  processing: 2,
-  shipped: 3,
-  out_for_delivery: 4,
-  delivered: 5,
-  cancelled: 0,
-};
-
-function buildSteps(
-  current: OrderTrackingStep[],
-  newStatus: string,
-): OrderTrackingStep[] {
-  const completedCount = STATUS_STEP_COUNT[newStatus] ?? 0;
-  const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-
-  if (newStatus === "cancelled") {
-    return STEP_LABELS.map((label, idx) => ({
-      label,
-      completed: false,
-      date: current[idx]?.date ?? null,
-    }));
-  }
-
-  return STEP_LABELS.map((label, idx) => {
-    const wasCompleted = current[idx]?.completed ?? false;
-    const shouldComplete = idx < completedCount;
-    return {
-      label,
-      completed: shouldComplete,
-      date: shouldComplete
-        ? wasCompleted
-          ? (current[idx]?.date ?? today)
-          : today
-        : null,
-    };
-  });
-}
 
 // ── Product helper ─────────────────────────────────────────────────────────
 

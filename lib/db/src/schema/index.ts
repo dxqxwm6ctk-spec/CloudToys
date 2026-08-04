@@ -24,3 +24,4 @@ export * from "./orders";
 export * from "./payment-methods";
 export * from "./admin-settings";
 export * from "./shipping-zones";
+export * from "./profiles";
