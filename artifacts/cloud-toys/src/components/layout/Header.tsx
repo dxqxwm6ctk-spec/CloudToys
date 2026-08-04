@@ -52,11 +52,22 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setLocation(`/shop?search=${encodeURIComponent(searchQuery)}`);
+      setLocation(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setSearchQuery('');
       setSearchOpen(false);
+      setMobileMenuOpen(false);
     }
   };
+
+  // Live search — navigate as the user types, without needing to press Enter.
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return;
+    const timeout = setTimeout(() => {
+      setLocation(`/shop?search=${encodeURIComponent(trimmed)}`, { replace: true });
+    }, 350);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, setLocation]);
 
   return (
     <>
