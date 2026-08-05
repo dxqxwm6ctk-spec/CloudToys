@@ -145,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ username, isLoading, googleError, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ username, role, isLoading, googleError, login, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );

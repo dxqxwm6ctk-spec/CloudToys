@@ -438,6 +438,88 @@ paths:
         "404":
           description: Category not found
 
+  /admin/staff:
+    get:
+      operationId: adminListStaff
+      tags: [admin]
+      summary: List all admin staff accounts (admin only)
+      responses:
+        "200":
+          description: List of staff accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminStaff"
+    post:
+      operationId: adminCreateStaff
+      tags: [admin]
+      summary: Create a new admin staff account (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStaffInput"
+      responses:
+        "201":
+          description: Created staff account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStaff"
+        "409":
+          description: Username already exists
+
+  /admin/staff/{id}:
+    patch:
+      operationId: adminUpdateStaff
+      tags: [admin]
+      summary: Update a staff account's role, active status, and/or password (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminStaffUpdate"
+      responses:
+        "200":
+          description: Updated staff account
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStaff"
+        "404":
+          description: Staff account not found
+    delete:
+      operationId: adminDeleteStaff
+      tags: [admin]
+      summary: Delete a staff account (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+        "404":
+          description: Staff account not found
+
   /admin/orders:
     get:
       operationId: adminListOrders
@@ -583,6 +665,29 @@ components:
         slug: { type: string }
         imageUrl: { type: string }
         productCount: { type: number }
+    AdminStaff:
+      type: object
+      required: [id, username, role, active, createdAt, lastLoginAt]
+      properties:
+        id: { type: string }
+        username: { type: string }
+        role: { type: string, enum: [admin, manager, supervisor] }
+        active: { type: boolean }
+        createdAt: { type: string }
+        lastLoginAt: { type: string, nullable: true }
+    AdminStaffInput:
+      type: object
+      required: [username, password, role]
+      properties:
+        username: { type: string, minLength: 3, maxLength: 100 }
+        password: { type: string, minLength: 8, maxLength: 200 }
+        role: { type: string, enum: [admin, manager, supervisor] }
+    AdminStaffUpdate:
+      type: object
+      properties:
+        role: { type: string, enum: [admin, manager, supervisor] }
+        active: { type: boolean }
+        password: { type: string, minLength: 8, maxLength: 200 }
     Product:
       type: object
       required:

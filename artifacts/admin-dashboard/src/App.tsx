@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -23,6 +24,7 @@ import ReturnPolicySettings from '@/pages/settings/returns';
 import WarrantyPolicySettings from '@/pages/settings/warranty';
 import UsersList from '@/pages/users/list';
 import SecurityDashboard from '@/pages/security/index';
+import StaffList from '@/pages/staff/list';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +40,12 @@ function EditProductRoute() {
   return <ProductForm id={params.id} isEdit />;
 }
 
+function AdminOnlyRoute({ component: Component }: { component: ComponentType }) {
+  const { role } = useAuth();
+  if (role !== 'admin') return <NotFound />;
+  return <Component />;
+}
+
 function Router() {
   return (
     <AdminLayout>
@@ -49,6 +57,7 @@ function Router() {
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />
         <Route path="/users" component={UsersList} />
+        <Route path="/staff">{() => <AdminOnlyRoute component={StaffList} />}</Route>
         <Route path="/security" component={SecurityDashboard} />
         <Route path="/newsletter" component={NewsletterList} />
         <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />

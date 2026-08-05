@@ -8,6 +8,7 @@
 
 export * from './adminDeleteCategory200';
 export * from './adminDeleteProduct200';
+export * from './adminDeleteStaff200';
 export * from './adminListOrdersParams';
 export * from './adminListProductsParams';
 export * from './adminNewsletterSubscriber';
@@ -15,6 +16,12 @@ export * from './adminOrder';
 export * from './adminOrderListResult';
 export * from './adminProduct';
 export * from './adminProductListResult';
+export * from './adminStaff';
+export * from './adminStaffInput';
+export * from './adminStaffInputRole';
+export * from './adminStaffRole';
+export * from './adminStaffUpdate';
+export * from './adminStaffUpdateRole';
 export * from './adminStats';
 export * from './category';
 export * from './categoryInput';

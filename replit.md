@@ -24,7 +24,7 @@ This project now runs directly inside Replit via the configured workflows (`arti
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/db run seed` — seed demo categories, products, reviews, and a sample order (idempotent — safe to re-run)
 - Required env: `DATABASE_URL` — Postgres connection string (auto-provisioned by Replit)
-- Required env for image uploads: `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` — Replit Object Storage (provisioned via the object-storage tool)
+- Required env for image uploads: `SUPABASE_SERVICE_ROLE_KEY` — Supabase Storage service_role secret key (Project Settings → API); images are stored in Supabase Storage, not Replit Object Storage
 - Required secrets for admin login: `ADMIN_USERNAME`, `ADMIN_PASSWORD` — single shared admin credential, checked with a constant-time comparison in `POST /api/admin/auth/login`
 - Required env for CORS in any multi-domain deployment: `ALLOWED_ORIGINS` — comma-separated list, e.g. `https://cloudtoys.com,https://admin.cloudtoys.com`. Unset = allow all origins (fine for local dev / Replit's same-origin preview proxy, unsafe for production on separate domains)
 - Required env for Google sign-in (customer storefront + admin): `SUPABASE_URL`, `SUPABASE_ANON_KEY` — read by both frontends (Vite `envPrefix` includes `SUPABASE_`, so no `VITE_` prefix needed) and by the API server. The Google provider itself must be enabled in the Supabase dashboard (Authentication → Providers → Google) with a Google Cloud OAuth Client ID/Secret — that's owned by the user, not configurable from here.

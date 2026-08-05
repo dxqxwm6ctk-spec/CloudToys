@@ -17,6 +17,66 @@ export interface Category {
   productCount: number;
 }
 
+export type AdminStaffRole = typeof AdminStaffRole[keyof typeof AdminStaffRole];
+
+
+export const AdminStaffRole = {
+  admin: 'admin',
+  manager: 'manager',
+  supervisor: 'supervisor',
+} as const;
+
+export interface AdminStaff {
+  id: string;
+  username: string;
+  role: AdminStaffRole;
+  active: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export type AdminStaffInputRole = typeof AdminStaffInputRole[keyof typeof AdminStaffInputRole];
+
+
+export const AdminStaffInputRole = {
+  admin: 'admin',
+  manager: 'manager',
+  supervisor: 'supervisor',
+} as const;
+
+export interface AdminStaffInput {
+  /**
+     * @minLength 3
+     * @maxLength 100
+     */
+  username: string;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  password: string;
+  role: AdminStaffInputRole;
+}
+
+export type AdminStaffUpdateRole = typeof AdminStaffUpdateRole[keyof typeof AdminStaffUpdateRole];
+
+
+export const AdminStaffUpdateRole = {
+  admin: 'admin',
+  manager: 'manager',
+  supervisor: 'supervisor',
+} as const;
+
+export interface AdminStaffUpdate {
+  role?: AdminStaffUpdateRole;
+  active?: boolean;
+  /**
+     * @minLength 8
+     * @maxLength 200
+     */
+  password?: string;
+}
+
 /**
  * @nullable
  */
@@ -331,6 +391,10 @@ export type AdminDeleteProduct200 = {
 };
 
 export type AdminDeleteCategory200 = {
+  success?: boolean;
+};
+
+export type AdminDeleteStaff200 = {
   success?: boolean;
 };
 

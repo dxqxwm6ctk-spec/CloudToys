@@ -534,6 +534,87 @@ export const AdminDeleteCategoryResponse = zod.object({
 
 
 /**
+ * @summary List all admin staff accounts (admin only)
+ */
+export const AdminListStaffResponseItem = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'manager', 'supervisor']),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "lastLoginAt": zod.string().nullable()
+})
+export const AdminListStaffResponse = zod.array(AdminListStaffResponseItem)
+
+
+/**
+ * @summary Create a new admin staff account (admin only)
+ */
+export const adminCreateStaffBodyUsernameMin = 3;
+export const adminCreateStaffBodyUsernameMax = 100;
+
+export const adminCreateStaffBodyPasswordMin = 8;
+export const adminCreateStaffBodyPasswordMax = 200;
+
+
+
+export const AdminCreateStaffBody = zod.object({
+  "username": zod.string().min(adminCreateStaffBodyUsernameMin).max(adminCreateStaffBodyUsernameMax),
+  "password": zod.string().min(adminCreateStaffBodyPasswordMin).max(adminCreateStaffBodyPasswordMax),
+  "role": zod.enum(['admin', 'manager', 'supervisor'])
+})
+
+export const AdminCreateStaffResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'manager', 'supervisor']),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "lastLoginAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Update a staff account's role, active status, and/or password (admin only)
+ */
+export const AdminUpdateStaffParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const adminUpdateStaffBodyPasswordMin = 8;
+export const adminUpdateStaffBodyPasswordMax = 200;
+
+
+
+export const AdminUpdateStaffBody = zod.object({
+  "role": zod.enum(['admin', 'manager', 'supervisor']).optional(),
+  "active": zod.boolean().optional(),
+  "password": zod.string().min(adminUpdateStaffBodyPasswordMin).max(adminUpdateStaffBodyPasswordMax).optional()
+})
+
+export const AdminUpdateStaffResponse = zod.object({
+  "id": zod.string(),
+  "username": zod.string(),
+  "role": zod.enum(['admin', 'manager', 'supervisor']),
+  "active": zod.boolean(),
+  "createdAt": zod.string(),
+  "lastLoginAt": zod.string().nullable()
+})
+
+
+/**
+ * @summary Delete a staff account (admin only)
+ */
+export const AdminDeleteStaffParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminDeleteStaffResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
+
+/**
  * @summary List all orders (admin view)
  */
 export const adminListOrdersQueryPageDefault = 1;
