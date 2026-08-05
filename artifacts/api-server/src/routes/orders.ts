@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { db, ordersTable, paymentMethodsTable, productsTable, adminSettingsTable, profilesTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
@@ -191,6 +191,35 @@ router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
     }
     throw err;
   }
+});
+
+// ── My orders (for the signed-in customer's "My Orders" page) ──────────────
+router.get("/orders/mine", requireCustomer, async (req, res): Promise<void> => {
+  const rows = await db
+    .select({
+      orderNumber: ordersTable.orderNumber,
+      status: ordersTable.status,
+      estimatedDelivery: ordersTable.estimatedDelivery,
+      createdAt: ordersTable.createdAt,
+      total: ordersTable.total,
+      items: ordersTable.items,
+    })
+    .from(ordersTable)
+    .where(eq(ordersTable.userId, req.customer!.id))
+    .orderBy(desc(ordersTable.createdAt));
+
+  res.json(
+    rows.map((order) => ({
+      orderNumber: order.orderNumber,
+      status: order.status,
+      estimatedDelivery: order.estimatedDelivery,
+      placedAt: order.createdAt ? order.createdAt.toISOString() : null,
+      total: order.total != null ? Number(order.total) : 0,
+      itemCount: Array.isArray(order.items)
+        ? (order.items as Array<{ quantity: number }>).reduce((sum, i) => sum + i.quantity, 0)
+        : 0,
+    })),
+  );
 });
 
 // ── Last shipping details (for pre-filling checkout on repeat orders) ──────

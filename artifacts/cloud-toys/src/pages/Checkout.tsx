@@ -7,6 +7,7 @@ import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { addOrderToHistory } from '../lib/orderHistory';
 import { formatJOD } from '../lib/currency';
+import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
 import { useShippingThreshold } from '../hooks/useStoreSettings';
 import { JORDAN_GOVERNORATES } from '../lib/jordan-locations';
 import { SearchableSelect } from '../components/ui/SearchableSelect';
@@ -293,7 +294,10 @@ export function Checkout() {
           <div className="bg-secondary/50 p-6 rounded-2xl border border-border w-full mb-10 text-left space-y-3">
             <div className="flex justify-between items-center pb-3 border-b border-border">
               <span className="text-muted-foreground">Order Number</span>
-              <span className="font-semibold text-lg font-mono">{orderNumber}</span>
+              <span className="flex items-center gap-1">
+                <span className="font-semibold text-lg font-mono">{orderNumber}</span>
+                <CopyOrderNumber orderNumber={orderNumber} />
+              </span>
             </div>
             {estimatedDelivery && (
               <div className="flex justify-between items-center pb-3 border-b border-border">

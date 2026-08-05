@@ -3,6 +3,7 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { useTrackOrder } from '@workspace/api-client-react';
 import { Search, Package, Truck, CheckCircle2 } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
 
 export function TrackOrder() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -71,7 +72,10 @@ export function TrackOrder() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Order Number</p>
-                <h2 className="text-2xl font-serif font-bold">{tracking.orderNumber}</h2>
+                <div className="flex items-center gap-1">
+                  <h2 className="text-2xl font-serif font-bold">{tracking.orderNumber}</h2>
+                  <CopyOrderNumber orderNumber={tracking.orderNumber} />
+                </div>
               </div>
               <div className="text-left md:text-right">
                 <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Estimated Delivery</p>

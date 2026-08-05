@@ -1,11 +1,24 @@
 import { PageTransition } from '../components/ui/PageTransition';
 import { useTrackOrder } from '@workspace/api-client-react';
+import { useQuery } from '@tanstack/react-query';
 import { User, Package, LogOut, Heart, ChevronRight } from 'lucide-react';
 import { Link } from 'wouter';
-import { getOrderHistory } from '../lib/orderHistory';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
+import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
+import { getApiBase } from '../lib/api-url';
 
 import { formatJOD } from '../lib/currency';
+
+const BASE = getApiBase();
+
+interface MyOrderEntry {
+  orderNumber: string;
+  status: string;
+  estimatedDelivery: string;
+  placedAt: string | null;
+  total: number;
+  itemCount: number;
+}
 
 function GoogleIcon() {
   return (
@@ -48,6 +61,7 @@ function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
+        <CopyOrderNumber orderNumber={orderNumber} />
         <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-secondary text-foreground capitalize">{statusLabel}</span>
         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
       </div>
@@ -56,9 +70,21 @@ function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string
 }
 
 export function Account() {
-  const { user, isLoading, signInWithGoogle, signOut } = useCustomerAuth();
+  const { user, isLoading, signInWithGoogle, signOut, getAccessToken } = useCustomerAuth();
 
-  const recentOrders = getOrderHistory().slice(0, 3);
+  const { data: myOrders } = useQuery<MyOrderEntry[]>({
+    queryKey: ['my-orders', user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const token = await getAccessToken();
+      const res = await fetch(`${BASE}/api/orders/mine`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Failed to load orders');
+      return res.json();
+    },
+  });
+  const recentOrders = (myOrders ?? []).slice(0, 3);
 
   const displayName =
     (user?.user_metadata?.full_name as string | undefined) ??
