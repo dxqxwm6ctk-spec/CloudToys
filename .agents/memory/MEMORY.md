@@ -6,3 +6,4 @@
 - [Drizzle schema push drift](drizzle-push-schema-drift.md) — external DB (Supabase) only gets schema changes via manual `drizzle-kit push`; "column does not exist" prod 500s often mean push was never re-run
 - [Cloud Toys currency model](cloud-toys-currency-model.md) — JOD is base currency, no conversion anywhere; per-product currency is a display label only
 - [Supabase RLS enablement](supabase-rls-security.md) — enabling RLS with no policies is safe when the app's own backend bypasses RLS as table owner and frontend Supabase clients only do Auth, not `.from()` queries
+- [Cloud Toys deployment architecture](cloud-toys-deployment-architecture.md) — Netlify admin uses a separate Heroku API, not this Repl's deploy
