@@ -21,6 +21,7 @@ import { Wishlist } from './pages/Wishlist';
 import { Account } from './pages/Account';
 import { TrackOrder } from './pages/TrackOrder';
 import { MyOrders } from './pages/MyOrders';
+import { Unsubscribe } from './pages/Unsubscribe';
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/account" component={Account} />
         <Route path="/orders" component={MyOrders} />
         <Route path="/track-order" component={TrackOrder} />
+        <Route path="/unsubscribe" component={Unsubscribe} />
         <Route component={NotFound} />
       </Switch>
     </Layout>

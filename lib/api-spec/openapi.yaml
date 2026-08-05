@@ -205,6 +205,27 @@ paths:
         "400":
           description: Invalid email
 
+  /newsletter/unsubscribe:
+    post:
+      operationId: unsubscribeNewsletter
+      tags: [orders]
+      summary: Remove an email from the newsletter (unsubscribe link)
+      parameters:
+        - name: email
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unsubscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterSubscribeResponse"
+        "400":
+          description: Invalid email
+
   /orders/{orderNumber}/track:
     get:
       operationId: trackOrder

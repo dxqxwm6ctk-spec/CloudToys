@@ -307,6 +307,10 @@ export const ListProductsSort = {
   newest: 'newest',
 } as const;
 
+export type UnsubscribeNewsletterParams = {
+email: string;
+};
+
 export type AdminListProductsParams = {
 search?: string;
 category?: string;

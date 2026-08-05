@@ -47,7 +47,8 @@ import type {
   ProductDetail,
   ProductInput,
   ProductListResult,
-  ProductUpdate
+  ProductUpdate,
+  UnsubscribeNewsletterParams
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -841,6 +842,84 @@ export const useSubscribeNewsletter = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getSubscribeNewsletterMutationOptions(options));
+    }
+
+export const getUnsubscribeNewsletterUrl = (params: UnsubscribeNewsletterParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/newsletter/unsubscribe?${stringifiedParams}` : `/api/newsletter/unsubscribe`
+}
+
+/**
+ * @summary Remove an email from the newsletter (unsubscribe link)
+ */
+export const unsubscribeNewsletter = async (params: UnsubscribeNewsletterParams, options?: Parameters<typeof customFetch>[1]): Promise<NewsletterSubscribeResponse> => {
+
+  return customFetch<NewsletterSubscribeResponse>(getUnsubscribeNewsletterUrl(params),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getUnsubscribeNewsletterMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeNewsletter>>, TError,{params: UnsubscribeNewsletterParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsubscribeNewsletter>>, TError,{params: UnsubscribeNewsletterParams}, TContext> => {
+
+const mutationKey = ['unsubscribeNewsletter'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsubscribeNewsletter>>, {params: UnsubscribeNewsletterParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  unsubscribeNewsletter(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsubscribeNewsletterMutationResult = NonNullable<Awaited<ReturnType<typeof unsubscribeNewsletter>>>
+
+    export type UnsubscribeNewsletterMutationError = ErrorType<void>
+
+    /**
+ * @summary Remove an email from the newsletter (unsubscribe link)
+ */
+export const useUnsubscribeNewsletter = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsubscribeNewsletter>>, TError,{params: UnsubscribeNewsletterParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsubscribeNewsletter>>,
+        TError,
+        {params: UnsubscribeNewsletterParams},
+        TContext
+      > => {
+      return useMutation(getUnsubscribeNewsletterMutationOptions(options));
     }
 
 export const getTrackOrderUrl = (orderNumber: string,) => {

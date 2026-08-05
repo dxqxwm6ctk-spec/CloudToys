@@ -39,3 +39,4 @@ export * from './productInput';
 export * from './productListResult';
 export * from './productUpdate';
 export * from './review';
+export * from './unsubscribeNewsletterParams';

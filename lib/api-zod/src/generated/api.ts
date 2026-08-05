@@ -254,6 +254,18 @@ export const SubscribeNewsletterResponse = zod.object({
 
 
 /**
+ * @summary Remove an email from the newsletter (unsubscribe link)
+ */
+export const UnsubscribeNewsletterQueryParams = zod.object({
+  "email": zod.coerce.string()
+})
+
+export const UnsubscribeNewsletterResponse = zod.object({
+  "email": zod.string()
+})
+
+
+/**
  * @summary Look up order tracking status by order number
  */
 export const TrackOrderParams = zod.object({
