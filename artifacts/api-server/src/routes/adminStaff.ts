@@ -15,11 +15,23 @@ function toStaffDto(row: typeof adminStaffTable.$inferSelect) {
   return {
     id: String(row.id),
     username: row.username,
+    email: row.email ?? null,
     role: row.role,
     active: row.active,
     createdAt: row.createdAt.toISOString(),
     lastLoginAt: row.lastLoginAt ? row.lastLoginAt.toISOString() : null,
   };
+}
+
+async function assertEmailAvailable(email: string, excludeId?: number): Promise<string | null> {
+  const [existing] = await db
+    .select({ id: adminStaffTable.id })
+    .from(adminStaffTable)
+    .where(sql`lower(${adminStaffTable.email}) = lower(${email})`);
+  if (existing && existing.id !== excludeId) {
+    return "A staff account with this Google email already exists";
+  }
+  return null;
 }
 
 // GET /admin/staff — list all staff accounts
@@ -32,6 +44,7 @@ const CreateStaffBody = z.object({
   username: z.string().trim().min(3).max(100),
   password: z.string().min(8).max(200),
   role: z.enum(adminRoles),
+  email: z.string().trim().toLowerCase().email().optional().or(z.literal("")),
 });
 
 // POST /admin/staff — create a new staff account
@@ -41,6 +54,7 @@ router.post("/admin/staff", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const email = parsed.data.email || undefined;
 
   const [existing] = await db
     .select({ id: adminStaffTable.id })
@@ -51,6 +65,14 @@ router.post("/admin/staff", async (req, res): Promise<void> => {
     return;
   }
 
+  if (email) {
+    const emailError = await assertEmailAvailable(email);
+    if (emailError) {
+      res.status(409).json({ error: emailError });
+      return;
+    }
+  }
+
   const [inserted] = await db
     .insert(adminStaffTable)
     .values({
@@ -58,6 +80,7 @@ router.post("/admin/staff", async (req, res): Promise<void> => {
       passwordHash: hashPassword(parsed.data.password),
       role: parsed.data.role,
       active: true,
+      email,
     })
     .returning();
 
@@ -69,6 +92,7 @@ const UpdateStaffBody = z.object({
   role: z.enum(adminRoles).optional(),
   active: z.boolean().optional(),
   password: z.string().min(8).max(200).optional(),
+  email: z.string().trim().toLowerCase().email().optional().or(z.literal("")),
 });
 
 // PATCH /admin/staff/:id — update role, active status, and/or password
@@ -83,10 +107,23 @@ router.patch("/admin/staff/:id", async (req, res): Promise<void> => {
     res.status(400).json({ error: body.error.message });
     return;
   }
-  const { role, active, password } = body.data;
-  if (role === undefined && active === undefined && password === undefined) {
+  const { role, active, password, email: rawEmail } = body.data;
+  if (
+    role === undefined &&
+    active === undefined &&
+    password === undefined &&
+    rawEmail === undefined
+  ) {
     res.status(400).json({ error: "No fields to update" });
     return;
+  }
+
+  if (rawEmail) {
+    const emailError = await assertEmailAvailable(rawEmail, params.data.id);
+    if (emailError) {
+      res.status(409).json({ error: emailError });
+      return;
+    }
   }
 
   // Prevent removing the last active admin — the dashboard would become
@@ -112,6 +149,7 @@ router.patch("/admin/staff/:id", async (req, res): Promise<void> => {
   if (role !== undefined) updates.role = role;
   if (active !== undefined) updates.active = active;
   if (password !== undefined) updates.passwordHash = hashPassword(password);
+  if (rawEmail !== undefined) updates.email = rawEmail || null;
 
   const [updated] = await db
     .update(adminStaffTable)

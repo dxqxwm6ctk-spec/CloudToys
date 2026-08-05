@@ -26,6 +26,13 @@ export const adminStaffTable = pgTable("admin_staff", {
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().$type<AdminRole>(),
   active: boolean("active").notNull().default(true),
+  /**
+   * Optional Google account email used to match "Sign in with Google" on
+   * the admin dashboard, independent of `username` (which can be any
+   * display name). Stored lowercase; nullable because password-only staff
+   * don't need one. See artifacts/api-server/src/routes/adminAuth.ts.
+   */
+  email: text("email").unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
 });

@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Loader2, KeyRound, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, Loader2, KeyRound, ShieldCheck, Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -60,6 +60,7 @@ const createStaffSchema = z.object({
   username: z.string().min(3, 'At least 3 characters').max(100),
   password: z.string().min(8, 'At least 8 characters').max(200),
   role: z.enum(['admin', 'manager', 'supervisor']),
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
 });
 type CreateStaffValues = z.infer<typeof createStaffSchema>;
 
@@ -67,6 +68,11 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8, 'At least 8 characters').max(200),
 });
 type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+
+const editEmailSchema = z.object({
+  email: z.string().email('Enter a valid email').optional().or(z.literal('')),
+});
+type EditEmailValues = z.infer<typeof editEmailSchema>;
 
 export default function StaffList() {
   const { username: currentUsername } = useAuth();
@@ -80,10 +86,11 @@ export default function StaffList() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [resetPasswordId, setResetPasswordId] = useState<string | null>(null);
+  const [editEmailId, setEditEmailId] = useState<string | null>(null);
 
   const createForm = useForm<CreateStaffValues>({
     resolver: zodResolver(createStaffSchema),
-    defaultValues: { username: '', password: '', role: 'manager' },
+    defaultValues: { username: '', password: '', role: 'manager', email: '' },
   });
 
   const resetForm = useForm<ResetPasswordValues>({
@@ -91,17 +98,22 @@ export default function StaffList() {
     defaultValues: { password: '' },
   });
 
+  const editEmailForm = useForm<EditEmailValues>({
+    resolver: zodResolver(editEmailSchema),
+    defaultValues: { email: '' },
+  });
+
   const invalidate = () =>
     queryClient.invalidateQueries({ queryKey: getAdminListStaffQueryKey() });
 
   const handleCreateNew = () => {
-    createForm.reset({ username: '', password: '', role: 'manager' });
+    createForm.reset({ username: '', password: '', role: 'manager', email: '' });
     setIsCreateOpen(true);
   };
 
   const onCreateSubmit = (data: CreateStaffValues) => {
     createStaff.mutate(
-      { data },
+      { data: { ...data, email: data.email || undefined } },
       {
         onSuccess: () => {
           toast({ title: 'Staff account created' });
@@ -160,6 +172,24 @@ export default function StaffList() {
         },
         onError: (err: any) => {
           const message = err?.response?.data?.error || 'Failed to reset password';
+          toast({ title: message, variant: 'destructive' });
+        },
+      },
+    );
+  };
+
+  const onEditEmailSubmit = (data: EditEmailValues) => {
+    if (!editEmailId) return;
+    updateStaff.mutate(
+      { id: editEmailId, data: { email: data.email || '' } },
+      {
+        onSuccess: () => {
+          toast({ title: data.email ? 'Google email saved' : 'Google email removed' });
+          invalidate();
+          setEditEmailId(null);
+        },
+        onError: (err: any) => {
+          const message = err?.response?.data?.error || 'Failed to update Google email';
           toast({ title: message, variant: 'destructive' });
         },
       },
@@ -258,6 +288,20 @@ export default function StaffList() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={createForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Google Email (optional)</FormLabel>
+                      <FormControl><Input {...field} type="email" placeholder="e.g. sara@gmail.com" autoComplete="off" /></FormControl>
+                      <FormDescription>
+                        Lets this person sign in with "Sign in with Google" using this address, instead of (or in addition to) the password above.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <DialogFooter className="pt-4">
                   <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
                   <Button type="submit" disabled={isSaving}>
@@ -276,6 +320,7 @@ export default function StaffList() {
           <TableHeader>
             <TableRow>
               <TableHead>Username</TableHead>
+              <TableHead>Google Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Last Login</TableHead>
@@ -287,6 +332,7 @@ export default function StaffList() {
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i} className="animate-pulse">
                   <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
+                  <TableCell><div className="h-4 bg-muted rounded w-32" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-24" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-16" /></TableCell>
                   <TableCell><div className="h-4 bg-muted rounded w-24" /></TableCell>
@@ -295,7 +341,7 @@ export default function StaffList() {
               ))
             ) : staff?.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
                   No staff accounts found.
                 </TableCell>
               </TableRow>
@@ -309,6 +355,23 @@ export default function StaffList() {
                         {s.username}
                         {isSelf && <span className="text-xs text-muted-foreground">(you)</span>}
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditEmailId(s.id);
+                          editEmailForm.reset({ email: s.email ?? '' });
+                        }}
+                        className="text-sm text-left hover:underline"
+                        title="Edit Google email"
+                      >
+                        {s.email ? (
+                          <span className="text-foreground">{s.email}</span>
+                        ) : (
+                          <span className="text-muted-foreground italic">Not set</span>
+                        )}
+                      </button>
                     </TableCell>
                     <TableCell>
                       <Select
@@ -343,6 +406,49 @@ export default function StaffList() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Dialog
+                          open={editEmailId === s.id}
+                          onOpenChange={(open) => {
+                            setEditEmailId(open ? s.id : null);
+                            editEmailForm.reset({ email: open ? (s.email ?? '') : '' });
+                          }}
+                        >
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="icon" title="Edit Google email">
+                              <Mail className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Google Sign-In Email</DialogTitle>
+                              <DialogDescription>
+                                Set the Google account email "{s.username}" can use to sign in with Google. Leave empty to disable Google sign-in for this account.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <Form {...editEmailForm}>
+                              <form onSubmit={editEmailForm.handleSubmit(onEditEmailSubmit)} className="space-y-4 py-4">
+                                <FormField
+                                  control={editEmailForm.control}
+                                  name="email"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Google Email</FormLabel>
+                                      <FormControl><Input {...field} type="email" placeholder="e.g. sara@gmail.com" autoComplete="off" /></FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                <DialogFooter className="pt-4">
+                                  <Button type="button" variant="outline" onClick={() => setEditEmailId(null)}>Cancel</Button>
+                                  <Button type="submit" disabled={updateStaff.isPending}>
+                                    {updateStaff.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                    Save
+                                  </Button>
+                                </DialogFooter>
+                              </form>
+                            </Form>
+                          </DialogContent>
+                        </Dialog>
                         <Dialog
                           open={resetPasswordId === s.id}
                           onOpenChange={(open) => {
@@ -413,6 +519,8 @@ export default function StaffList() {
           setting. <strong className="text-foreground">Manager</strong> handles day-to-day
           operations. <strong className="text-foreground">Supervisor</strong> has read-only
           access, aside from updating order status. There must always be at least one active admin.
+          Set a <strong className="text-foreground">Google Email</strong> on an account to let that
+          person sign in with "Sign in with Google" instead of a password.
         </p>
       </div>
     </div>

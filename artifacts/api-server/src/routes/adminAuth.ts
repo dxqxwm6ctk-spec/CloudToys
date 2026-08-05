@@ -131,16 +131,24 @@ router.post("/admin/auth/google", adminLoginRateLimit, async (req, res): Promise
   }
 
   const email = user.email;
+  // Preferred match: a staff account whose dedicated `email` field (set in
+  // staff management, independent of their display username) matches the
+  // Google account. Falls back to matching `username` directly for legacy
+  // rows created before the `email` column existed (e.g. the very first
+  // admin, or accounts auto-provisioned by the old allowlist-only flow).
   const [existingStaff] = await db
     .select()
     .from(adminStaffTable)
-    .where(sql`lower(${adminStaffTable.username}) = lower(${email})`);
+    .where(
+      sql`lower(${adminStaffTable.email}) = lower(${email}) OR lower(${adminStaffTable.username}) = lower(${email})`,
+    );
 
   if (existingStaff && !existingStaff.active) {
     res.status(403).json({ error: "This admin account has been disabled" });
     return;
   }
 
+  let username = existingStaff?.username;
   let role = existingStaff?.role;
   if (!role) {
     if (!allowedEmails.has(email.toLowerCase())) {
@@ -150,21 +158,28 @@ router.post("/admin/auth/google", adminLoginRateLimit, async (req, res): Promise
     }
     // Legacy allowlist entry with no staff row yet — provision one as
     // "admin" so it shows up in staff management going forward.
+    username = email;
     role = "admin";
     await db
       .insert(adminStaffTable)
-      .values({ username: email, passwordHash: hashPassword(randomUUID()), role, active: true })
+      .values({
+        username: email,
+        email,
+        passwordHash: hashPassword(randomUUID()),
+        role,
+        active: true,
+      })
       .onConflictDoNothing();
   }
 
-  const identity = { username: email, role };
+  const identity = { username: username!, role };
   res.cookie(ADMIN_COOKIE_NAME, encodeCookieIdentity(identity), ADMIN_COOKIE_OPTIONS);
   const token = createAdminToken(identity);
   await db
     .update(adminStaffTable)
     .set({ lastLoginAt: new Date() })
-    .where(sql`lower(${adminStaffTable.username}) = lower(${email})`);
-  res.json({ username: email, role, token });
+    .where(sql`lower(${adminStaffTable.username}) = lower(${username})`);
+  res.json({ username, role, token });
 });
 
 // POST /admin/auth/logout — public (clearing an absent/invalid cookie is a no-op)

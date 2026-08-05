@@ -539,6 +539,7 @@ export const AdminDeleteCategoryResponse = zod.object({
 export const AdminListStaffResponseItem = zod.object({
   "id": zod.string(),
   "username": zod.string(),
+  "email": zod.string().nullable().describe('Google account email used for \"Sign in with Google\" on the admin dashboard, independent of username.'),
   "role": zod.enum(['admin', 'manager', 'supervisor']),
   "active": zod.boolean(),
   "createdAt": zod.string(),
@@ -561,12 +562,14 @@ export const adminCreateStaffBodyPasswordMax = 200;
 export const AdminCreateStaffBody = zod.object({
   "username": zod.string().min(adminCreateStaffBodyUsernameMin).max(adminCreateStaffBodyUsernameMax),
   "password": zod.string().min(adminCreateStaffBodyPasswordMin).max(adminCreateStaffBodyPasswordMax),
-  "role": zod.enum(['admin', 'manager', 'supervisor'])
+  "role": zod.enum(['admin', 'manager', 'supervisor']),
+  "email": zod.string().optional().describe('Optional Google account email to enable \"Sign in with Google\" for this account.')
 })
 
 export const AdminCreateStaffResponse = zod.object({
   "id": zod.string(),
   "username": zod.string(),
+  "email": zod.string().nullable().describe('Google account email used for \"Sign in with Google\" on the admin dashboard, independent of username.'),
   "role": zod.enum(['admin', 'manager', 'supervisor']),
   "active": zod.boolean(),
   "createdAt": zod.string(),
@@ -589,12 +592,14 @@ export const adminUpdateStaffBodyPasswordMax = 200;
 export const AdminUpdateStaffBody = zod.object({
   "role": zod.enum(['admin', 'manager', 'supervisor']).optional(),
   "active": zod.boolean().optional(),
-  "password": zod.string().min(adminUpdateStaffBodyPasswordMin).max(adminUpdateStaffBodyPasswordMax).optional()
+  "password": zod.string().min(adminUpdateStaffBodyPasswordMin).max(adminUpdateStaffBodyPasswordMax).optional(),
+  "email": zod.string().optional().describe('Optional Google account email to enable \"Sign in with Google\" for this account.')
 })
 
 export const AdminUpdateStaffResponse = zod.object({
   "id": zod.string(),
   "username": zod.string(),
+  "email": zod.string().nullable().describe('Google account email used for \"Sign in with Google\" on the admin dashboard, independent of username.'),
   "role": zod.enum(['admin', 'manager', 'supervisor']),
   "active": zod.boolean(),
   "createdAt": zod.string(),

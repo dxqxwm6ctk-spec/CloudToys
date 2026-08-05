@@ -667,10 +667,14 @@ components:
         productCount: { type: number }
     AdminStaff:
       type: object
-      required: [id, username, role, active, createdAt, lastLoginAt]
+      required: [id, username, email, role, active, createdAt, lastLoginAt]
       properties:
         id: { type: string }
         username: { type: string }
+        email:
+          type: string
+          nullable: true
+          description: Google account email used for "Sign in with Google" on the admin dashboard, independent of username.
         role: { type: string, enum: [admin, manager, supervisor] }
         active: { type: boolean }
         createdAt: { type: string }
@@ -682,12 +686,18 @@ components:
         username: { type: string, minLength: 3, maxLength: 100 }
         password: { type: string, minLength: 8, maxLength: 200 }
         role: { type: string, enum: [admin, manager, supervisor] }
+        email:
+          type: string
+          description: Optional Google account email to enable "Sign in with Google" for this account.
     AdminStaffUpdate:
       type: object
       properties:
         role: { type: string, enum: [admin, manager, supervisor] }
         active: { type: boolean }
         password: { type: string, minLength: 8, maxLength: 200 }
+        email:
+          type: string
+          description: Optional Google account email to enable "Sign in with Google" for this account.
     Product:
       type: object
       required:

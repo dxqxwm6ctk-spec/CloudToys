@@ -29,6 +29,8 @@ export const AdminStaffRole = {
 export interface AdminStaff {
   id: string;
   username: string;
+  /** Google account email used for "Sign in with Google" on the admin dashboard, independent of username. */
+  email: string | null;
   role: AdminStaffRole;
   active: boolean;
   createdAt: string;
@@ -56,6 +58,8 @@ export interface AdminStaffInput {
      */
   password: string;
   role: AdminStaffInputRole;
+  /** Optional Google account email to enable "Sign in with Google" for this account. */
+  email?: string;
 }
 
 export type AdminStaffUpdateRole = typeof AdminStaffUpdateRole[keyof typeof AdminStaffUpdateRole];
@@ -75,6 +79,8 @@ export interface AdminStaffUpdate {
      * @maxLength 200
      */
   password?: string;
+  /** Optional Google account email to enable "Sign in with Google" for this account. */
+  email?: string;
 }
 
 /**

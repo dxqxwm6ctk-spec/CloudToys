@@ -19,4 +19,6 @@ export interface AdminStaffInput {
      */
   password: string;
   role: AdminStaffInputRole;
+  /** Optional Google account email to enable "Sign in with Google" for this account. */
+  email?: string;
 }

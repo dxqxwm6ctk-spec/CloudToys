@@ -15,4 +15,6 @@ export interface AdminStaffUpdate {
      * @maxLength 200
      */
   password?: string;
+  /** Optional Google account email to enable "Sign in with Google" for this account. */
+  email?: string;
 }

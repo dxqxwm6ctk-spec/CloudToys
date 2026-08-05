@@ -10,6 +10,8 @@ import type { AdminStaffRole } from './adminStaffRole';
 export interface AdminStaff {
   id: string;
   username: string;
+  /** Google account email used for "Sign in with Google" on the admin dashboard, independent of username. */
+  email: string | null;
   role: AdminStaffRole;
   active: boolean;
   createdAt: string;
