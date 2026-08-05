@@ -35,7 +35,7 @@ export const ordersTable = pgTable("orders", {
   total: numeric("total", { precision: 10, scale: 2 }),
   shippingAddress: text("shipping_address"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}).enableRLS();
 
 export const insertOrderSchema = createInsertSchema(ordersTable).omit({
   id: true,

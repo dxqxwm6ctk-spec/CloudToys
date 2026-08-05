@@ -8,7 +8,7 @@ export const paymentMethodsTable = pgTable("payment_methods", {
   label: text("label").notNull(),
   description: text("description"),
   enabled: boolean("enabled").notNull().default(true),
-});
+}).enableRLS();
 
 export const insertPaymentMethodSchema = createInsertSchema(
   paymentMethodsTable,

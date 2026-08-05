@@ -4,6 +4,6 @@ import { pgTable, text } from "drizzle-orm/pg-core";
 export const adminSettingsTable = pgTable("admin_settings", {
   key: text("key").primaryKey(),
   value: text("value").notNull(),
-});
+}).enableRLS();
 
 export type AdminSetting = typeof adminSettingsTable.$inferSelect;

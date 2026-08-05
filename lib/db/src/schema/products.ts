@@ -46,7 +46,7 @@ export const productsTable = pgTable("products", {
   // LQIP: tiny 20×20 WebP encoded as a base64 data URI — shown as blurred
   // placeholder while the full image loads (generated server-side on upload)
   lqip: text("lqip"),
-});
+}).enableRLS();
 
 export const insertProductSchema = createInsertSchema(productsTable).omit({
   id: true,

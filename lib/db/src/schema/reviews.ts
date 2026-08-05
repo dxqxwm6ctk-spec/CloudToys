@@ -12,7 +12,7 @@ export const reviewsTable = pgTable("reviews", {
   rating: numeric("rating", { precision: 2, scale: 1 }).notNull(),
   comment: text("comment").notNull(),
   date: timestamp("date", { withTimezone: true }).notNull().defaultNow(),
-});
+}).enableRLS();
 
 export const insertReviewSchema = createInsertSchema(reviewsTable).omit({
   id: true,

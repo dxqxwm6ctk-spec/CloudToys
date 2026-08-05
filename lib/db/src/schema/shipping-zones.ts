@@ -14,7 +14,7 @@ export const shippingZonesTable = pgTable("shipping_zones", {
   governorates: text("governorates").notNull().default(""),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   isDefault: boolean("is_default").notNull().default(false),
-});
+}).enableRLS();
 
 export const insertShippingZoneSchema = createInsertSchema(shippingZonesTable).omit({ id: true });
 export type InsertShippingZone = z.infer<typeof insertShippingZoneSchema>;
