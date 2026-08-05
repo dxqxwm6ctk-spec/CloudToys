@@ -74,25 +74,37 @@ export function Checkout() {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [loadingMethods, setLoadingMethods] = useState(false);
 
-  // Dynamic shipping price based on selected governorate
-  const [shippingPrice, setShippingPrice] = useState<number>(15);
+  // Dynamic shipping price based on selected governorate. Stays `null` (unknown)
+  // until a governorate is chosen and the lookup resolves — we never want to
+  // show a placeholder fee that doesn't match what the customer will actually
+  // be charged once they pick their area.
+  const [shippingPrice, setShippingPrice] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
 
   useEffect(() => {
-    if (!governorate) return;
+    if (!governorate) {
+      setShippingPrice(null);
+      return;
+    }
     setLoadingShipping(true);
+    setShippingPrice(null);
     fetch(`${BASE}/api/shipping/lookup?governorate=${governorate}`)
       .then((r) => r.json())
       .then((data: { price: number | null }) => {
-        if (data.price !== null) setShippingPrice(data.price);
+        setShippingPrice(data.price);
       })
       .catch(() => {})
       .finally(() => setLoadingShipping(false));
   }, [governorate]);
 
   const { amount: freeShippingThreshold } = useShippingThreshold();
-  const shipping = cartTotal >= freeShippingThreshold ? 0 : shippingPrice;
-  const total = cartTotal + shipping;
+  const isFreeShipping = cartTotal >= freeShippingThreshold;
+  // `null` means "not known yet" (no area picked, or still loading) — keep it
+  // distinct from 0 (genuinely free) so the UI can show a placeholder instead
+  // of a number the customer hasn't earned yet.
+  const shipping = isFreeShipping ? 0 : shippingPrice;
+  const shippingKnown = isFreeShipping || (shippingPrice !== null && !loadingShipping);
+  const total = cartTotal + (shipping ?? 0);
 
   // Load payment methods when entering payment step
   useEffect(() => {
@@ -249,7 +261,7 @@ export function Checkout() {
     paymentMethodKey: selectedPayment,
     shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
     governorate,
-    shippingFee: shipping,
+    shippingFee: shipping ?? 0,
     items: items.map(i => ({
       productId: String(i.id),
       name: i.name,
@@ -556,14 +568,21 @@ export function Checkout() {
                   <span className="text-muted-foreground">Shipping</span>
                   {loadingShipping ? (
                     <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : !shippingKnown ? (
+                    <span className="text-sm text-muted-foreground italic">Select your area</span>
                   ) : (
-                    <span className="font-medium">{shipping === 0 ? 'Free' : formatJOD(shipping)}</span>
+                    <span className="font-medium">{shipping === 0 ? 'Free' : formatJOD(shipping as number)}</span>
                   )}
                 </div>
               </div>
               <div className="flex justify-between items-start">
                 <span className="text-lg font-medium">Total</span>
-                <div className="text-right"><div className="text-3xl font-serif font-semibold">{formatJOD(total)}</div></div>
+                <div className="text-right">
+                  <div className="text-3xl font-serif font-semibold">{formatJOD(total)}</div>
+                  {!shippingKnown && (
+                    <div className="text-xs text-muted-foreground mt-1">+ shipping, based on your area</div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
