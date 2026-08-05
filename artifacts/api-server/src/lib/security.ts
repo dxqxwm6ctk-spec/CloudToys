@@ -29,6 +29,60 @@ export async function logSecurityEvent(
   } catch (err) {
     logger.error({ err, reason }, "Failed to record security event");
   }
+  void maybeAutoBlock(clientIp(req), reason);
+}
+
+// ── Auto-block repeat offenders ──────────────────────────────────────────────
+// Any rate limiter tripping repeatedly from the same IP within a short window
+// is treated as an active attack/abuse attempt rather than a one-off mistake,
+// and the IP is blocked automatically — an admin doesn't have to be watching
+// the Security page in real time to stop it.
+
+const RATE_LIMIT_REASONS = new Set([
+  "checkout_rate_limit",
+  "track_order_rate_limit",
+  "admin_login_rate_limit",
+  "global_rate_limit",
+]);
+const AUTO_BLOCK_THRESHOLD = 5;
+const AUTO_BLOCK_WINDOW_MS = 10 * 60_000;
+
+const tripCounts = new Map<string, { count: number; windowStart: number }>();
+
+// Never auto-block loopback/local addresses — seeing one usually means a
+// proxy in front of the app isn't forwarding the real client IP (so every
+// request looks like it comes from the same place), not a real attacker.
+// Blocking it would take down the whole site for everyone at once.
+const NEVER_BLOCK = new Set(["unknown", "127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+async function maybeAutoBlock(ip: string, reason: string): Promise<void> {
+  if (!RATE_LIMIT_REASONS.has(reason) || NEVER_BLOCK.has(ip)) return;
+
+  const now = Date.now();
+  const entry = tripCounts.get(ip);
+  if (!entry || now - entry.windowStart > AUTO_BLOCK_WINDOW_MS) {
+    tripCounts.set(ip, { count: 1, windowStart: now });
+    return;
+  }
+  entry.count += 1;
+  if (entry.count < AUTO_BLOCK_THRESHOLD) return;
+
+  tripCounts.delete(ip);
+  if (blockedIpCache.has(ip)) return; // already blocked, nothing to do
+
+  try {
+    await db
+      .insert(blockedIpsTable)
+      .values({
+        ip,
+        reason: `Auto-blocked: ${entry.count} rate-limit hits in ${Math.round(AUTO_BLOCK_WINDOW_MS / 60_000)} minutes (${reason})`,
+      })
+      .onConflictDoNothing();
+    await invalidateBlockedIpCache();
+    logger.warn({ ip, reason, count: entry.count }, "Auto-blocked IP after repeated rate-limit hits");
+  } catch (err) {
+    logger.error({ err, ip, reason }, "Failed to auto-block IP");
+  }
 }
 
 // ── Blocked-IP enforcement ──────────────────────────────────────────────────

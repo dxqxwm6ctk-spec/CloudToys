@@ -12,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldAlert, Ban, Trash2 } from 'lucide-react';
+import { Loader2, ShieldAlert, Ban, Trash2, X } from 'lucide-react';
 import { getApiBase } from '@/lib/api-url';
 import { authHeader } from '@/lib/auth-token';
 
@@ -40,10 +41,26 @@ const REASON_LABELS: Record<string, string> = {
   checkout_rate_limit: 'Too many checkout attempts',
   track_order_rate_limit: 'Too many order lookups',
   admin_login_rate_limit: 'Too many admin login attempts',
+  global_rate_limit: 'General request flood',
 };
 
-async function fetchEvents(): Promise<SecurityEvent[]> {
-  const res = await fetch(`${BASE}/api/admin/security/events`, { credentials: 'include', headers: authHeader() });
+const EMPTY_FILTERS: EventFilters = { ip: '', reason: '', from: '', to: '' };
+
+interface EventFilters {
+  ip: string;
+  reason: string;
+  from: string;
+  to: string;
+}
+
+async function fetchEvents(filters: EventFilters): Promise<SecurityEvent[]> {
+  const params = new URLSearchParams();
+  if (filters.ip.trim()) params.set('ip', filters.ip.trim());
+  if (filters.reason) params.set('reason', filters.reason);
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  const qs = params.toString();
+  const res = await fetch(`${BASE}/api/admin/security/events${qs ? `?${qs}` : ''}`, { credentials: 'include', headers: authHeader() });
   if (!res.ok) throw new Error('Failed to load');
   return res.json();
 }
@@ -82,10 +99,12 @@ export default function SecurityDashboard() {
   const queryClient = useQueryClient();
   const [manualIp, setManualIp] = useState('');
   const [manualReason, setManualReason] = useState('');
+  const [filters, setFilters] = useState<EventFilters>(EMPTY_FILTERS);
+  const hasActiveFilters = !!(filters.ip || filters.reason || filters.from || filters.to);
 
   const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ['admin', 'security', 'events'],
-    queryFn: fetchEvents,
+    queryKey: ['admin', 'security', 'events', filters],
+    queryFn: () => fetchEvents(filters),
     refetchInterval: 30_000,
   });
 
@@ -179,13 +198,59 @@ export default function SecurityDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Recent suspicious activity</CardTitle>
-          <CardDescription>Last 200 rate-limited or blocked requests, most recent first.</CardDescription>
+          <CardDescription>
+            Last 200 matching rate-limited or blocked requests, most recent first. Filter to investigate a
+            specific IP or incident.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3 px-6 pb-4">
+            <Input
+              placeholder="Filter by IP…"
+              value={filters.ip}
+              onChange={(e) => setFilters((f) => ({ ...f, ip: e.target.value }))}
+              className="sm:max-w-[200px]"
+            />
+            <Select
+              value={filters.reason || 'all'}
+              onValueChange={(v) => setFilters((f) => ({ ...f, reason: v === 'all' ? '' : v }))}
+            >
+              <SelectTrigger className="sm:max-w-[220px]">
+                <SelectValue placeholder="All event types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All event types</SelectItem>
+                {Object.entries(REASON_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="date"
+              value={filters.from}
+              onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
+              className="sm:max-w-[160px]"
+              aria-label="From date"
+            />
+            <Input
+              type="date"
+              value={filters.to}
+              onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
+              className="sm:max-w-[160px]"
+              aria-label="To date"
+            />
+            {hasActiveFilters && (
+              <Button variant="ghost" size="sm" onClick={() => setFilters(EMPTY_FILTERS)}>
+                <X className="w-3.5 h-3.5 mr-1.5" /> Clear filters
+              </Button>
+            )}
+          </div>
           {eventsLoading ? (
             <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
           ) : !events || events.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No suspicious activity recorded yet.</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              {hasActiveFilters ? 'No activity matches these filters.' : 'No suspicious activity recorded yet.'}
+            </p>
           ) : (
             <Table>
               <TableHeader>
