@@ -1,4 +1,4 @@
-import type { CookieOptions } from "express";
+import type { CookieOptions, Request } from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const ADMIN_COOKIE_NAME = "admin_session";
@@ -35,6 +35,24 @@ export function createAdminToken(username: string): string {
  * username if the signature is valid and the token has not expired,
  * otherwise null.
  */
+/**
+ * Whether this request is a genuinely authenticated admin request (valid
+ * bearer token or signed session cookie) — as opposed to just hitting an
+ * `/admin` URL. Used to exempt real admin traffic from anti-abuse controls
+ * (like the blanket global rate limiter) meant for anonymous/public
+ * traffic, so normal dashboard usage never reads as suspicious activity.
+ */
+export function isVerifiedAdminRequest(req: Request): boolean {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    return verifyAdminToken(authHeader.slice("Bearer ".length)) !== null;
+  }
+  const value = (req as Request & { signedCookies?: Record<string, unknown> }).signedCookies?.[
+    ADMIN_COOKIE_NAME
+  ];
+  return typeof value === "string" && value.length > 0;
+}
+
 export function verifyAdminToken(token: string): string | null {
   const secret = process.env.SESSION_SECRET;
   if (!secret) return null;

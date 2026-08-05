@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { db, securityEventsTable, blockedIpsTable } from "@workspace/db";
 import { logger } from "./logger";
+import { trackAndMaybeAlert } from "./emailAlerts";
+import { isVerifiedAdminRequest } from "./adminAuth";
 
 /** Best-effort real client IP, correct behind Heroku's single reverse proxy (see app.ts `trust proxy`). */
 export function clientIp(req: Request): string {
@@ -17,19 +19,28 @@ export async function logSecurityEvent(
   req: Request,
   reason: string,
 ): Promise<void> {
+  const ip = clientIp(req);
+  const method = req.method;
+  const path = req.originalUrl?.split("?")[0] ?? req.path;
+  const email = req.customer?.email ?? null;
+
   try {
     await db.insert(securityEventsTable).values({
-      ip: clientIp(req),
-      method: req.method,
-      path: req.originalUrl?.split("?")[0] ?? req.path,
+      ip,
+      method,
+      path,
       reason,
       userId: req.customer?.id ?? null,
-      email: req.customer?.email ?? null,
+      email,
     });
   } catch (err) {
     logger.error({ err, reason }, "Failed to record security event");
   }
-  void maybeAutoBlock(clientIp(req), reason);
+
+  // Await auto-block first so the alert email (if any) can accurately report
+  // whether this trip already got the IP blocked.
+  await maybeAutoBlock(ip, reason);
+  void trackAndMaybeAlert({ ip, method, path, email, isBlocked: blockedIpCache.has(ip) });
 }
 
 // ── Auto-block repeat offenders ──────────────────────────────────────────────
@@ -164,6 +175,14 @@ export const globalApiRateLimit = rateLimit({
   max: 240,
   standardHeaders: true,
   legacyHeaders: false,
+  // Exempt authenticated admin requests. This limiter is a blanket safety
+  // net against anonymous abuse/scraping — without this, a busy admin
+  // dashboard session (bulk product/order/image loads) could legitimately
+  // cross 240 req/min and get logged as "suspicious", counting toward
+  // auto-block and the email alert threshold. Requests still need a valid
+  // bearer token or session cookie to qualify, so this can't be abused by
+  // simply hitting an /admin/* path.
+  skip: (req) => isVerifiedAdminRequest(req),
   message: { error: "Too many requests — please slow down" },
   handler: (req, res, _next, options) => {
     void logSecurityEvent(req, "global_rate_limit");
