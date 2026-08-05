@@ -6,6 +6,8 @@ if (!("WebSocket" in globalThis)) {
 }
 import { createClient } from "@supabase/supabase-js";
 import type { NextFunction, Request, Response } from "express";
+import { eq } from "drizzle-orm";
+import { db, profilesTable } from "@workspace/db";
 import { logger } from "./logger";
 
 let _authClient: ReturnType<typeof createClient> | null = null;
@@ -54,7 +56,43 @@ function extractBearerToken(req: Request): string | null {
   return header.slice("Bearer ".length).trim() || null;
 }
 
-/** Requires a valid customer session; 401s otherwise. */
+/**
+ * Lazily create/refresh the customer's profile row (id + email) so the
+ * admin "Users" list has something to show for every authenticated
+ * customer, and returns whether the account is currently banned. Never
+ * throws — a profile-sync failure shouldn't block the request; it only
+ * means banned-status can't be confirmed, so we fail open on the sync but
+ * still enforce a ban when the row is readable.
+ */
+async function syncProfileAndCheckBanned(user: AuthenticatedUser): Promise<boolean> {
+  try {
+    const [existing] = await db
+      .select({ banned: profilesTable.banned })
+      .from(profilesTable)
+      .where(eq(profilesTable.id, user.id));
+
+    if (existing) {
+      if (user.email) {
+        await db
+          .update(profilesTable)
+          .set({ email: user.email })
+          .where(eq(profilesTable.id, user.id));
+      }
+      return existing.banned;
+    }
+
+    await db
+      .insert(profilesTable)
+      .values({ id: user.id, email: user.email })
+      .onConflictDoNothing({ target: profilesTable.id });
+    return false;
+  } catch (err) {
+    logger.error({ err, userId: user.id }, "Failed to sync profile / check banned status");
+    return false;
+  }
+}
+
+/** Requires a valid, non-banned customer session; 401/403s otherwise. */
 export async function requireCustomer(
   req: Request,
   res: Response,
@@ -68,6 +106,11 @@ export async function requireCustomer(
   const user = await verifySupabaseToken(token);
   if (!user) {
     res.status(401).json({ error: "Invalid or expired session" });
+    return;
+  }
+  const banned = await syncProfileAndCheckBanned(user);
+  if (banned) {
+    res.status(403).json({ error: "This account has been suspended. Contact support for help." });
     return;
   }
   req.customer = user;

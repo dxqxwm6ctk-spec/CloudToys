@@ -26,3 +26,5 @@ export * from "./admin-settings";
 export * from "./shipping-zones";
 export * from "./profiles";
 export * from "./newsletter-subscribers";
+export * from "./security-events";
+export * from "./blocked-ips";

@@ -6,6 +6,8 @@ import shippingRouter from "./shipping";
 import newsletterRouter from "./newsletter";
 import adminAuthRouter from "./adminAuth";
 import adminRouter from "./admin";
+import adminUsersRouter from "./adminUsers";
+import adminSecurityRouter from "./adminSecurity";
 import imagesRouter from "./images";
 import { requireAdmin } from "../middleware/requireAdmin";
 
@@ -23,6 +25,8 @@ router.use(newsletterRouter);
 router.use(adminAuthRouter);
 router.use("/admin", requireAdmin);
 router.use(adminRouter);
+router.use(adminUsersRouter);
+router.use(adminSecurityRouter);
 router.use(imagesRouter);
 
 export default router;

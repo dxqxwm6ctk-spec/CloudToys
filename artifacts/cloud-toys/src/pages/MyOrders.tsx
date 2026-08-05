@@ -1,11 +1,23 @@
 import { PageTransition } from '../components/ui/PageTransition';
 import { useTrackOrder } from '@workspace/api-client-react';
-import { useQuery } from '@tanstack/react-query';
-import { Package, ChevronRight, LogIn } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Package, ChevronRight, LogIn, Trash2, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
 import { getApiBase } from '../lib/api-url';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '../components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 import { formatJOD } from '../lib/currency';
 
@@ -25,14 +37,34 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 }
 
-function OrderRow({ order }: { order: MyOrderEntry }) {
+function OrderRow({ order, onRemoved }: { order: MyOrderEntry; onRemoved: () => void }) {
   // Live status from the server — falls back to the stored status while
   // loading (kept in sync in case an admin update landed since the list load).
   const { data: tracking, isLoading } = useTrackOrder(order.orderNumber, {
     query: { queryKey: ['trackOrder', order.orderNumber] },
   });
+  const { toast } = useToast();
+  const { getAccessToken } = useCustomerAuth();
 
   const statusLabel = isLoading ? order.status : (tracking?.status ?? order.status);
+
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getAccessToken();
+      const res = await fetch(`${BASE}/api/orders/${order.orderNumber}/mine`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Failed to remove order');
+    },
+    onSuccess: () => {
+      onRemoved();
+      toast({ title: 'Order removed from your list' });
+    },
+    onError: () => {
+      toast({ title: 'Could not remove order', variant: 'destructive' });
+    },
+  });
 
   return (
     <div className="flex items-center justify-between gap-4 bg-white border border-border rounded-2xl p-6 hover:border-primary/40 transition-colors group">
@@ -54,6 +86,36 @@ function OrderRow({ order }: { order: MyOrderEntry }) {
         <span className="text-sm font-medium px-3 py-1.5 rounded-full bg-secondary text-foreground capitalize whitespace-nowrap">
           {statusLabel.replace(/_/g, ' ')}
         </span>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button
+              type="button"
+              title="Remove order from my list"
+              aria-label="Remove order from my list"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              disabled={removeMutation.isPending}
+            >
+              {removeMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove this order?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Order {order.orderNumber} will be removed from your "My Orders" list. This won't cancel it or
+                affect your order history with the store — you can still track it by order number.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => removeMutation.mutate()}>Remove</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Link href={`/track-order?number=${order.orderNumber}`}>
           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
         </Link>
@@ -64,6 +126,7 @@ function OrderRow({ order }: { order: MyOrderEntry }) {
 
 export function MyOrders() {
   const { user, isLoading: authLoading, getAccessToken, signInWithGoogle } = useCustomerAuth();
+  const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery<MyOrderEntry[]>({
     queryKey: ['my-orders', user?.id],
@@ -77,6 +140,10 @@ export function MyOrders() {
       return res.json();
     },
   });
+
+  const handleRemoved = () => {
+    queryClient.invalidateQueries({ queryKey: ['my-orders', user?.id] });
+  };
 
   return (
     <PageTransition>
@@ -110,7 +177,7 @@ export function MyOrders() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <OrderRow key={order.orderNumber} order={order} />
+              <OrderRow key={order.orderNumber} order={order} onRemoved={handleRemoved} />
             ))}
           </div>
         )}

@@ -9,6 +9,7 @@ import {
   createAdminToken,
 } from "../lib/adminAuth";
 import { verifySupabaseToken } from "../lib/supabaseAuth";
+import { adminLoginRateLimit } from "../lib/security";
 import { logger } from "../lib/logger";
 
 /**
@@ -44,7 +45,7 @@ function safeCompare(a: string, b: string): boolean {
 }
 
 // POST /admin/auth/login — public
-router.post("/admin/auth/login", (req, res): void => {
+router.post("/admin/auth/login", adminLoginRateLimit, (req, res): void => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Username and password are required" });
@@ -85,7 +86,7 @@ const googleLoginSchema = z.object({
 // token with Supabase, then check the resulting email against the
 // ADMIN_ALLOWED_EMAILS allowlist before issuing the same admin session used
 // by password login.
-router.post("/admin/auth/google", async (req, res): Promise<void> => {
+router.post("/admin/auth/google", adminLoginRateLimit, async (req, res): Promise<void> => {
   const parsed = googleLoginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "accessToken is required" });

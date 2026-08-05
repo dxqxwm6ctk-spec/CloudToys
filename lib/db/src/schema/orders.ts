@@ -1,4 +1,4 @@
-import { pgTable, text, serial, jsonb, numeric, timestamp, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, jsonb, numeric, timestamp, uuid, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -34,6 +34,9 @@ export const ordersTable = pgTable("orders", {
   items: jsonb("items").$type<OrderLineItem[]>(),
   total: numeric("total", { precision: 10, scale: 2 }),
   shippingAddress: text("shipping_address"),
+  // Customer-side soft delete: hides the order from "My Orders" without
+  // touching admin visibility or order history/analytics.
+  hiddenByCustomer: boolean("hidden_by_customer").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 }).enableRLS();
 

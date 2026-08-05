@@ -6,6 +6,7 @@ import * as z from "zod";
 import { requireCustomer } from "../lib/supabaseAuth";
 import { verifyTurnstileToken } from "../lib/turnstile";
 import { buildSteps } from "../lib/orderStatus";
+import { checkoutRateLimit, trackOrderRateLimit } from "../lib/security";
 
 const router: IRouter = Router();
 
@@ -60,7 +61,7 @@ const CreateOrderBody = z.object({
   ).min(1),
 });
 
-router.post("/orders", requireCustomer, async (req, res): Promise<void> => {
+router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Promise<void> => {
   const body = CreateOrderBody.safeParse(req.body);
   if (!body.success) {
     res.status(400).json({ error: body.error.message });
@@ -205,7 +206,9 @@ router.get("/orders/mine", requireCustomer, async (req, res): Promise<void> => {
       items: ordersTable.items,
     })
     .from(ordersTable)
-    .where(eq(ordersTable.userId, req.customer!.id))
+    .where(
+      sql`${ordersTable.userId} = ${req.customer!.id} AND ${ordersTable.hiddenByCustomer} = false`,
+    )
     .orderBy(desc(ordersTable.createdAt));
 
   res.json(
@@ -221,6 +224,38 @@ router.get("/orders/mine", requireCustomer, async (req, res): Promise<void> => {
     })),
   );
 });
+
+// ── Remove an order from "My Orders" (customer-side soft delete) ───────────
+// Hides the order from the signed-in customer's own list without touching
+// admin visibility, order history, or analytics — the row itself is kept.
+const RemoveMyOrderParams = z.object({ orderNumber: z.string().min(1) });
+
+router.delete(
+  "/orders/:orderNumber/mine",
+  requireCustomer,
+  async (req, res): Promise<void> => {
+    const params = RemoveMyOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const [updated] = await db
+      .update(ordersTable)
+      .set({ hiddenByCustomer: true })
+      .where(
+        sql`${ordersTable.orderNumber} = ${params.data.orderNumber} AND ${ordersTable.userId} = ${req.customer!.id}`,
+      )
+      .returning({ id: ordersTable.id });
+
+    if (!updated) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    res.status(204).end();
+  },
+);
 
 // ── Last shipping details (for pre-filling checkout on repeat orders) ──────
 router.get("/orders/last-shipping", requireCustomer, async (req, res): Promise<void> => {
@@ -244,7 +279,7 @@ router.get("/orders/last-shipping", requireCustomer, async (req, res): Promise<v
 });
 
 // ── Track order ────────────────────────────────────────────────────────────
-router.get("/orders/:orderNumber/track", async (req, res): Promise<void> => {
+router.get("/orders/:orderNumber/track", trackOrderRateLimit, async (req, res): Promise<void> => {
   const params = TrackOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

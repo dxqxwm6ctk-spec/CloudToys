@@ -5,8 +5,14 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { blockBannedIps } from "./lib/security";
 
 const app: Express = express();
+
+// Heroku (and most PaaS hosts) sit behind a single reverse proxy — trust it
+// so `req.ip` reflects the real client IP (X-Forwarded-For) instead of the
+// proxy's own address. Required for rate limiting and IP blocking to work.
+app.set("trust proxy", 1);
 
 // Comma-separated list of allowed origins for the storefront + admin apps,
 // e.g. "https://cloudtoys.com,https://admin.cloudtoys.com". Required in any
@@ -60,6 +66,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.SESSION_SECRET));
+app.use(blockBannedIps);
 
 app.use(
   "/api/images",
