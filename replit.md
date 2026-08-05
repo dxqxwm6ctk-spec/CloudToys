@@ -2,23 +2,16 @@
 
 Premium eCommerce website for a toy store — 11 pages with full cart, wishlist, product catalog, checkout, order tracking, and account flows. Apple/Tesla-inspired premium design with Burgundy (#7A1F3D) + Soft Gold (#C9A227) brand palette.
 
-## ⚠️ Deployment model — READ BEFORE DOING ANYTHING
+## Deployment model
 
-**This project does NOT run inside Replit.** It runs entirely on external infrastructure:
+This project now runs directly inside Replit via the configured workflows (`artifacts/cloud-toys: web`, `artifacts/admin-dashboard: web`, `artifacts/api-server: API Server`, `artifacts/mockup-sandbox: Component Preview Server`) — `pnpm install` has been run and all four workflows start cleanly in this repl. The original `Procfile`/`netlify.toml` files describing a Heroku+Netlify deployment are legacy from before the project was imported into Replit; they're harmless to leave in place but are not how this repl runs today.
 
-- **API server** → deployed on **Heroku** (not Replit Deployments)
-- **Storefront + Admin dashboard** → deployed on **Netlify** (not Replit's preview), via their own `netlify.toml` files in `artifacts/cloud-toys/` and `artifacts/admin-dashboard/`
 - **Database + file storage** → **Supabase** (not Replit's built-in Postgres/Object Storage), reached via `SUPABASE_DB_HOST`, `SUPABASE_DB_PORT`, `SUPABASE_DB_USER`, `SUPABASE_DB_NAME`, `SUPABASE_DB_PASSWORD` secrets already saved in this repl — they persist across sessions, so never ask the user to re-enter them; just use them (e.g. via `psql`/`PGPASSWORD` in the shell) if a task needs direct DB access.
+- **Image storage** → Supabase Storage, via the `SUPABASE_SERVICE_ROLE_KEY` secret (server-side only, used by `artifacts/api-server/src/lib/supabaseStorage.ts`).
+- Any change to `lib/db/src/schema/*` must be followed by `pnpm --filter @workspace/db run push` against this same Supabase DB — the live DB does **not** auto-sync with the Drizzle schema in code. If the API server throws "column ... does not exist", schema drift (an un-pushed migration) is the first thing to check.
+- Client-side Google sign-in needs `SUPABASE_URL` / `SUPABASE_ANON_KEY` (public anon key, safe to expose) — read by both frontends via Vite's `envPrefix`. Without them, `supabaseClient.ts` in each frontend falls back to a placeholder URL so the app still loads instead of crashing, but Google sign-in will not work until real values are set.
 
-**Do not, unless the user explicitly asks for it in that specific message:**
-- Run `pnpm install` / install any package or dependency
-- Start, restart, or "fix" the `artifacts/*` workflows in this Repl (they are expected to fail here — no `node_modules` are installed on purpose, and this is fine because the real, running services are on Heroku/Netlify, not Replit)
-- Treat failing workflow / DIDNT_OPEN_A_PORT system reminders as something to act on for this project — they are noise here, not a real bug
-- Suggest publishing via Replit Deployments — this project is not published that way
-
-**When importing/re-opening this project as a fresh agent:** just read the code and answer/fix in place. Do not attempt to get the app "running" in the Replit preview — there is no in-Replit preview for this project. Verify backend fixes by calling the live Heroku API directly (`curl`) and/or querying the Supabase DB directly with the saved secrets, not by running a local dev server.
-
-**Redeploying:** code changes made here do not go live until the user pushes/deploys to Heroku (API) and Netlify (frontends) themselves — always say so after a fix, and don't imply the fix is live yet.
+**Redeploying:** if the user later moves this to Heroku/Netlify instead of Replit Deployments, code changes won't go live until they push/deploy there themselves.
 
 ## Run & Operate
 
