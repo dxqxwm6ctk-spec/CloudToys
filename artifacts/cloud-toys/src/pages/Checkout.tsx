@@ -152,6 +152,7 @@ export function Checkout() {
           customerPhone: order.customerPhone,
           paymentMethodKey: order.paymentMethodKey,
           shippingAddress: order.shippingAddress,
+          shippingFee: order.shippingFee,
           items: order.items,
         }),
       });
@@ -247,6 +248,7 @@ export function Checkout() {
     customerPhone: normalizePhoneInput(phone),
     paymentMethodKey: selectedPayment,
     shippingAddress: `${address}, ${area}, ${governorateLabel}`.trim(),
+    shippingFee: shipping,
     items: items.map(i => ({
       productId: String(i.id),
       name: i.name,

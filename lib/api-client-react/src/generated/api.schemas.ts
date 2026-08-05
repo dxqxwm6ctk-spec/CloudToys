@@ -89,11 +89,23 @@ export interface OrderTrackingStep {
   date: string | null;
 }
 
+export interface OrderItem {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 export interface OrderTracking {
   orderNumber: string;
   status: string;
   estimatedDelivery: string;
   steps: OrderTrackingStep[];
+  /** @nullable */
+  items?: OrderItem[] | null;
+  subtotal: number;
+  shippingFee: number;
+  total: number;
 }
 
 export interface PaymentMethod {
@@ -109,18 +121,12 @@ export interface PaymentMethodUpdate {
   enabled: boolean;
 }
 
-export interface OrderItem {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-}
-
 export interface CreateOrderInput {
   customerName: string;
   customerPhone: string;
   paymentMethodKey: string;
   shippingAddress?: string;
+  shippingFee?: number;
   items: OrderItem[];
 }
 

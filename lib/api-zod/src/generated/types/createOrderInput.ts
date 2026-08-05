@@ -12,5 +12,6 @@ export interface CreateOrderInput {
   customerPhone: string;
   paymentMethodKey: string;
   shippingAddress?: string;
+  shippingFee?: number;
   items: OrderItem[];
 }

@@ -51,6 +51,7 @@ const CreateOrderBody = z.object({
   customerPhone: z.string().regex(JORDAN_PHONE_REGEX, "Enter a valid Jordanian mobile number"),
   paymentMethodKey: z.string().min(1),
   shippingAddress: z.string().optional(),
+  shippingFee: z.number().min(0).default(0),
   items: z.array(
     z.object({
       productId: z.string(),
@@ -68,9 +69,10 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
     return;
   }
 
-  const { customerName, customerPhone, paymentMethodKey, shippingAddress, items } =
+  const { customerName, customerPhone, paymentMethodKey, shippingAddress, shippingFee, items } =
     body.data;
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = subtotal + shippingFee;
 
   // Validate payment method is enabled
   const [pm] = await db
@@ -171,6 +173,7 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
           paymentMethod: pm.label,
           shippingAddress: shippingAddress ?? null,
           items,
+          shippingFee: String(shippingFee),
           total: String(total),
         })
         .returning({ id: ordersTable.id });
@@ -296,12 +299,28 @@ router.get("/orders/:orderNumber/track", trackOrderRateLimit, async (req, res): 
     return;
   }
 
+  const shippingFee = order.shippingFee != null ? Number(order.shippingFee) : 0;
+  const total = order.total != null ? Number(order.total) : null;
+  const subtotal =
+    total != null
+      ? total - shippingFee
+      : Array.isArray(order.items)
+        ? (order.items as Array<{ price: number; quantity: number }>).reduce(
+            (sum, i) => sum + i.price * i.quantity,
+            0,
+          )
+        : 0;
+
   res.json(
     TrackOrderResponse.parse({
       orderNumber: order.orderNumber,
       status: order.status,
       estimatedDelivery: order.estimatedDelivery,
       steps: order.steps,
+      items: order.items ?? null,
+      subtotal,
+      shippingFee,
+      total: total ?? subtotal + shippingFee,
     }),
   );
 });

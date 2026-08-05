@@ -227,6 +227,7 @@ export const CreateOrderBody = zod.object({
   "customerPhone": zod.string(),
   "paymentMethodKey": zod.string(),
   "shippingAddress": zod.string().optional(),
+  "shippingFee": zod.number().optional(),
   "items": zod.array(zod.object({
   "productId": zod.string(),
   "name": zod.string(),
@@ -280,7 +281,16 @@ export const TrackOrderResponse = zod.object({
   "label": zod.string(),
   "completed": zod.boolean(),
   "date": zod.string().nullable()
-}))
+})),
+  "items": zod.array(zod.object({
+  "productId": zod.string(),
+  "name": zod.string(),
+  "quantity": zod.number(),
+  "price": zod.number()
+})).nullish(),
+  "subtotal": zod.number(),
+  "shippingFee": zod.number(),
+  "total": zod.number()
 })
 
 

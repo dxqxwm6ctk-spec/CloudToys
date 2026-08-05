@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { OrderItem } from './orderItem';
 import type { OrderTrackingStep } from './orderTrackingStep';
 
 export interface OrderTracking {
@@ -12,4 +13,9 @@ export interface OrderTracking {
   status: string;
   estimatedDelivery: string;
   steps: OrderTrackingStep[];
+  /** @nullable */
+  items?: OrderItem[] | null;
+  subtotal: number;
+  shippingFee: number;
+  total: number;
 }

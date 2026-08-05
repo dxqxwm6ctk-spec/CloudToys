@@ -673,7 +673,7 @@ components:
         date: { type: ["string", "null"] }
     OrderTracking:
       type: object
-      required: [orderNumber, status, estimatedDelivery, steps]
+      required: [orderNumber, status, estimatedDelivery, steps, subtotal, shippingFee, total]
       properties:
         orderNumber: { type: string }
         status: { type: string }
@@ -682,6 +682,13 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrderTrackingStep"
+        items:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        subtotal: { type: number }
+        shippingFee: { type: number }
+        total: { type: number }
 
     PaymentMethod:
       type: object
@@ -716,6 +723,7 @@ components:
         customerPhone: { type: string }
         paymentMethodKey: { type: string }
         shippingAddress: { type: string }
+        shippingFee: { type: number }
         items:
           type: array
           items:

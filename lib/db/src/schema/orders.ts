@@ -32,6 +32,7 @@ export const ordersTable = pgTable("orders", {
   // Line items + total as placed at checkout (nullable — orders created
   // before this field existed have no recorded item detail).
   items: jsonb("items").$type<OrderLineItem[]>(),
+  shippingFee: numeric("shipping_fee", { precision: 10, scale: 2 }),
   total: numeric("total", { precision: 10, scale: 2 }),
   shippingAddress: text("shipping_address"),
   // Customer-side soft delete: hides the order from "My Orders" without
