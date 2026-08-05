@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatPrice } from '@/lib/currency';
 
 export default function ProductsList() {
   const [search, setSearch] = React.useState('');
@@ -54,8 +54,6 @@ export default function ProductsList() {
       }
     });
   };
-
-  const { renderPrice } = useCurrency();
 
   return (
     <div className="space-y-6">
@@ -141,7 +139,7 @@ export default function ProductsList() {
                     {product.categoryName}
                   </TableCell>
                   <TableCell className="font-medium">
-                    {renderPrice(product.price)}
+                    {formatPrice(product.price, product.currency)}
                   </TableCell>
                   <TableCell>
                     {product.inStock ? (

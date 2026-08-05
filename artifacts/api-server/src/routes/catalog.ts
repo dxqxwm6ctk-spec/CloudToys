@@ -98,6 +98,68 @@ router.get("/settings/contact", async (_req, res): Promise<void> => {
   }
 });
 
+// ── Public site settings (free shipping / returns / warranty) ──────────────
+//
+// These mirror the admin-side settings in routes/admin.ts — read-only here,
+// no auth required, so the storefront can render them.
+
+const SHIPPING_THRESHOLD_KEY = "free_shipping_threshold";
+const DEFAULT_SHIPPING_THRESHOLD = { amount: 150, currency: "USD" };
+
+router.get("/settings/shipping", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, SHIPPING_THRESHOLD_KEY));
+  if (!row) {
+    res.json(DEFAULT_SHIPPING_THRESHOLD);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_SHIPPING_THRESHOLD, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_SHIPPING_THRESHOLD);
+  }
+});
+
+const RETURN_POLICY_KEY = "return_policy";
+const DEFAULT_RETURN_POLICY = { enabled: true, days: 30 };
+
+router.get("/settings/returns", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, RETURN_POLICY_KEY));
+  if (!row) {
+    res.json(DEFAULT_RETURN_POLICY);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_RETURN_POLICY, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_RETURN_POLICY);
+  }
+});
+
+const WARRANTY_POLICY_KEY = "warranty_policy";
+const DEFAULT_WARRANTY_POLICY = { enabled: true, duration: 2, unit: "years" };
+
+router.get("/settings/warranty", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, WARRANTY_POLICY_KEY));
+  if (!row) {
+    res.json(DEFAULT_WARRANTY_POLICY);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_WARRANTY_POLICY, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_WARRANTY_POLICY);
+  }
+});
+
 router.get("/categories", async (req, res): Promise<void> => {
   req.log.info("Listing categories");
   const rows = await db

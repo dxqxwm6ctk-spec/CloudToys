@@ -1,14 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail } from 'lucide-react';
+import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail, PackageCheck, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { useCurrency } from '@/context/CurrencyContext';
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { username, logout } = useAuth();
-  const { mode, setMode } = useCurrency();
 
   const navItems = [
     { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -19,6 +17,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: '/settings/payment-methods', label: 'Payment Methods', icon: Settings },
     { href: '/settings/delivery', label: 'Delivery', icon: Truck },
     { href: '/settings/shipping-zones', label: 'Shipping Zones', icon: MapPin },
+    { href: '/settings/shipping-threshold', label: 'Free Shipping', icon: PackageCheck },
+    { href: '/settings/returns', label: 'Return Policy', icon: Package },
+    { href: '/settings/warranty', label: 'Warranty', icon: ShieldCheck },
     { href: '/settings/contact', label: 'Contact Info', icon: Contact },
   ];
 

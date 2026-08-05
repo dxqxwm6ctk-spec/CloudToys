@@ -1,6 +1,5 @@
 import { Link } from 'wouter';
-import { formatJOD } from '../../lib/currency';
-// JOD is the storefront's primary display currency
+import { formatPrice as formatCurrency } from '../../lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { useState } from 'react';
@@ -34,7 +33,7 @@ export function ProductCard({ product }: { product: Product }) {
     }
   };
 
-  const formatPrice = (price: number) => formatJOD(price);
+  const formatPrice = (price: number) => formatCurrency(price, product.currency);
 
   const discountPct =
     product.compareAtPrice && product.compareAtPrice > product.price

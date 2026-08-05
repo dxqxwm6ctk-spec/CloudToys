@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCurrency } from '@/context/CurrencyContext';
+import { formatPrice } from '@/lib/currency';
 import { useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
@@ -64,8 +64,6 @@ export default function OrdersList() {
   const [deliveryDuration, setDeliveryDuration] = React.useState<string>('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { renderPrice } = useCurrency();
-  
   const { data, isLoading } = useAdminListOrders({
     page,
     pageSize: 20,
@@ -219,7 +217,7 @@ export default function OrdersList() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     {order.total != null ? (
-                      <div>{renderPrice(Number(order.total))}</div>
+                      <div>{formatPrice(Number(order.total))}</div>
                     ) : '—'}
                   </TableCell>
                   <TableCell className="text-right">
@@ -438,10 +436,10 @@ export default function OrdersList() {
                                 <TableCell className="text-sm font-medium py-3">{item.name}</TableCell>
                                 <TableCell className="text-sm text-center py-3">{item.quantity}</TableCell>
                                 <TableCell className="text-sm text-right py-3">
-                                  {renderPrice(Number(item.price))}
+                                  {formatPrice(Number(item.price))}
                                 </TableCell>
                                 <TableCell className="text-sm text-right py-3 font-medium">
-                                  {renderPrice(Number(item.price) * item.quantity)}
+                                  {formatPrice(Number(item.price) * item.quantity)}
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -460,7 +458,7 @@ export default function OrdersList() {
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Order Total</span>
                       <div className="text-right text-xl font-bold">
-                        {selectedOrder.total != null ? renderPrice(Number(selectedOrder.total)) : '—'}
+                        {selectedOrder.total != null ? formatPrice(Number(selectedOrder.total)) : '—'}
                       </div>
                     </div>
                     {selectedOrder.items && selectedOrder.items.length > 0 && (

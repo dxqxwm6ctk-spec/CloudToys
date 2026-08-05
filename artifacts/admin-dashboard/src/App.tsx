@@ -6,7 +6,6 @@ import { Route, Switch, Router as WouterRouter, useParams } from 'wouter';
 import { Loader2 } from 'lucide-react';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { CurrencyProvider } from '@/context/CurrencyContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
@@ -19,6 +18,9 @@ import PaymentMethodsSettings from '@/pages/settings/payment-methods';
 import DeliverySettings from '@/pages/settings/delivery';
 import ContactSettings from '@/pages/settings/contact';
 import ShippingZonesSettings from '@/pages/settings/shipping-zones';
+import ShippingThresholdSettings from '@/pages/settings/shipping-threshold';
+import ReturnPolicySettings from '@/pages/settings/returns';
+import WarrantyPolicySettings from '@/pages/settings/warranty';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +51,9 @@ function Router() {
         <Route path="/settings/delivery" component={DeliverySettings} />
         <Route path="/settings/contact" component={ContactSettings} />
         <Route path="/settings/shipping-zones" component={ShippingZonesSettings} />
+        <Route path="/settings/shipping-threshold" component={ShippingThresholdSettings} />
+        <Route path="/settings/returns" component={ReturnPolicySettings} />
+        <Route path="/settings/warranty" component={WarrantyPolicySettings} />
         <Route component={NotFound} />
       </Switch>
     </AdminLayout>
@@ -79,9 +84,7 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
           <AuthProvider>
-            <CurrencyProvider>
-              <Gate />
-            </CurrencyProvider>
+            <Gate />
           </AuthProvider>
         </WouterRouter>
         <Toaster />

@@ -658,32 +658,139 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
   );
 });
 
-// ── Admin Settings (currency mode) ────────────────────────────────────────
+// ── Admin Settings (free shipping threshold) ───────────────────────────────
+//
+// JOD is the store's base currency — prices are entered and shown as-is,
+// with no exchange-rate conversion applied anywhere. The "currency" field
+// here is a display label only (which symbol/code appears next to the
+// amount); it is never converted against the cart's JOD-denominated total.
 
-const CURRENCY_KEY = "currency_mode";
+const SHIPPING_THRESHOLD_KEY = "free_shipping_threshold";
+const DEFAULT_SHIPPING_THRESHOLD = { amount: 150, currency: "USD" as const };
 
-router.get("/admin/settings/currency", async (_req, res): Promise<void> => {
+const ShippingThresholdBody = z.object({
+  amount: z.coerce.number().min(0),
+  currency: z.enum(["JOD", "USD"]),
+});
+
+router.get("/admin/settings/shipping", async (_req, res): Promise<void> => {
   const [row] = await db
     .select()
     .from(adminSettingsTable)
-    .where(eq(adminSettingsTable.key, CURRENCY_KEY));
-  res.json({ value: row?.value ?? "USD" });
+    .where(eq(adminSettingsTable.key, SHIPPING_THRESHOLD_KEY));
+  if (!row) {
+    res.json(DEFAULT_SHIPPING_THRESHOLD);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_SHIPPING_THRESHOLD, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_SHIPPING_THRESHOLD);
+  }
 });
 
-router.put("/admin/settings/currency", async (req, res): Promise<void> => {
-  const parsed = z.object({ value: z.enum(["USD", "JOD"]) }).safeParse(req.body);
+router.put("/admin/settings/shipping", async (req, res): Promise<void> => {
+  const parsed = ShippingThresholdBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const value = JSON.stringify(parsed.data);
   await db
     .insert(adminSettingsTable)
-    .values({ key: CURRENCY_KEY, value: parsed.data.value })
+    .values({ key: SHIPPING_THRESHOLD_KEY, value })
     .onConflictDoUpdate({
       target: adminSettingsTable.key,
-      set: { value: parsed.data.value },
+      set: { value },
     });
-  res.json({ value: parsed.data.value });
+  res.json(parsed.data);
+});
+
+// ── Admin Settings (return policy) ─────────────────────────────────────────
+
+const RETURN_POLICY_KEY = "return_policy";
+const DEFAULT_RETURN_POLICY = { enabled: true, days: 30 };
+
+const ReturnPolicyBody = z.object({
+  enabled: z.boolean(),
+  days: z.coerce.number().int().min(1).max(365),
+});
+
+router.get("/admin/settings/returns", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, RETURN_POLICY_KEY));
+  if (!row) {
+    res.json(DEFAULT_RETURN_POLICY);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_RETURN_POLICY, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_RETURN_POLICY);
+  }
+});
+
+router.put("/admin/settings/returns", async (req, res): Promise<void> => {
+  const parsed = ReturnPolicyBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const value = JSON.stringify(parsed.data);
+  await db
+    .insert(adminSettingsTable)
+    .values({ key: RETURN_POLICY_KEY, value })
+    .onConflictDoUpdate({
+      target: adminSettingsTable.key,
+      set: { value },
+    });
+  res.json(parsed.data);
+});
+
+// ── Admin Settings (warranty policy) ───────────────────────────────────────
+
+const WARRANTY_POLICY_KEY = "warranty_policy";
+const DEFAULT_WARRANTY_POLICY = { enabled: true, duration: 2, unit: "years" as const };
+
+const WarrantyPolicyBody = z.object({
+  enabled: z.boolean(),
+  duration: z.coerce.number().int().min(1).max(120),
+  unit: z.enum(["months", "years"]),
+});
+
+router.get("/admin/settings/warranty", async (_req, res): Promise<void> => {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, WARRANTY_POLICY_KEY));
+  if (!row) {
+    res.json(DEFAULT_WARRANTY_POLICY);
+    return;
+  }
+  try {
+    res.json({ ...DEFAULT_WARRANTY_POLICY, ...JSON.parse(row.value) });
+  } catch {
+    res.json(DEFAULT_WARRANTY_POLICY);
+  }
+});
+
+router.put("/admin/settings/warranty", async (req, res): Promise<void> => {
+  const parsed = WarrantyPolicyBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const value = JSON.stringify(parsed.data);
+  await db
+    .insert(adminSettingsTable)
+    .values({ key: WARRANTY_POLICY_KEY, value })
+    .onConflictDoUpdate({
+      target: adminSettingsTable.key,
+      set: { value },
+    });
+  res.json(parsed.data);
 });
 
 // ── Admin Settings (default delivery duration) ────────────────────────────

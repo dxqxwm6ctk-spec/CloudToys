@@ -6,7 +6,8 @@ import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
 import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatJOD } from '../lib/currency';
+import { formatPrice as formatCurrency } from '../lib/currency';
+import { useShippingThreshold, useReturnPolicy, useWarrantyPolicy } from '../hooks/useStoreSettings';
 import { motion } from 'framer-motion';
 import { ProductPicture } from '../components/ui/ProductPicture';
 import { resolveMediaUrl } from '@workspace/api-client-react';
@@ -19,6 +20,9 @@ export function ProductDetail() {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const shippingThreshold = useShippingThreshold();
+  const returnPolicy = useReturnPolicy();
+  const warrantyPolicy = useWarrantyPolicy();
 
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -91,7 +95,7 @@ export function ProductDetail() {
     }
   };
 
-  const formatPrice = (price: number) => formatJOD(price);
+  const formatPrice = (price: number) => formatCurrency(price, product.currency);
 
   return (
     <PageTransition>
@@ -193,7 +197,6 @@ export function ProductDetail() {
               <div className="flex items-baseline gap-4">
                 <div>
                   <span className="text-3xl font-medium text-foreground">{formatPrice(product.price)}</span>
-                  <div className="text-sm text-muted-foreground mt-0.5">{formatJOD(product.price)}</div>
                 </div>
                 {product.compareAtPrice && (
                   <span className="text-xl text-muted-foreground line-through">{formatPrice(product.compareAtPrice)}</span>
@@ -247,16 +250,20 @@ export function ProductDetail() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-8 border-t border-border">
               <div className="flex flex-col gap-2 text-sm text-muted-foreground">
                 <Truck className="w-6 h-6 text-foreground" />
-                <span>Free shipping over $150</span>
+                <span>Free shipping over {formatCurrency(shippingThreshold.amount, shippingThreshold.currency)}</span>
               </div>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <RotateCcw className="w-6 h-6 text-foreground" />
-                <span>30-day free returns</span>
-              </div>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-                <Shield className="w-6 h-6 text-foreground" />
-                <span>2-year quality warranty</span>
-              </div>
+              {returnPolicy.enabled && (
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <RotateCcw className="w-6 h-6 text-foreground" />
+                  <span>{returnPolicy.days}-day free returns</span>
+                </div>
+              )}
+              {warrantyPolicy.enabled && (
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <Shield className="w-6 h-6 text-foreground" />
+                  <span>{warrantyPolicy.duration}-{warrantyPolicy.unit === 'years' ? 'year' : 'month'} quality warranty</span>
+                </div>
+              )}
             </div>
 
           </div>
