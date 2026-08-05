@@ -18,11 +18,20 @@ import {
 
 const { Pool } = pg;
 
-if (!process.env.SUPABASE_DB_URL) {
-  throw new Error("SUPABASE_DB_URL must be set before running the seed.");
+function getConnectionString(): string {
+  const password = process.env.SUPABASE_DB_PASSWORD;
+  const host = process.env.SUPABASE_DB_HOST;
+  const user = process.env.SUPABASE_DB_USER;
+  const port = process.env.SUPABASE_DB_PORT ?? "6543";
+  const dbName = process.env.SUPABASE_DB_NAME ?? "postgres";
+  if (password && host && user) {
+    return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${dbName}`;
+  }
+  if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
+  throw new Error("Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, or SUPABASE_DB_URL.");
 }
 
-const pool = new Pool({ connectionString: process.env.SUPABASE_DB_URL });
+const pool = new Pool({ connectionString: getConnectionString() });
 const db = drizzle(pool, { schema });
 
 async function seed() {
