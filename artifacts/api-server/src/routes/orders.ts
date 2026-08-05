@@ -7,6 +7,26 @@ import { requireCustomer } from "../lib/supabaseAuth";
 import { verifyTurnstileToken } from "../lib/turnstile";
 import { buildSteps } from "../lib/orderStatus";
 import { checkoutRateLimit, trackOrderRateLimit } from "../lib/security";
+import { lookupShippingFee } from "../lib/shippingFee";
+
+const SHIPPING_THRESHOLD_KEY = "free_shipping_threshold";
+const DEFAULT_SHIPPING_THRESHOLD_AMOUNT = 150;
+
+/** Admin-configured free-shipping cart threshold, mirroring routes/catalog.ts. */
+async function getFreeShippingThreshold(): Promise<number> {
+  const [row] = await db
+    .select()
+    .from(adminSettingsTable)
+    .where(eq(adminSettingsTable.key, SHIPPING_THRESHOLD_KEY));
+  if (!row) return DEFAULT_SHIPPING_THRESHOLD_AMOUNT;
+  try {
+    const parsed = JSON.parse(row.value);
+    const amount = Number(parsed.amount);
+    return Number.isFinite(amount) && amount >= 0 ? amount : DEFAULT_SHIPPING_THRESHOLD_AMOUNT;
+  } catch {
+    return DEFAULT_SHIPPING_THRESHOLD_AMOUNT;
+  }
+}
 
 const router: IRouter = Router();
 
@@ -51,7 +71,10 @@ const CreateOrderBody = z.object({
   customerPhone: z.string().regex(JORDAN_PHONE_REGEX, "Enter a valid Jordanian mobile number"),
   paymentMethodKey: z.string().min(1),
   shippingAddress: z.string().optional(),
-  shippingFee: z.number().min(0).default(0),
+  governorate: z.string().min(1),
+  // Accepted for backward compatibility but never trusted — the server always
+  // recomputes the authoritative fee from the shipping zones table below.
+  shippingFee: z.number().min(0).optional(),
   items: z.array(
     z.object({
       productId: z.string(),
@@ -69,7 +92,7 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
     return;
   }
 
-  const { customerName, customerPhone, paymentMethodKey, shippingAddress, shippingFee, items } =
+  const { customerName, customerPhone, paymentMethodKey, shippingAddress, governorate, items } =
     body.data;
 
   // Validate payment method is enabled
@@ -125,6 +148,23 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
     };
   });
   const subtotal = pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  // Never trust a client-supplied shipping fee either — recompute it from the
+  // same shipping-zones lookup and free-shipping threshold the storefront
+  // uses to *display* a fee, so what's charged always matches what's
+  // configured. This is also why the checkout UI, the placed order, and the
+  // admin view could previously show three different numbers: only the first
+  // one was ever validated against the zones table.
+  const freeShippingThreshold = await getFreeShippingThreshold();
+  let shippingFee = 0;
+  if (subtotal < freeShippingThreshold) {
+    const zoneMatch = await lookupShippingFee(governorate);
+    if (!zoneMatch) {
+      res.status(400).json({ error: "No shipping zone is configured for this governorate" });
+      return;
+    }
+    shippingFee = zoneMatch.price;
+  }
   const total = subtotal + shippingFee;
 
   // Estimated delivery: admin-configurable number of days from now (defaults to 7)

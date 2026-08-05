@@ -19,6 +19,7 @@ export interface PendingOrder {
   customerPhone: string;
   paymentMethodKey: string;
   shippingAddress: string;
+  governorate: string;
   shippingFee: number;
   items: PendingOrderItem[];
   // Form fields needed to redisplay the checkout page if auto-submit fails
