@@ -8,6 +8,7 @@ import {
   ordersTable,
   paymentMethodsTable,
   adminSettingsTable,
+  newsletterSubscribersTable,
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
 import { buildSteps } from "../lib/orderStatus";
@@ -815,6 +816,63 @@ router.put("/admin/settings/payment-methods/:id", async (req, res): Promise<void
     description: updated.description ?? null,
     enabled: updated.enabled,
   });
+});
+
+// ── Newsletter subscribers (admin) ──────────────────────────────────────────
+
+router.get("/admin/newsletter/subscribers", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(newsletterSubscribersTable)
+    .orderBy(desc(newsletterSubscribersTable.subscribedAt));
+
+  res.json(
+    rows.map((s) => ({
+      id: String(s.id),
+      email: s.email,
+      subscribedAt: s.subscribedAt.toISOString(),
+    })),
+  );
+});
+
+router.get("/admin/newsletter/subscribers/export", async (_req, res): Promise<void> => {
+  const rows = await db
+    .select()
+    .from(newsletterSubscribersTable)
+    .orderBy(desc(newsletterSubscribersTable.subscribedAt));
+
+  const escapeCsv = (value: string) =>
+    /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+
+  const csv = [
+    "email,subscribed_at",
+    ...rows.map(
+      (s) => `${escapeCsv(s.email)},${s.subscribedAt.toISOString()}`,
+    ),
+  ].join("\n");
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader(
+    "Content-Disposition",
+    'attachment; filename="newsletter-subscribers.csv"',
+  );
+  res.send(csv);
+});
+
+const AdminDeleteNewsletterSubscriberParams = z.object({ id: z.coerce.number() });
+
+router.delete("/admin/newsletter/subscribers/:id", async (req, res): Promise<void> => {
+  const params = AdminDeleteNewsletterSubscriberParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  await db
+    .delete(newsletterSubscribersTable)
+    .where(eq(newsletterSubscribersTable.id, params.data.id));
+
+  res.status(204).end();
 });
 
 export default router;

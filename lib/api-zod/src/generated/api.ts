@@ -242,6 +242,18 @@ export const CreateOrderResponse = zod.object({
 
 
 /**
+ * @summary Subscribe an email to the newsletter (footer signup form)
+ */
+export const SubscribeNewsletterBody = zod.object({
+  "email": zod.string()
+})
+
+export const SubscribeNewsletterResponse = zod.object({
+  "email": zod.string()
+})
+
+
+/**
  * @summary Look up order tracking status by order number
  */
 export const TrackOrderParams = zod.object({
@@ -576,6 +588,27 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   "price": zod.number()
 })).nullish()
 })
+
+
+/**
+ * @summary List newsletter subscribers (admin)
+ */
+export const AdminListNewsletterSubscribersResponseItem = zod.object({
+  "id": zod.string(),
+  "email": zod.string(),
+  "subscribedAt": zod.string()
+})
+export const AdminListNewsletterSubscribersResponse = zod.array(AdminListNewsletterSubscribersResponseItem)
+
+
+/**
+ * @summary Remove a newsletter subscriber (admin)
+ */
+export const AdminDeleteNewsletterSubscriberParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminDeleteNewsletterSubscriberResponse = zod.void()
 
 
 /**

@@ -3,6 +3,7 @@ import healthRouter from "./health";
 import catalogRouter from "./catalog";
 import ordersRouter from "./orders";
 import shippingRouter from "./shipping";
+import newsletterRouter from "./newsletter";
 import adminAuthRouter from "./adminAuth";
 import adminRouter from "./admin";
 import imagesRouter from "./images";
@@ -14,6 +15,7 @@ router.use(healthRouter);
 router.use(catalogRouter);
 router.use(ordersRouter);
 router.use(shippingRouter);
+router.use(newsletterRouter);
 
 // Auth routes first: /admin/auth/login and /admin/auth/logout must stay
 // public. Everything else under /admin/* (including image uploads) requires

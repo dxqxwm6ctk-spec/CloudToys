@@ -129,6 +129,20 @@ export interface OrderConfirmation {
   estimatedDelivery: string;
 }
 
+export interface NewsletterSubscribeInput {
+  email: string;
+}
+
+export interface NewsletterSubscribeResponse {
+  email: string;
+}
+
+export interface AdminNewsletterSubscriber {
+  id: string;
+  email: string;
+  subscribedAt: string;
+}
+
 export interface AdminStats {
   totalProducts: number;
   totalCategories: number;

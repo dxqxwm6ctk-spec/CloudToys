@@ -14,6 +14,7 @@ import ProductsList from '@/pages/products/list';
 import ProductForm from '@/pages/products/form';
 import CategoriesList from '@/pages/categories/list';
 import OrdersList from '@/pages/orders/list';
+import NewsletterList from '@/pages/newsletter/list';
 import PaymentMethodsSettings from '@/pages/settings/payment-methods';
 import DeliverySettings from '@/pages/settings/delivery';
 import ContactSettings from '@/pages/settings/contact';
@@ -43,6 +44,7 @@ function Router() {
         <Route path="/products/:id/edit" component={EditProductRoute} />
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />
+        <Route path="/newsletter" component={NewsletterList} />
         <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />
         <Route path="/settings/delivery" component={DeliverySettings} />
         <Route path="/settings/contact" component={ContactSettings} />

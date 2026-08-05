@@ -184,6 +184,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrderConfirmation"
 
+  /newsletter/subscribe:
+    post:
+      operationId: subscribeNewsletter
+      tags: [orders]
+      summary: Subscribe an email to the newsletter (footer signup form)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewsletterSubscribeInput"
+      responses:
+        "201":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NewsletterSubscribeResponse"
+        "400":
+          description: Invalid email
+
   /orders/{orderNumber}/track:
     get:
       operationId: trackOrder
@@ -451,6 +472,36 @@ paths:
         "404":
           description: Order not found
 
+  /admin/newsletter/subscribers:
+    get:
+      operationId: adminListNewsletterSubscribers
+      tags: [admin]
+      summary: List newsletter subscribers (admin)
+      responses:
+        "200":
+          description: List of newsletter subscribers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminNewsletterSubscriber"
+
+  /admin/newsletter/subscribers/{id}:
+    delete:
+      operationId: adminDeleteNewsletterSubscriber
+      tags: [admin]
+      summary: Remove a newsletter subscriber (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
   /admin/settings/payment-methods:
     get:
       operationId: adminListPaymentMethods
@@ -655,6 +706,26 @@ components:
       properties:
         orderNumber: { type: string }
         estimatedDelivery: { type: string }
+
+    NewsletterSubscribeInput:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    NewsletterSubscribeResponse:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string }
+
+    AdminNewsletterSubscriber:
+      type: object
+      required: [id, email, subscribedAt]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        subscribedAt: { type: string }
 
     # ── Admin schemas ─────────────────────────────────────────────────────────
     AdminStats:

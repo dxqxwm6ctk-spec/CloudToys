@@ -2,6 +2,7 @@ import { Link } from 'wouter';
 import { Instagram, Facebook, Mail, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { useContactInfo } from '@/hooks/useContactInfo';
+import { useSubscribeNewsletter } from '@workspace/api-client-react';
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -15,14 +16,24 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
+  const [error, setError] = useState('');
   const contact = useContactInfo();
+  const subscribeMutation = useSubscribeNewsletter();
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
-      setSubscribed(true);
-      setEmail('');
-    }
+    if (!email.trim() || subscribeMutation.isPending) return;
+    setError('');
+    subscribeMutation.mutate(
+      { data: { email: email.trim() } },
+      {
+        onSuccess: () => {
+          setSubscribed(true);
+          setEmail('');
+        },
+        onError: () => setError('Something went wrong. Please try again.'),
+      },
+    );
   };
 
   return (
@@ -39,22 +50,26 @@ export function Footer() {
           {subscribed ? (
             <p className="text-[#C9A227] font-medium text-sm">✓ You're on the list — thank you!</p>
           ) : (
-            <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                className="flex-1 md:w-64 bg-white/8 border border-white/15 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#C9A227]/60 transition-colors"
-              />
-              <button
-                type="submit"
-                className="bg-[#C9A227] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#b08e20] transition-all duration-200 hover:shadow-lg whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
+            <div className="w-full md:w-auto">
+              <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="flex-1 md:w-64 bg-white/8 border border-white/15 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#C9A227]/60 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={subscribeMutation.isPending}
+                  className="bg-[#C9A227] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#b08e20] transition-all duration-200 hover:shadow-lg whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {subscribeMutation.isPending ? 'Subscribing…' : 'Subscribe'}
+                </button>
+              </form>
+              {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+            </div>
           )}
         </div>
       </div>

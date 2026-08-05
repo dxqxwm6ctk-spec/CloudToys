@@ -24,6 +24,7 @@ import type {
   AdminDeleteProduct200,
   AdminListOrdersParams,
   AdminListProductsParams,
+  AdminNewsletterSubscriber,
   AdminOrder,
   AdminOrderListResult,
   AdminProduct,
@@ -35,6 +36,8 @@ import type {
   CreateOrderInput,
   HealthStatus,
   ListProductsParams,
+  NewsletterSubscribeInput,
+  NewsletterSubscribeResponse,
   OrderConfirmation,
   OrderStatusUpdate,
   OrderTracking,
@@ -767,6 +770,77 @@ export const useCreateOrder = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateOrderMutationOptions(options));
+    }
+
+export const getSubscribeNewsletterUrl = () => {
+
+
+
+
+  return `/api/newsletter/subscribe`
+}
+
+/**
+ * @summary Subscribe an email to the newsletter (footer signup form)
+ */
+export const subscribeNewsletter = async (newsletterSubscribeInput: NewsletterSubscribeInput, options?: Parameters<typeof customFetch>[1]): Promise<NewsletterSubscribeResponse> => {
+
+  return customFetch<NewsletterSubscribeResponse>(getSubscribeNewsletterUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(newsletterSubscribeInput)
+  }
+);}
+
+
+
+
+
+export const getSubscribeNewsletterMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeNewsletter>>, TError,{data: BodyType<NewsletterSubscribeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof subscribeNewsletter>>, TError,{data: BodyType<NewsletterSubscribeInput>}, TContext> => {
+
+const mutationKey = ['subscribeNewsletter'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof subscribeNewsletter>>, {data: BodyType<NewsletterSubscribeInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  subscribeNewsletter(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SubscribeNewsletterMutationResult = NonNullable<Awaited<ReturnType<typeof subscribeNewsletter>>>
+    export type SubscribeNewsletterMutationBody = BodyType<NewsletterSubscribeInput>
+    export type SubscribeNewsletterMutationError = ErrorType<void>
+
+    /**
+ * @summary Subscribe an email to the newsletter (footer signup form)
+ */
+export const useSubscribeNewsletter = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof subscribeNewsletter>>, TError,{data: BodyType<NewsletterSubscribeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof subscribeNewsletter>>,
+        TError,
+        {data: BodyType<NewsletterSubscribeInput>},
+        TContext
+      > => {
+      return useMutation(getSubscribeNewsletterMutationOptions(options));
     }
 
 export const getTrackOrderUrl = (orderNumber: string,) => {
@@ -1666,6 +1740,154 @@ export const useAdminUpdateOrderStatus = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getAdminUpdateOrderStatusMutationOptions(options));
+    }
+
+export const getAdminListNewsletterSubscribersUrl = () => {
+
+
+
+
+  return `/api/admin/newsletter/subscribers`
+}
+
+/**
+ * @summary List newsletter subscribers (admin)
+ */
+export const adminListNewsletterSubscribers = async ( options?: Parameters<typeof customFetch>[1]): Promise<AdminNewsletterSubscriber[]> => {
+
+  return customFetch<AdminNewsletterSubscriber[]>(getAdminListNewsletterSubscribersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListNewsletterSubscribersQueryKey = () => {
+    return [
+    `/api/admin/newsletter/subscribers`
+    ] as const;
+    }
+
+
+export const getAdminListNewsletterSubscribersQueryOptions = <TData = Awaited<ReturnType<typeof adminListNewsletterSubscribers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListNewsletterSubscribers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListNewsletterSubscribersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListNewsletterSubscribers>>> = ({ signal }) => adminListNewsletterSubscribers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListNewsletterSubscribers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListNewsletterSubscribersQueryResult = NonNullable<Awaited<ReturnType<typeof adminListNewsletterSubscribers>>>
+export type AdminListNewsletterSubscribersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List newsletter subscribers (admin)
+ */
+
+export function useAdminListNewsletterSubscribers<TData = Awaited<ReturnType<typeof adminListNewsletterSubscribers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListNewsletterSubscribers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListNewsletterSubscribersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdminDeleteNewsletterSubscriberUrl = (id: string,) => {
+
+
+
+
+  return `/api/admin/newsletter/subscribers/${id}`
+}
+
+/**
+ * @summary Remove a newsletter subscriber (admin)
+ */
+export const adminDeleteNewsletterSubscriber = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getAdminDeleteNewsletterSubscriberUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminDeleteNewsletterSubscriberMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>, TError,{id: string}, TContext> => {
+
+const mutationKey = ['adminDeleteNewsletterSubscriber'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>, {id: string}> = (props) => {
+          const {id} = props ?? {};
+
+          return  adminDeleteNewsletterSubscriber(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDeleteNewsletterSubscriberMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>>
+
+    export type AdminDeleteNewsletterSubscriberMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a newsletter subscriber (admin)
+ */
+export const useAdminDeleteNewsletterSubscriber = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteNewsletterSubscriber>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+      return useMutation(getAdminDeleteNewsletterSubscriberMutationOptions(options));
     }
 
 export const getAdminListPaymentMethodsUrl = () => {
