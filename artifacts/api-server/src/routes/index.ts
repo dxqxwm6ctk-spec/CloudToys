@@ -7,10 +7,11 @@ import newsletterRouter from "./newsletter";
 import adminAuthRouter from "./adminAuth";
 import adminRouter from "./admin";
 import adminUsersRouter from "./adminUsers";
+import adminStaffRouter from "./adminStaff";
 import adminSecurityRouter from "./adminSecurity";
 import adminShippingRouter from "./adminShipping";
 import imagesRouter from "./images";
-import { requireAdmin } from "../middleware/requireAdmin";
+import { requireAdmin, requireRole } from "../middleware/requireAdmin";
 
 const router: IRouter = Router();
 
@@ -26,7 +27,15 @@ router.use(newsletterRouter);
 router.use(adminAuthRouter);
 router.use("/admin", requireAdmin);
 router.use(adminRouter);
+// Customer management: admin + manager can act (ban/unban), supervisor can
+// only view — enforced route-by-route inside adminUsers.ts.
 router.use(adminUsersRouter);
+// Staff account management is admin-only — a manager/supervisor could
+// otherwise grant themselves more access.
+router.use("/admin/staff", requireRole("admin"));
+router.use(adminStaffRouter);
+// Security dashboard (rate-limit events, IP blocking) is admin-only.
+router.use("/admin/security", requireRole("admin"));
 router.use(adminSecurityRouter);
 router.use(adminShippingRouter);
 router.use(imagesRouter);

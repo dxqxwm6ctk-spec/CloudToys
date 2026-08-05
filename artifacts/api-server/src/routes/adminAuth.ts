@@ -1,16 +1,48 @@
 import { Router, type IRouter } from "express";
-import { timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { sql } from "drizzle-orm";
 import * as z from "zod";
+import { db, adminStaffTable } from "@workspace/db";
 import { requireAdmin } from "../middleware/requireAdmin";
 import {
   ADMIN_COOKIE_NAME,
   ADMIN_COOKIE_OPTIONS,
   ADMIN_COOKIE_CLEAR_OPTIONS,
   createAdminToken,
+  encodeCookieIdentity,
+  hashPassword,
+  verifyPassword,
 } from "../lib/adminAuth";
 import { verifySupabaseToken } from "../lib/supabaseAuth";
 import { adminLoginRateLimit } from "../lib/security";
 import { logger } from "../lib/logger";
+
+/**
+ * Auto-creates the first "admin" staff account from the legacy
+ * ADMIN_USERNAME/ADMIN_PASSWORD env vars the first time anyone logs in,
+ * so existing deployments keep working after moving to DB-backed staff
+ * accounts. No-ops once at least one staff row exists.
+ */
+async function seedFirstAdminIfNeeded(): Promise<void> {
+  const expectedUsername = process.env.ADMIN_USERNAME;
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+  if (!expectedUsername || !expectedPassword) return;
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(adminStaffTable);
+  if (count > 0) return;
+
+  await db
+    .insert(adminStaffTable)
+    .values({
+      username: expectedUsername,
+      passwordHash: hashPassword(expectedPassword),
+      role: "admin",
+      active: true,
+    })
+    .onConflictDoNothing();
+}
 
 /**
  * Emails allowed to sign in to the admin dashboard via "Sign in with
@@ -35,46 +67,36 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-// Constant-time comparison — prevents leaking password length/content via
-// response-time differences.
-function safeCompare(a: string, b: string): boolean {
-  const bufA = Buffer.from(a);
-  const bufB = Buffer.from(b);
-  if (bufA.length !== bufB.length) return false;
-  return timingSafeEqual(bufA, bufB);
-}
-
 // POST /admin/auth/login — public
-router.post("/admin/auth/login", adminLoginRateLimit, (req, res): void => {
+router.post("/admin/auth/login", adminLoginRateLimit, async (req, res): Promise<void> => {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Username and password are required" });
     return;
   }
 
-  const expectedUsername = process.env.ADMIN_USERNAME;
-  const expectedPassword = process.env.ADMIN_PASSWORD;
-
-  if (!expectedUsername || !expectedPassword) {
-    logger.error(
-      "ADMIN_USERNAME/ADMIN_PASSWORD are not configured — admin login is disabled",
-    );
-    res.status(500).json({ error: "Admin authentication is not configured" });
-    return;
-  }
+  await seedFirstAdminIfNeeded();
 
   const { username, password } = parsed.data;
-  const usernameOk = safeCompare(username, expectedUsername);
-  const passwordOk = safeCompare(password, expectedPassword);
 
-  if (!usernameOk || !passwordOk) {
+  const [staff] = await db
+    .select()
+    .from(adminStaffTable)
+    .where(sql`lower(${adminStaffTable.username}) = lower(${username})`);
+
+  if (!staff || !staff.active || !verifyPassword(password, staff.passwordHash)) {
     res.status(401).json({ error: "Invalid username or password" });
     return;
   }
 
-  res.cookie(ADMIN_COOKIE_NAME, username, ADMIN_COOKIE_OPTIONS);
-  const token = createAdminToken(username);
-  res.json({ username, token });
+  const identity = { username: staff.username, role: staff.role };
+  res.cookie(ADMIN_COOKIE_NAME, encodeCookieIdentity(identity), ADMIN_COOKIE_OPTIONS);
+  const token = createAdminToken(identity);
+  await db
+    .update(adminStaffTable)
+    .set({ lastLoginAt: new Date() })
+    .where(sql`${adminStaffTable.id} = ${staff.id}`);
+  res.json({ username: staff.username, role: staff.role, token });
 });
 
 const googleLoginSchema = z.object({
@@ -108,15 +130,41 @@ router.post("/admin/auth/google", adminLoginRateLimit, async (req, res): Promise
     return;
   }
 
-  if (!allowedEmails.has(user.email.toLowerCase())) {
-    logger.warn({ email: user.email }, "Admin Google login rejected — email not allowlisted");
-    res.status(403).json({ error: "This Google account is not authorized for admin access" });
+  const email = user.email;
+  const [existingStaff] = await db
+    .select()
+    .from(adminStaffTable)
+    .where(sql`lower(${adminStaffTable.username}) = lower(${email})`);
+
+  if (existingStaff && !existingStaff.active) {
+    res.status(403).json({ error: "This admin account has been disabled" });
     return;
   }
 
-  res.cookie(ADMIN_COOKIE_NAME, user.email, ADMIN_COOKIE_OPTIONS);
-  const token = createAdminToken(user.email);
-  res.json({ username: user.email, token });
+  let role = existingStaff?.role;
+  if (!role) {
+    if (!allowedEmails.has(email.toLowerCase())) {
+      logger.warn({ email }, "Admin Google login rejected — email not allowlisted");
+      res.status(403).json({ error: "This Google account is not authorized for admin access" });
+      return;
+    }
+    // Legacy allowlist entry with no staff row yet — provision one as
+    // "admin" so it shows up in staff management going forward.
+    role = "admin";
+    await db
+      .insert(adminStaffTable)
+      .values({ username: email, passwordHash: hashPassword(randomUUID()), role, active: true })
+      .onConflictDoNothing();
+  }
+
+  const identity = { username: email, role };
+  res.cookie(ADMIN_COOKIE_NAME, encodeCookieIdentity(identity), ADMIN_COOKIE_OPTIONS);
+  const token = createAdminToken(identity);
+  await db
+    .update(adminStaffTable)
+    .set({ lastLoginAt: new Date() })
+    .where(sql`lower(${adminStaffTable.username}) = lower(${email})`);
+  res.json({ username: email, role, token });
 });
 
 // POST /admin/auth/logout — public (clearing an absent/invalid cookie is a no-op)
@@ -128,7 +176,7 @@ router.post("/admin/auth/logout", (_req, res): void => {
 // GET /admin/auth/me — guarded; the admin frontend polls this on load to
 // decide whether to show the login screen or the dashboard.
 router.get("/admin/auth/me", requireAdmin, (req, res): void => {
-  res.json({ username: req.adminUsername });
+  res.json({ username: req.adminUsername, role: req.adminRole });
 });
 
 export default router;

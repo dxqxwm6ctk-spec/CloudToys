@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { eq, asc } from "drizzle-orm";
 import { db, shippingZonesTable } from "@workspace/db";
+import { requireRole } from "../middleware/requireAdmin";
 import * as z from "zod";
 
 // Admin CRUD for shipping zones — mounted behind `requireAdmin` in
@@ -35,7 +36,7 @@ router.get("/admin/settings/shipping-zones", async (_req, res): Promise<void> =>
   );
 });
 
-router.post("/admin/settings/shipping-zones", async (req, res): Promise<void> => {
+router.post("/admin/settings/shipping-zones", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const parsed = ShippingZoneBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -67,7 +68,7 @@ router.post("/admin/settings/shipping-zones", async (req, res): Promise<void> =>
   });
 });
 
-router.put("/admin/settings/shipping-zones/:id", async (req, res): Promise<void> => {
+router.put("/admin/settings/shipping-zones/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = z.object({ id: z.coerce.number() }).safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });
@@ -110,7 +111,7 @@ router.put("/admin/settings/shipping-zones/:id", async (req, res): Promise<void>
   });
 });
 
-router.delete("/admin/settings/shipping-zones/:id", async (req, res): Promise<void> => {
+router.delete("/admin/settings/shipping-zones/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = z.object({ id: z.coerce.number() }).safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: "Invalid id" });

@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
 import * as z from "zod";
 import { db, profilesTable, ordersTable } from "@workspace/db";
+import { requireRole } from "../middleware/requireAdmin";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -162,7 +163,7 @@ router.get("/admin/users/:id", async (req, res): Promise<void> => {
 // ── Ban / unban ───────────────────────────────────────────────────────────
 const BanBody = z.object({ reason: z.string().trim().max(500).optional() });
 
-router.post("/admin/users/:id/ban", async (req, res): Promise<void> => {
+router.post("/admin/users/:id/ban", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = UserIdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -201,7 +202,7 @@ router.post("/admin/users/:id/ban", async (req, res): Promise<void> => {
   res.json({ id: params.data.id, banned: true });
 });
 
-router.post("/admin/users/:id/unban", async (req, res): Promise<void> => {
+router.post("/admin/users/:id/unban", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = UserIdParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

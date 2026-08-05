@@ -1,5 +1,6 @@
 import type { CookieOptions, Request } from "express";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, scryptSync, randomBytes } from "node:crypto";
+import type { AdminRole } from "@workspace/db";
 
 export const ADMIN_COOKIE_NAME = "admin_session";
 
@@ -9,6 +10,29 @@ const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 function sign(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+// ── Password hashing (scrypt, no extra dependency) ──────────────────────────
+
+/** Hash a plaintext password into a storable `salt:hash` string. */
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+/** Verify a plaintext password against a hash produced by hashPassword. */
+export function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = stored.split(":");
+  if (!salt || !hash) return false;
+  const hashBuf = Buffer.from(hash, "hex");
+  const candidateBuf = scryptSync(password, salt, 64);
+  return hashBuf.length === candidateBuf.length && timingSafeEqual(hashBuf, candidateBuf);
+}
+
+export interface AdminIdentity {
+  username: string;
+  role: AdminRole;
 }
 
 /**
@@ -22,19 +46,15 @@ function sign(payload: string, secret: string): string {
  * comes back unauthenticated. A bearer token sent via the `Authorization`
  * header has no such restriction, so the admin dashboard prefers it.
  */
-export function createAdminToken(username: string): string {
+export function createAdminToken(identity: AdminIdentity): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret) throw new Error("SESSION_SECRET is not configured");
   const expiresAt = Date.now() + TOKEN_TTL_MS;
-  const payload = `${Buffer.from(username, "utf8").toString("base64url")}.${expiresAt}`;
+  const encodedUsername = Buffer.from(identity.username, "utf8").toString("base64url");
+  const payload = `${encodedUsername}.${identity.role}.${expiresAt}`;
   return `${payload}.${sign(payload, secret)}`;
 }
 
-/**
- * Verify a bearer token created by createAdminToken. Returns the admin
- * username if the signature is valid and the token has not expired,
- * otherwise null.
- */
 /**
  * Whether this request is a genuinely authenticated admin request (valid
  * bearer token or signed session cookie) — as opposed to just hitting an
@@ -53,14 +73,19 @@ export function isVerifiedAdminRequest(req: Request): boolean {
   return typeof value === "string" && value.length > 0;
 }
 
-export function verifyAdminToken(token: string): string | null {
+/**
+ * Verify a bearer token created by createAdminToken. Returns the admin
+ * identity (username + role) if the signature is valid and the token has
+ * not expired, otherwise null.
+ */
+export function verifyAdminToken(token: string): AdminIdentity | null {
   const secret = process.env.SESSION_SECRET;
   if (!secret) return null;
 
   const parts = token.split(".");
-  if (parts.length !== 3) return null;
-  const [encodedUsername, expiresAtRaw, signature] = parts;
-  const payload = `${encodedUsername}.${expiresAtRaw}`;
+  if (parts.length !== 4) return null;
+  const [encodedUsername, role, expiresAtRaw, signature] = parts;
+  const payload = `${encodedUsername}.${role}.${expiresAtRaw}`;
 
   const expectedSignature = sign(payload, secret);
   const sigBuf = Buffer.from(signature);
@@ -73,10 +98,26 @@ export function verifyAdminToken(token: string): string | null {
   if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) return null;
 
   try {
-    return Buffer.from(encodedUsername, "base64url").toString("utf8");
+    const username = Buffer.from(encodedUsername, "base64url").toString("utf8");
+    return { username, role: role as AdminRole };
   } catch {
     return null;
   }
+}
+
+/** Encode a username + role pair into the value stored in the signed cookie. */
+export function encodeCookieIdentity(identity: AdminIdentity): string {
+  return `${identity.username}::${identity.role}`;
+}
+
+/** Decode a cookie value produced by encodeCookieIdentity. */
+export function decodeCookieIdentity(value: string): AdminIdentity | null {
+  const idx = value.lastIndexOf("::");
+  if (idx === -1) return null;
+  const username = value.slice(0, idx);
+  const role = value.slice(idx + 2);
+  if (!username || !role) return null;
+  return { username, role: role as AdminRole };
 }
 
 // Admin and storefront are deployed on different origins in production

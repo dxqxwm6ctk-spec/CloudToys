@@ -12,6 +12,7 @@ import {
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
 import { buildSteps } from "../lib/orderStatus";
+import { requireRole } from "../middleware/requireAdmin";
 import * as z from "zod";
 import {
   GetAdminStatsResponse,
@@ -198,7 +199,7 @@ router.get("/admin/products", async (req, res): Promise<void> => {
   );
 });
 
-router.post("/admin/products", async (req, res): Promise<void> => {
+router.post("/admin/products", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const parsed = AdminCreateProductBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -267,7 +268,7 @@ router.post("/admin/products", async (req, res): Promise<void> => {
   res.status(201).json(AdminCreateProductResponse.parse(toAdminProductDto(row)));
 });
 
-router.put("/admin/products/:id", async (req, res): Promise<void> => {
+router.put("/admin/products/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminUpdateProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -366,7 +367,7 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
   res.json(AdminUpdateProductResponse.parse(toAdminProductDto(row)));
 });
 
-router.delete("/admin/products/:id", async (req, res): Promise<void> => {
+router.delete("/admin/products/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminDeleteProductParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -429,7 +430,7 @@ router.get("/admin/categories", async (_req, res): Promise<void> => {
   );
 });
 
-router.post("/admin/categories", async (req, res): Promise<void> => {
+router.post("/admin/categories", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const parsed = AdminCreateCategoryBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -456,7 +457,7 @@ router.post("/admin/categories", async (req, res): Promise<void> => {
   );
 });
 
-router.put("/admin/categories/:id", async (req, res): Promise<void> => {
+router.put("/admin/categories/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminUpdateCategoryParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -513,7 +514,7 @@ router.put("/admin/categories/:id", async (req, res): Promise<void> => {
   );
 });
 
-router.delete("/admin/categories/:id", async (req, res): Promise<void> => {
+router.delete("/admin/categories/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminDeleteCategoryParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -690,7 +691,7 @@ router.get("/admin/settings/shipping", async (_req, res): Promise<void> => {
   }
 });
 
-router.put("/admin/settings/shipping", async (req, res): Promise<void> => {
+router.put("/admin/settings/shipping", requireRole("admin"), async (req, res): Promise<void> => {
   const parsed = ShippingThresholdBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -733,7 +734,7 @@ router.get("/admin/settings/returns", async (_req, res): Promise<void> => {
   }
 });
 
-router.put("/admin/settings/returns", async (req, res): Promise<void> => {
+router.put("/admin/settings/returns", requireRole("admin"), async (req, res): Promise<void> => {
   const parsed = ReturnPolicyBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -777,7 +778,7 @@ router.get("/admin/settings/warranty", async (_req, res): Promise<void> => {
   }
 });
 
-router.put("/admin/settings/warranty", async (req, res): Promise<void> => {
+router.put("/admin/settings/warranty", requireRole("admin"), async (req, res): Promise<void> => {
   const parsed = WarrantyPolicyBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -808,7 +809,7 @@ router.get("/admin/settings/delivery", async (_req, res): Promise<void> => {
   res.json({ days: Number.isFinite(days) && days > 0 ? days : DEFAULT_DELIVERY_DAYS });
 });
 
-router.put("/admin/settings/delivery", async (req, res): Promise<void> => {
+router.put("/admin/settings/delivery", requireRole("admin"), async (req, res): Promise<void> => {
   const parsed = z.object({ days: z.coerce.number().int().min(1).max(90) }).safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -855,7 +856,7 @@ const AdminUpdateContactInfoBody = z.object({
   address: z.string().min(1),
 });
 
-router.put("/admin/settings/contact", async (req, res): Promise<void> => {
+router.put("/admin/settings/contact", requireRole("admin"), async (req, res): Promise<void> => {
   const parsed = AdminUpdateContactInfoBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -894,7 +895,7 @@ router.get("/admin/settings/payment-methods", async (_req, res): Promise<void> =
 const AdminUpdatePaymentMethodParams = z.object({ id: z.coerce.number() });
 const AdminUpdatePaymentMethodBody = z.object({ enabled: z.boolean() });
 
-router.put("/admin/settings/payment-methods/:id", async (req, res): Promise<void> => {
+router.put("/admin/settings/payment-methods/:id", requireRole("admin"), async (req, res): Promise<void> => {
   const params = AdminUpdatePaymentMethodParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -969,7 +970,7 @@ router.get("/admin/newsletter/subscribers/export", async (_req, res): Promise<vo
 
 const AdminDeleteNewsletterSubscriberParams = z.object({ id: z.coerce.number() });
 
-router.delete("/admin/newsletter/subscribers/:id", async (req, res): Promise<void> => {
+router.delete("/admin/newsletter/subscribers/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminDeleteNewsletterSubscriberParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });

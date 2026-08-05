@@ -3,8 +3,11 @@ import { getApiBase } from '@/lib/api-url';
 import { setAuthToken, clearAuthToken, authHeader } from '@/lib/auth-token';
 import { supabase } from '@/lib/supabaseClient';
 
+export type AdminRole = 'admin' | 'manager' | 'supervisor';
+
 interface AuthState {
   username: string | null;
+  role: AdminRole | null;
   isLoading: boolean;
   googleError: string | null;
   login: (username: string, password: string) => Promise<void>;
@@ -18,6 +21,7 @@ const BASE = getApiBase();
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsername] = useState<string | null>(null);
+  const [role, setRole] = useState<AdminRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [googleError, setGoogleError] = useState<string | null>(null);
   // Guards against exchanging the same Supabase session twice (initial
@@ -38,9 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { error?: string }).error ?? 'Google sign-in failed');
       }
-      const data = (await res.json()) as { username: string; token?: string };
+      const data = (await res.json()) as { username: string; role?: AdminRole; token?: string };
       if (data.token) setAuthToken(data.token);
       setUsername(data.username);
+      setRole(data.role ?? null);
       setGoogleError(null);
     } catch (err) {
       setGoogleError(err instanceof Error ? err.message : 'Google sign-in failed');
@@ -62,10 +67,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         headers: authHeader(),
       }).catch(() => null);
-      const meData = meRes?.ok ? ((await meRes.json()) as { username: string }) : null;
+      const meData = meRes?.ok ? ((await meRes.json()) as { username: string; role?: AdminRole }) : null;
       if (cancelled) return;
       if (meData) {
         setUsername(meData.username);
+        setRole(meData.role ?? null);
         setIsLoading(false);
         return;
       }
@@ -105,9 +111,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const err = await res.json().catch(() => ({}));
       throw new Error((err as { error?: string }).error ?? 'Login failed');
     }
-    const data = (await res.json()) as { username: string; token?: string };
+    const data = (await res.json()) as { username: string; role?: AdminRole; token?: string };
     if (data.token) setAuthToken(data.token);
     setUsername(data.username);
+    setRole(data.role ?? null);
   }, []);
 
   const loginWithGoogle = useCallback(async () => {

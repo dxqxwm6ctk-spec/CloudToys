@@ -11,6 +11,7 @@ import multer from "multer";
 import sharp from "sharp";
 import rateLimit from "express-rate-limit";
 import { uploadFile, fileExists, downloadFile, deleteByPrefix } from "../lib/supabaseStorage";
+import { requireRole } from "../middleware/requireAdmin";
 import { db, productsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
@@ -165,6 +166,7 @@ const router: IRouter = Router();
 // POST /admin/images/upload
 router.post(
   "/admin/images/upload",
+  requireRole("admin", "manager"),
   uploadRateLimit,
   upload.single("file"),
   async (req, res): Promise<void> => {

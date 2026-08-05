@@ -28,3 +28,4 @@ export * from "./profiles";
 export * from "./newsletter-subscribers";
 export * from "./security-events";
 export * from "./blocked-ips";
+export * from "./admin-staff";
