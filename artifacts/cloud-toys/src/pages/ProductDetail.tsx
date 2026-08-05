@@ -9,6 +9,7 @@ import { Star, Heart, Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Chevro
 import { formatJOD } from '../lib/currency';
 import { motion } from 'framer-motion';
 import { ProductPicture } from '../components/ui/ProductPicture';
+import { resolveMediaUrl } from '@workspace/api-client-react';
 
 export function ProductDetail() {
   const [, params] = useRoute('/product/:slug');
@@ -163,7 +164,7 @@ export function ProductDetail() {
                     className={`w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-colors ${activeImage === idx ? 'border-primary' : 'border-transparent'}`}
                   >
                     <img
-                      src={idx === 0 ? (product.thumbUrl ?? img) : img}
+                      src={resolveMediaUrl(idx === 0 ? (product.thumbUrl ?? img) : img)}
                       alt=""
                       loading="lazy"
                       className="w-full h-full object-cover"
