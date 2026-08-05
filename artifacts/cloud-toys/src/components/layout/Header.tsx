@@ -78,6 +78,7 @@ export function Header() {
       const query = params.toString();
       setLocation(query ? `/shop?${query}` : '/shop', { replace: true });
     }
+    return undefined;
   }, [searchQuery, setLocation]);
 
   return (
