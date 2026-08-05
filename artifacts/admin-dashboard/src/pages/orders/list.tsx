@@ -471,6 +471,27 @@ export default function OrdersList() {
                         {selectedOrder.shippingFee != null ? formatPrice(Number(selectedOrder.shippingFee)) : '—'}
                       </span>
                     </div>
+                    {(() => {
+                      // Discount, if any: the gap between what the line items +
+                      // shipping add up to and the order's recorded total.
+                      // Both sides are server-computed, so a non-zero gap here
+                      // reflects a real discount rather than a display quirk.
+                      if (!selectedOrder.items || selectedOrder.items.length === 0) return null;
+                      if (selectedOrder.total == null) return null;
+                      const itemsSubtotal = selectedOrder.items.reduce(
+                        (sum, item) => sum + Number(item.price) * item.quantity,
+                        0,
+                      );
+                      const shippingFee = selectedOrder.shippingFee != null ? Number(selectedOrder.shippingFee) : 0;
+                      const discount = itemsSubtotal + shippingFee - Number(selectedOrder.total);
+                      if (discount <= 0.001) return null;
+                      return (
+                        <div className="flex justify-between items-center text-sm text-emerald-600">
+                          <span>Discount</span>
+                          <span>-{formatPrice(discount)}</span>
+                        </div>
+                      );
+                    })()}
                     <Separator />
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Order Total</span>

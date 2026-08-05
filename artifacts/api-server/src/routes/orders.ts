@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, desc } from "drizzle-orm";
+import { eq, sql, desc, inArray } from "drizzle-orm";
 import { db, ordersTable, paymentMethodsTable, productsTable, adminSettingsTable, profilesTable } from "@workspace/db";
 import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
@@ -71,8 +71,6 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
 
   const { customerName, customerPhone, paymentMethodKey, shippingAddress, shippingFee, items } =
     body.data;
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const total = subtotal + shippingFee;
 
   // Validate payment method is enabled
   const [pm] = await db
@@ -98,6 +96,36 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
       (quantityByProductId.get(productId) ?? 0) + item.quantity,
     );
   }
+
+  // Never trust client-supplied prices — a tampered or stale cart could send
+  // any number here. Re-price every line item from the product's current
+  // price in the database so the charged amount always matches what the
+  // admin configured, in JOD, with no client-side influence.
+  const productIds = [...quantityByProductId.keys()];
+  const authoritativeProducts = await db
+    .select({ id: productsTable.id, name: productsTable.name, price: productsTable.price })
+    .from(productsTable)
+    .where(inArray(productsTable.id, productIds));
+
+  const productById = new Map(authoritativeProducts.map((p) => [p.id, p]));
+  for (const productId of productIds) {
+    if (!productById.has(productId)) {
+      res.status(400).json({ error: `Product ${productId} not found` });
+      return;
+    }
+  }
+
+  const pricedItems = items.map((item) => {
+    const product = productById.get(Number(item.productId))!;
+    return {
+      productId: item.productId,
+      name: product.name,
+      quantity: item.quantity,
+      price: Number(product.price),
+    };
+  });
+  const subtotal = pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = subtotal + shippingFee;
 
   // Estimated delivery: admin-configurable number of days from now (defaults to 7)
   const defaultDeliveryDays = await getDefaultDeliveryDays();
@@ -172,7 +200,7 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
           userId: req.customer!.id,
           paymentMethod: pm.label,
           shippingAddress: shippingAddress ?? null,
-          items,
+          items: pricedItems,
           shippingFee: String(shippingFee),
           total: String(total),
         })
