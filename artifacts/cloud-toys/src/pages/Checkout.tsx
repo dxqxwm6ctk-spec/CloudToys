@@ -7,6 +7,7 @@ import { CheckCircle2, ChevronRight, Lock, CreditCard, Banknote, Loader2 } from 
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { addOrderToHistory } from '../lib/orderHistory';
 import { formatJOD } from '../lib/currency';
+import { useShippingThreshold } from '../hooks/useStoreSettings';
 import { JORDAN_GOVERNORATES } from '../lib/jordan-locations';
 import { SearchableSelect } from '../components/ui/SearchableSelect';
 import {
@@ -88,7 +89,8 @@ export function Checkout() {
       .finally(() => setLoadingShipping(false));
   }, [governorate]);
 
-  const shipping = cartTotal >= 150 ? 0 : shippingPrice;
+  const { amount: freeShippingThreshold } = useShippingThreshold();
+  const shipping = cartTotal >= freeShippingThreshold ? 0 : shippingPrice;
   const total = cartTotal + shipping;
 
   // Load payment methods when entering payment step

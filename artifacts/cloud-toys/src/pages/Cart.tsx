@@ -5,6 +5,7 @@ import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { formatJOD } from '../lib/currency';
+import { useShippingThreshold } from '../hooks/useStoreSettings';
 import { getApiBase } from '../lib/api-url';
 
 const BASE = getApiBase();
@@ -32,7 +33,7 @@ export function Cart() {
   const { items, updateQuantity, removeFromCart, cartTotal } = useCart();
   const [, setLocation] = useLocation();
   const defaultShipping = useDefaultShippingPrice();
-  const freeShippingThreshold = 150;
+  const { amount: freeShippingThreshold } = useShippingThreshold();
 
   const isFreeShipping = cartTotal >= freeShippingThreshold;
   const currentShipping = isFreeShipping ? 0 : defaultShipping;

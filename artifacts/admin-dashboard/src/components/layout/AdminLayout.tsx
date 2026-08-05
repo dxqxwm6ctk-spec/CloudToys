@@ -69,31 +69,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             Admin Console
           </div>
           <div className="flex items-center gap-4">
-            {/* Currency toggle */}
-            <div className="flex items-center rounded-md border border-border overflow-hidden text-xs font-medium">
-              <button
-                onClick={() => setMode('USD')}
-                className={cn(
-                  'px-3 py-1.5 transition-colors',
-                  mode === 'USD'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
-                )}
-              >
-                USD
-              </button>
-              <button
-                onClick={() => setMode('JOD')}
-                className={cn(
-                  'px-3 py-1.5 transition-colors',
-                  mode === 'JOD'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
-                )}
-              >
-                JOD
-              </button>
-            </div>
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
               {username ? username.charAt(0).toUpperCase() : '?'}
             </div>

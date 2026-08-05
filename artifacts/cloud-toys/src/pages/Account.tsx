@@ -5,7 +5,7 @@ import { Link } from 'wouter';
 import { getOrderHistory } from '../lib/orderHistory';
 import { useCustomerAuth } from '../context/CustomerAuthContext';
 
-import { formatUSD, formatJOD } from '../lib/currency';
+import { formatJOD } from '../lib/currency';
 
 function GoogleIcon() {
   return (
@@ -44,7 +44,7 @@ function RecentOrderRow({ orderNumber, itemCount, total }: { orderNumber: string
       <div>
         <p className="font-semibold font-mono text-sm">{orderNumber}</p>
         <p className="text-xs text-muted-foreground mt-1">
-          {itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatUSD(total)} <span className="opacity-70">/ {formatJOD(total)}</span>
+          {itemCount} {itemCount === 1 ? 'item' : 'items'} · {formatJOD(total)}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">

@@ -13,3 +13,8 @@ export function formatPrice(amount: number, currency: string = 'JOD'): string {
     maximumFractionDigits: currency === 'JOD' ? 3 : 2,
   }).format(amount);
 }
+
+/** Cart/checkout totals are always denominated in JOD, the store's base currency. */
+export function formatJOD(amount: number): string {
+  return formatPrice(amount, 'JOD');
+}
