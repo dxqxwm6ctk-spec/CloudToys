@@ -98,6 +98,25 @@ export const trackOrderRateLimit = rateLimit({
   },
 });
 
+/**
+ * Blanket safety net across every API route. Specific limiters above are
+ * tighter and cover the sensitive endpoints (checkout, order lookup, admin
+ * login); this one exists purely so a single IP hammering the API with
+ * arbitrary/varied requests (scraping, scripted abuse, a runaway client)
+ * can't pile up enough load to degrade the server for everyone else.
+ */
+export const globalApiRateLimit = rateLimit({
+  windowMs: 60_000,
+  max: 240,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests — please slow down" },
+  handler: (req, res, _next, options) => {
+    void logSecurityEvent(req, "global_rate_limit");
+    res.status(options.statusCode).json(options.message);
+  },
+});
+
 export const adminLoginRateLimit = rateLimit({
   windowMs: 15 * 60_000,
   max: 15,

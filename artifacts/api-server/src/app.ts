@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { blockBannedIps } from "./lib/security";
+import { blockBannedIps, globalApiRateLimit } from "./lib/security";
 
 const app: Express = express();
 
@@ -67,6 +67,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser(process.env.SESSION_SECRET));
 app.use(blockBannedIps);
+app.use("/api", globalApiRateLimit);
 
 app.use(
   "/api/images",

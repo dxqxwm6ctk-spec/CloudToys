@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail, PackageCheck, ShieldCheck } from 'lucide-react';
+import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail, PackageCheck, ShieldCheck, Users, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
@@ -13,6 +13,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: '/products', label: 'Products', icon: Package },
     { href: '/categories', label: 'Categories', icon: FolderTree },
     { href: '/orders', label: 'Orders', icon: ShoppingBag },
+    { href: '/users', label: 'Users', icon: Users },
+    { href: '/security', label: 'Security', icon: ShieldAlert },
     { href: '/newsletter', label: 'Newsletter', icon: Mail },
     { href: '/settings/payment-methods', label: 'Payment Methods', icon: Settings },
     { href: '/settings/delivery', label: 'Delivery', icon: Truck },

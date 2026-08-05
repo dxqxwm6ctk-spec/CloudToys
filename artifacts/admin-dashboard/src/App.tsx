@@ -21,6 +21,8 @@ import ShippingZonesSettings from '@/pages/settings/shipping-zones';
 import ShippingThresholdSettings from '@/pages/settings/shipping-threshold';
 import ReturnPolicySettings from '@/pages/settings/returns';
 import WarrantyPolicySettings from '@/pages/settings/warranty';
+import UsersList from '@/pages/users/list';
+import SecurityDashboard from '@/pages/security/index';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,6 +48,8 @@ function Router() {
         <Route path="/products/:id/edit" component={EditProductRoute} />
         <Route path="/categories" component={CategoriesList} />
         <Route path="/orders" component={OrdersList} />
+        <Route path="/users" component={UsersList} />
+        <Route path="/security" component={SecurityDashboard} />
         <Route path="/newsletter" component={NewsletterList} />
         <Route path="/settings/payment-methods" component={PaymentMethodsSettings} />
         <Route path="/settings/delivery" component={DeliverySettings} />
