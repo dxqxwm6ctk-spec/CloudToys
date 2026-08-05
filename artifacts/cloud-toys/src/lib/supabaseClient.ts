@@ -16,4 +16,7 @@ if (!url || !anonKey) {
   );
 }
 
-export const supabase = createClient(url ?? '', anonKey ?? '');
+// Fall back to a syntactically valid placeholder so the client can be
+// constructed even when Supabase isn't configured yet — real requests will
+// simply fail until SUPABASE_URL / SUPABASE_ANON_KEY are set.
+export const supabase = createClient(url || 'https://placeholder.supabase.co', anonKey || 'placeholder-anon-key');

@@ -4,6 +4,7 @@ import { useTrackOrder } from '@workspace/api-client-react';
 import { Search, Package, Truck, CheckCircle2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
+import { formatJOD } from '../lib/currency';
 
 export function TrackOrder() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -111,6 +112,40 @@ export function TrackOrder() {
                 ))}
               </div>
             </div>
+
+            {(tracking.items?.length || tracking.total != null) && (
+              <div className="mt-12 pt-8 border-t border-border">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-4">
+                  Order Summary
+                </h3>
+                {tracking.items && tracking.items.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {tracking.items.map((item, i) => (
+                      <div key={i} className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          {item.name} <span className="text-xs">× {item.quantity}</span>
+                        </span>
+                        <span>{formatJOD(item.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="space-y-2 pt-4 border-t border-border/60">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>{formatJOD(tracking.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span>{tracking.shippingFee === 0 ? 'Free' : formatJOD(tracking.shippingFee)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-semibold pt-2 border-t border-border/60">
+                    <span>Total</span>
+                    <span>{formatJOD(tracking.total)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

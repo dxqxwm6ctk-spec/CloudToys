@@ -272,6 +272,8 @@ export interface AdminOrder {
   /** @nullable */
   shippingAddress?: string | null;
   /** @nullable */
+  shippingFee?: number | null;
+  /** @nullable */
   total?: number | null;
   /** @nullable */
   createdAt?: string | null;

@@ -454,7 +454,24 @@ export default function OrdersList() {
                   </section>
 
                   {/* Order Total */}
-                  <div className="bg-muted/40 rounded-lg p-4">
+                  <div className="bg-muted/40 rounded-lg p-4 space-y-2">
+                    {selectedOrder.items && selectedOrder.items.length > 0 && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Subtotal</span>
+                        <span>
+                          {formatPrice(
+                            selectedOrder.items.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0),
+                          )}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Shipping</span>
+                      <span>
+                        {selectedOrder.shippingFee != null ? formatPrice(Number(selectedOrder.shippingFee)) : '—'}
+                      </span>
+                    </div>
+                    <Separator />
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground">Order Total</span>
                       <div className="text-right text-xl font-bold">

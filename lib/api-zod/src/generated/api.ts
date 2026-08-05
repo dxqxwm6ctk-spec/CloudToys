@@ -555,6 +555,7 @@ export const AdminListOrdersResponse = zod.object({
   "customerPhone": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
+  "shippingFee": zod.number().nullish(),
   "total": zod.number().nullish(),
   "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({
@@ -596,6 +597,7 @@ export const AdminUpdateOrderStatusResponse = zod.object({
   "customerPhone": zod.string().nullish(),
   "paymentMethod": zod.string().nullish(),
   "shippingAddress": zod.string().nullish(),
+  "shippingFee": zod.number().nullish(),
   "total": zod.number().nullish(),
   "createdAt": zod.string().nullish(),
   "steps": zod.array(zod.object({

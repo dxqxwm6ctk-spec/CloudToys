@@ -888,6 +888,7 @@ components:
         customerPhone: { type: ["string", "null"] }
         paymentMethod: { type: ["string", "null"] }
         shippingAddress: { type: ["string", "null"] }
+        shippingFee: { type: ["number", "null"] }
         total: { type: ["number", "null"] }
         createdAt: { type: ["string", "null"] }
         steps:
