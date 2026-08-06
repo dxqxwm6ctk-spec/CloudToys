@@ -172,8 +172,13 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
             queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
             setLocation('/products');
           },
-          onError: () => {
-            toast({ title: "Failed to create product", variant: "destructive" });
+          onError: (err: any) => {
+            const message =
+              err?.data?.error ||
+              err?.response?.data?.error ||
+              err?.message ||
+              "Failed to create product";
+            toast({ title: message, variant: "destructive" });
           }
         }
       );

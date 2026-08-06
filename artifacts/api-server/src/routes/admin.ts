@@ -223,28 +223,79 @@ router.post("/admin/products", requireRole("admin", "manager"), async (req, res)
     categoryId, stockQuantity, badge, features,
   } = parsed.data;
 
-  const [inserted] = await db
-    .insert(productsTable)
-    .values({
-      slug,
-      name,
-      shortDescription,
-      description,
-      price: String(price),
-      compareAtPrice: compareAtPrice != null ? String(compareAtPrice) : null,
-      currency: currency ?? "JOD",
-      imageUrl,
-      galleryUrls: galleryUrls ?? [],
-      thumbUrl: thumbUrl ?? null,
-      mediumUrl: mediumUrl ?? null,
-      largeUrl: largeUrl ?? null,
-      categoryId: Number(categoryId),
-      stockQuantity,
-      inStock: stockQuantity > 0,
-      badge: badge ?? null,
-      features: features ?? [],
-    })
-    .returning();
+  const numericCategoryId = Number(categoryId);
+  if (!Number.isInteger(numericCategoryId) || numericCategoryId <= 0) {
+    res.status(400).json({ error: "Please select a valid category." });
+    return;
+  }
+
+  const [category] = await db
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.id, numericCategoryId));
+
+  if (!category) {
+    res.status(400).json({
+      error: "The selected category no longer exists. Refresh the page and select a category again.",
+    });
+    return;
+  }
+
+  let inserted: typeof productsTable.$inferSelect;
+  try {
+    [inserted] = await db
+      .insert(productsTable)
+      .values({
+        slug,
+        name,
+        shortDescription,
+        description,
+        price: String(price),
+        compareAtPrice: compareAtPrice != null ? String(compareAtPrice) : null,
+        currency: currency ?? "JOD",
+        imageUrl,
+        galleryUrls: galleryUrls ?? [],
+        thumbUrl: thumbUrl ?? null,
+        mediumUrl: mediumUrl ?? null,
+        largeUrl: largeUrl ?? null,
+        categoryId: numericCategoryId,
+        stockQuantity,
+        inStock: stockQuantity > 0,
+        badge: badge ?? null,
+        features: features ?? [],
+      })
+      .returning();
+  } catch (error) {
+    req.log.error(
+      { err: error, slug, categoryId: numericCategoryId },
+      "Failed to create product",
+    );
+
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: unknown }).code)
+        : "";
+    if (code === "23505") {
+      res.status(409).json({
+        error: "A product with this slug already exists. Choose a different slug.",
+      });
+      return;
+    }
+    if (code === "23503") {
+      res.status(400).json({
+        error: "The selected category is invalid or no longer exists. Refresh the page and try again.",
+      });
+      return;
+    }
+    if (code === "42703" || code === "42P01") {
+      res.status(500).json({
+        error: "The Supabase database schema is missing a product field. Apply the latest database schema, then try again.",
+      });
+      return;
+    }
+    res.status(500).json({ error: "Product could not be created. Please try again." });
+    return;
+  }
 
   const [row] = await db
     .select({
