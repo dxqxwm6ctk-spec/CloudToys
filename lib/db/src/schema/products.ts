@@ -17,6 +17,12 @@ export const productsTable = pgTable("products", {
   name: text("name").notNull(),
   shortDescription: text("short_description").notNull(),
   description: text("description").notNull(),
+  // Arabic translations — nullable; storefront falls back to the English
+  // fields above when these are not filled in by the admin.
+  nameAr: text("name_ar"),
+  shortDescriptionAr: text("short_description_ar"),
+  descriptionAr: text("description_ar"),
+  featuresAr: text("features_ar").array().notNull().default([]),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   compareAtPrice: numeric("compare_at_price", { precision: 10, scale: 2 }),
   currency: text("currency").notNull().default("JOD"),
