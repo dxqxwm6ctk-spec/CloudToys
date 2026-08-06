@@ -293,40 +293,93 @@ router.post("/admin/products", requireRole("admin", "manager"), async (req, res)
       });
       return;
     }
-    res.status(500).json({ error: "Product could not be created. Please try again." });
+    if (code === "22P02" || code === "22003" || code === "23514") {
+      res.status(400).json({
+        error: `Supabase rejected the product values${code ? ` (database error ${code})` : ""}. Check the price, stock quantity, and other fields.`,
+      });
+      return;
+    }
+    res.status(500).json({
+      error: `Product could not be created in Supabase${code ? ` (database error ${code})` : ""}.`,
+    });
     return;
   }
 
-  const [row] = await db
-    .select({
-      id: productsTable.id,
-      slug: productsTable.slug,
-      name: productsTable.name,
-      shortDescription: productsTable.shortDescription,
-      description: productsTable.description,
-      price: productsTable.price,
-      compareAtPrice: productsTable.compareAtPrice,
-      currency: productsTable.currency,
-      imageUrl: productsTable.imageUrl,
-      galleryUrls: productsTable.galleryUrls,
-      thumbUrl: productsTable.thumbUrl,
-      mediumUrl: productsTable.mediumUrl,
-      largeUrl: productsTable.largeUrl,
-      lqip: productsTable.lqip,
-      imageAlt: productsTable.imageAlt,
-      categoryId: productsTable.categoryId,
-      categoryName: categoriesTable.name,
-      rating: productsTable.rating,
-      reviewCount: productsTable.reviewCount,
-      inStock: productsTable.inStock,
-      stockQuantity: productsTable.stockQuantity,
-      badge: productsTable.badge,
-      features: productsTable.features,
-      createdAt: productsTable.createdAt,
-    })
-    .from(productsTable)
-    .innerJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
-    .where(eq(productsTable.id, inserted.id));
+  let row: {
+    id: number;
+    slug: string;
+    name: string;
+    shortDescription: string;
+    description: string;
+    price: string;
+    compareAtPrice: string | null;
+    currency: string;
+    imageUrl: string;
+    galleryUrls: string[];
+    thumbUrl: string | null;
+    mediumUrl: string | null;
+    largeUrl: string | null;
+    lqip: string | null;
+    imageAlt: string | null;
+    categoryId: number;
+    categoryName: string;
+    rating: string;
+    reviewCount: number;
+    inStock: boolean;
+    stockQuantity: number;
+    badge: string | null;
+    features: string[];
+    createdAt: Date;
+  } | undefined;
+  try {
+    [row] = await db
+      .select({
+        id: productsTable.id,
+        slug: productsTable.slug,
+        name: productsTable.name,
+        shortDescription: productsTable.shortDescription,
+        description: productsTable.description,
+        price: productsTable.price,
+        compareAtPrice: productsTable.compareAtPrice,
+        currency: productsTable.currency,
+        imageUrl: productsTable.imageUrl,
+        galleryUrls: productsTable.galleryUrls,
+        thumbUrl: productsTable.thumbUrl,
+        mediumUrl: productsTable.mediumUrl,
+        largeUrl: productsTable.largeUrl,
+        lqip: productsTable.lqip,
+        imageAlt: productsTable.imageAlt,
+        categoryId: productsTable.categoryId,
+        categoryName: categoriesTable.name,
+        rating: productsTable.rating,
+        reviewCount: productsTable.reviewCount,
+        inStock: productsTable.inStock,
+        stockQuantity: productsTable.stockQuantity,
+        badge: productsTable.badge,
+        features: productsTable.features,
+        createdAt: productsTable.createdAt,
+      })
+      .from(productsTable)
+      .innerJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
+      .where(eq(productsTable.id, inserted.id));
+  } catch (error) {
+    req.log.error({ err: error, productId: inserted.id }, "Failed to load created product");
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: unknown }).code)
+        : "";
+    res.status(500).json({
+      error: code === "42703" || code === "42P01"
+        ? "The Supabase database schema is missing a product field. Apply the latest database schema, then try again."
+        : `Product was saved, but its response could not be loaded from Supabase${code ? ` (database error ${code})` : ""}.`,
+    });
+    return;
+  }
+
+  if (!row) {
+    res.status(500).json({ error: "Product was created but could not be loaded afterward." });
+    return;
+  }
 
   res.status(201).json(AdminCreateProductResponse.parse(toAdminProductDto(row)));
 });
