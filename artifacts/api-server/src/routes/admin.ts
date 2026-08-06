@@ -105,22 +105,31 @@ function toAdminProductDto(
 
 // ── Stats ──────────────────────────────────────────────────────────────────
 
+// Supabase free-tier storage allowance (bytes). Update if the plan changes.
+const SUPABASE_FREE_STORAGE_LIMIT_BYTES = 1024 * 1024 * 1024; // 1 GiB
+
 router.get("/admin/stats", async (_req, res): Promise<void> => {
-  const [productStats, categoryCount, orderCount] = await Promise.all([
-    db
-      .select({
-        total: sql<number>`count(*)`.mapWith(Number),
-        inStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} > 0)`.mapWith(Number),
-        outOfStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} <= 0)`.mapWith(Number),
-      })
-      .from(productsTable),
-    db
-      .select({ count: sql<number>`count(*)`.mapWith(Number) })
-      .from(categoriesTable),
-    db
-      .select({ count: sql<number>`count(*)`.mapWith(Number) })
-      .from(ordersTable),
-  ]);
+  const [productStats, categoryCount, orderCount, storageStats] =
+    await Promise.all([
+      db
+        .select({
+          total: sql<number>`count(*)`.mapWith(Number),
+          inStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} > 0)`.mapWith(Number),
+          outOfStock: sql<number>`count(*) filter (where ${productsTable.stockQuantity} <= 0)`.mapWith(Number),
+        })
+        .from(productsTable),
+      db
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
+        .from(categoriesTable),
+      db
+        .select({ count: sql<number>`count(*)`.mapWith(Number) })
+        .from(ordersTable),
+      db.execute<{ bytes: string | null; file_count: string }>(
+        sql`select sum((metadata->>'size')::bigint) as bytes, count(*) as file_count from storage.objects`,
+      ),
+    ]);
+
+  const storageRow = storageStats.rows[0];
 
   res.json(
     GetAdminStatsResponse.parse({
@@ -129,6 +138,9 @@ router.get("/admin/stats", async (_req, res): Promise<void> => {
       totalOrders: orderCount[0].count,
       inStockProducts: productStats[0].inStock,
       outOfStockProducts: productStats[0].outOfStock,
+      storageUsedBytes: Number(storageRow?.bytes ?? 0),
+      storageLimitBytes: SUPABASE_FREE_STORAGE_LIMIT_BYTES,
+      storageFileCount: Number(storageRow?.file_count ?? 0),
     }),
   );
 });

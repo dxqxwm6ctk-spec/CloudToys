@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, FolderTree, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
+import { StorageUsageCard } from '@/components/dashboard/storage-usage-card';
 
 export default function Dashboard() {
   const { data: stats, isLoading, isError } = useGetAdminStats();
@@ -82,6 +83,12 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <StorageUsageCard
+        usedBytes={stats.storageUsedBytes}
+        limitBytes={stats.storageLimitBytes}
+        fileCount={stats.storageFileCount}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>

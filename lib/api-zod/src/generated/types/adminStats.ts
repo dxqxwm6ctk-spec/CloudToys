@@ -12,4 +12,7 @@ export interface AdminStats {
   totalOrders: number;
   inStockProducts: number;
   outOfStockProducts: number;
+  storageUsedBytes: number;
+  storageLimitBytes: number;
+  storageFileCount: number;
 }

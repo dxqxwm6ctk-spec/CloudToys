@@ -874,13 +874,16 @@ components:
     # ── Admin schemas ─────────────────────────────────────────────────────────
     AdminStats:
       type: object
-      required: [totalProducts, totalCategories, totalOrders, inStockProducts, outOfStockProducts]
+      required: [totalProducts, totalCategories, totalOrders, inStockProducts, outOfStockProducts, storageUsedBytes, storageLimitBytes, storageFileCount]
       properties:
         totalProducts: { type: number }
         totalCategories: { type: number }
         totalOrders: { type: number }
         inStockProducts: { type: number }
         outOfStockProducts: { type: number }
+        storageUsedBytes: { type: number }
+        storageLimitBytes: { type: number }
+        storageFileCount: { type: number }
 
     AdminProduct:
       type: object

@@ -302,7 +302,10 @@ export const GetAdminStatsResponse = zod.object({
   "totalCategories": zod.number(),
   "totalOrders": zod.number(),
   "inStockProducts": zod.number(),
-  "outOfStockProducts": zod.number()
+  "outOfStockProducts": zod.number(),
+  "storageUsedBytes": zod.number(),
+  "storageLimitBytes": zod.number(),
+  "storageFileCount": zod.number()
 })
 
 
