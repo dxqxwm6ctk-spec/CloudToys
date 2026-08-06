@@ -2,42 +2,16 @@ import { useCart } from '../context/CartContext';
 import { PageTransition } from '../components/ui/PageTransition';
 import { Link, useLocation } from 'wouter';
 import { Minus, Plus, Trash2, ArrowRight } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 import { formatJOD } from '../lib/currency';
 import { useShippingThreshold } from '../hooks/useStoreSettings';
-import { getApiBase } from '../lib/api-url';
-
-const BASE = getApiBase();
-
-interface ShippingZone {
-  id: string;
-  name: string;
-  governorates: string[];
-  price: number;
-  isDefault: boolean;
-}
-
-function useDefaultShippingPrice() {
-  const { data } = useQuery<ShippingZone[]>({
-    queryKey: ['shipping-zones'],
-    queryFn: () => fetch(`${BASE}/api/shipping/zones`).then((r) => r.json()),
-    staleTime: 5 * 60 * 1000,
-  });
-  if (!data || data.length === 0) return 15; // final fallback
-  const def = data.find((z) => z.isDefault);
-  return def ? def.price : data[0].price;
-}
 
 export function Cart() {
   const { items, updateQuantity, removeFromCart, cartTotal } = useCart();
   const [, setLocation] = useLocation();
-  const defaultShipping = useDefaultShippingPrice();
   const { amount: freeShippingThreshold } = useShippingThreshold();
 
   const isFreeShipping = cartTotal >= freeShippingThreshold;
-  const currentShipping = isFreeShipping ? 0 : defaultShipping;
-  const total = cartTotal + currentShipping;
   const amountToFreeShipping = Math.max(0, freeShippingThreshold - cartTotal);
 
   if (items.length === 0) {
@@ -157,7 +131,9 @@ export function Cart() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Shipping</span>
-                  <span className="font-medium">{isFreeShipping ? 'Free' : formatJOD(defaultShipping)}</span>
+                  <span className="font-medium text-muted-foreground text-xs">
+                    {isFreeShipping ? 'Free' : 'Calculated at checkout'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Tax</span>
@@ -168,7 +144,10 @@ export function Cart() {
               <div className="flex justify-between items-start mb-8">
                 <span className="text-lg font-medium">Total</span>
                 <div className="text-right">
-                  <div className="text-3xl font-serif font-semibold">{formatJOD(total)}</div>
+                  <div className="text-3xl font-serif font-semibold">{formatJOD(cartTotal)}</div>
+                  {!isFreeShipping && (
+                    <div className="text-xs text-muted-foreground mt-1">+ shipping, based on your area</div>
+                  )}
                 </div>
               </div>
 

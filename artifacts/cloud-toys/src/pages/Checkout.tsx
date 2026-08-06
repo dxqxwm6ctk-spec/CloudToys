@@ -74,15 +74,14 @@ export function Checkout() {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [loadingMethods, setLoadingMethods] = useState(false);
 
-  // Dynamic shipping price based on selected governorate. Stays `null` (unknown)
-  // until a governorate is chosen and the lookup resolves — we never want to
-  // show a placeholder fee that doesn't match what the customer will actually
-  // be charged once they pick their area.
+  // Dynamic shipping price based on the selected location. Keep it `null`
+  // until the customer chooses an area, so shipping is never added before
+  // the complete delivery location is entered.
   const [shippingPrice, setShippingPrice] = useState<number | null>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
 
   useEffect(() => {
-    if (!governorate) {
+    if (!governorate || !area) {
       setShippingPrice(null);
       return;
     }
@@ -99,11 +98,10 @@ export function Checkout() {
 
   const { amount: freeShippingThreshold } = useShippingThreshold();
   const isFreeShipping = cartTotal >= freeShippingThreshold;
-  // `null` means "not known yet" (no area picked, or still loading) — keep it
-  // distinct from 0 (genuinely free) so the UI can show a placeholder instead
-  // of a number the customer hasn't earned yet.
-  const shipping = isFreeShipping ? 0 : shippingPrice;
-  const shippingKnown = isFreeShipping || (shippingPrice !== null && !loadingShipping);
+  // `null` means "not known yet" (the area is not selected, or the lookup is
+  // still loading). Keep it distinct from 0 (genuinely free).
+  const shipping = !area ? null : isFreeShipping ? 0 : shippingPrice;
+  const shippingKnown = Boolean(area) && (isFreeShipping || (shippingPrice !== null && !loadingShipping));
   const total = cartTotal + (shipping ?? 0);
 
   // Load payment methods when entering payment step
