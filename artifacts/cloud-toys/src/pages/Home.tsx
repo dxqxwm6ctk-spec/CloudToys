@@ -33,7 +33,7 @@ export function Home() {
     <PageTransition>
 
       {/* Category pills */}
-      <section className="py-3 border-b border-border bg-white sticky top-0 z-10 shadow-sm">
+      <section className="py-3 border-b border-border bg-white sticky top-16 md:top-20 z-30 shadow-sm">
         <div className="flex gap-2 overflow-x-auto px-4 lg:max-w-7xl lg:mx-auto lg:px-8 scrollbar-none">
           <button
             onClick={() => updateCategory(undefined)}
