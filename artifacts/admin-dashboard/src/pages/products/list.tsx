@@ -16,6 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Edit2, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/currency';
+import { authHeader } from '@/lib/auth-token';
+import { useAuth } from '@/context/AuthContext';
 
 export default function ProductsList() {
   const [search, setSearch] = React.useState('');
@@ -23,14 +25,20 @@ export default function ProductsList() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+  const { role } = useAuth();
+
   const { data, isLoading } = useAdminListProducts({
     page,
     pageSize: 20,
     search: search || undefined
   });
 
-  const deleteProduct = useAdminDeleteProduct();
+  // Pass the bearer token explicitly as well as through the generated client's
+  // global token getter. This keeps deletion working when the admin dashboard
+  // and API are on different origins and the session cookie is unavailable.
+  const deleteProduct = useAdminDeleteProduct({
+    request: { headers: authHeader() },
+  });
 
   const handleDelete = (id: string, name: string) => {
     if (!window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
@@ -45,10 +53,14 @@ export default function ProductsList() {
         });
         queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
       },
-      onError: () => {
+      onError: (error) => {
+        const message =
+          (error as { data?: { error?: string }; message?: string }).data?.error ??
+          (error as { message?: string }).message ??
+          "Failed to delete product. Please try again.";
         toast({
           title: "Error",
-          description: "Failed to delete product. Please try again.",
+          description: message,
           variant: "destructive"
         });
       }
@@ -161,7 +173,7 @@ export default function ProductsList() {
                       >
                         <Edit2 className="w-4 h-4 text-muted-foreground" />
                       </Button>
-                      <Button 
+                      {role !== 'supervisor' && <Button
                         variant="ghost" 
                         size="icon" 
                         onClick={() => handleDelete(product.id, product.name)}
@@ -170,7 +182,7 @@ export default function ProductsList() {
                         className="hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="w-4 h-4" />
-                      </Button>
+                      </Button>}
                     </div>
                   </TableCell>
                 </TableRow>

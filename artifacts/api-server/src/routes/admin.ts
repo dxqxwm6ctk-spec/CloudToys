@@ -386,26 +386,40 @@ router.delete("/admin/products/:id", requireRole("admin", "manager"), async (req
     return;
   }
 
+  const productId = Number(params.data.id);
+
   // Fetch image URLs before deleting so we can clean up storage
   const [product] = await db
     .select({ thumbUrl: productsTable.thumbUrl })
     .from(productsTable)
-    .where(eq(productsTable.id, Number(params.data.id)));
+    .where(eq(productsTable.id, productId));
 
   if (!product) {
     res.status(404).json({ error: "Product not found" });
     return;
   }
 
-  // Reviews reference this product with a NOT NULL foreign key — remove them
-  // first so the product delete doesn't fail with a constraint violation.
-  await db
-    .delete(reviewsTable)
-    .where(eq(reviewsTable.productId, Number(params.data.id)));
+  try {
+    await db.transaction(async (tx) => {
+      // Reviews reference this product with a NOT NULL foreign key — remove
+      // them in the same transaction so a failed product delete cannot leave
+      // the database half-updated.
+      await tx.delete(reviewsTable).where(eq(reviewsTable.productId, productId));
 
-  await db
-    .delete(productsTable)
-    .where(eq(productsTable.id, Number(params.data.id)));
+      const deleted = await tx
+        .delete(productsTable)
+        .where(eq(productsTable.id, productId))
+        .returning({ id: productsTable.id });
+
+      if (deleted.length === 0) {
+        throw new Error("Product was removed before the delete completed");
+      }
+    });
+  } catch (error) {
+    req.log.error({ err: error, productId }, "Failed to delete product");
+    res.status(500).json({ error: "Product could not be deleted. Please try again." });
+    return;
+  }
 
   // Delete stored image files after the DB row is gone (fire-and-forget)
   deleteProductImageSet(product.thumbUrl).catch(() => {});

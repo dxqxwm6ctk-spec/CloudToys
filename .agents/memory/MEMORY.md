@@ -9,3 +9,4 @@
 - [Cloud Toys deployment architecture](cloud-toys-deployment-architecture.md) — Netlify admin uses a separate Heroku API, not this Repl's deploy
 - [drizzle-kit push in non-interactive shells](drizzle-push-noninteractive.md) — "safe" changes (nullable unique column) can still hit a TTY prompt; apply DDL manually via `pg` client as a workaround
 - [Cloud Toys admin Google login](cloud-toys-admin-google-login.md) — admin_staff has a separate `email` column (not `username`) for Google sign-in matching; decoupled by user's explicit choice
+- [Live FK verification](live-fk-verification.md) — when deletes behave differently than the ORM schema suggests, inspect live information_schema constraints before changing application logic
