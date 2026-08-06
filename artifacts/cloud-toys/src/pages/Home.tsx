@@ -3,12 +3,12 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
 import { motion } from 'framer-motion';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 
 export function Home() {
-  const [location, setLocation] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
-  const categoryParam = searchParams.get('category') || undefined;
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const categoryParam = new URLSearchParams(search).get('category') || undefined;
 
   const { data, isLoading, isError, error, refetch } = useListProducts({
     category: categoryParam,
