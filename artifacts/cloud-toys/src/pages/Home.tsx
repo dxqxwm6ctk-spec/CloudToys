@@ -34,7 +34,7 @@ export function Home() {
 
       {/* Category pills */}
       <section className="py-3 border-b border-border bg-white sticky top-0 z-10 shadow-sm">
-        <div className="flex gap-2 overflow-x-auto px-4 scrollbar-none">
+        <div className="flex gap-2 overflow-x-auto px-4 lg:max-w-7xl lg:mx-auto lg:px-8 scrollbar-none">
           <button
             onClick={() => updateCategory(undefined)}
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
@@ -62,10 +62,10 @@ export function Home() {
       </section>
 
       {/* Product grid */}
-      <section className="px-4 py-4">
+      <section className="px-4 py-4 lg:max-w-7xl lg:mx-auto lg:px-8 lg:py-8">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
+            {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="rounded-xl bg-secondary animate-pulse aspect-[3/4]" />
             ))}
           </div>
@@ -83,7 +83,7 @@ export function Home() {
             </button>
           </div>
         ) : data?.items && data.items.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-5 lg:gap-6">
             {data.items.map((product, i) => (
               <motion.div
                 key={product.id}
