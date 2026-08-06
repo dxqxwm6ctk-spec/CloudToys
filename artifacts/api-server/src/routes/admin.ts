@@ -549,32 +549,54 @@ router.delete("/admin/categories/:id", requireRole("admin", "manager"), async (r
 
   const categoryId = Number(params.data.id);
 
+  const [category] = await db
+    .select({ id: categoriesTable.id })
+    .from(categoriesTable)
+    .where(eq(categoriesTable.id, categoryId));
+
+  if (!category) {
+    res.status(404).json({ error: "Category not found" });
+    return;
+  }
+
   // Fetch all products in this category so we can clean up their images
   const products = await db
     .select({ id: productsTable.id, thumbUrl: productsTable.thumbUrl })
     .from(productsTable)
     .where(eq(productsTable.categoryId, categoryId));
 
-  if (products.length > 0) {
-    const productIds = products.map((p) => p.id);
-    // Remove reviews first (FK constraint)
-    await db.delete(reviewsTable).where(inArray(reviewsTable.productId, productIds));
-    // Remove products
-    await db.delete(productsTable).where(inArray(productsTable.id, productIds));
-    // Clean up images from storage (fire-and-forget)
-    for (const p of products) {
-      deleteProductImageSet(p.thumbUrl).catch(() => {});
-    }
+  try {
+    await db.transaction(async (tx) => {
+      if (products.length > 0) {
+        const productIds = products.map((p) => p.id);
+        // Reviews reference products with a NOT NULL foreign key, so they
+        // must be removed before the products in the same transaction.
+        await tx
+          .delete(reviewsTable)
+          .where(inArray(reviewsTable.productId, productIds));
+        await tx
+          .delete(productsTable)
+          .where(inArray(productsTable.id, productIds));
+      }
+
+      const deleted = await tx
+        .delete(categoriesTable)
+        .where(eq(categoriesTable.id, categoryId))
+        .returning({ id: categoriesTable.id });
+
+      if (deleted.length === 0) {
+        throw new Error("Category was removed before the delete completed");
+      }
+    });
+  } catch (error) {
+    req.log.error({ err: error, categoryId }, "Failed to delete category");
+    res.status(500).json({ error: "Category could not be deleted. Please try again." });
+    return;
   }
 
-  const [deleted] = await db
-    .delete(categoriesTable)
-    .where(eq(categoriesTable.id, categoryId))
-    .returning();
-
-  if (!deleted) {
-    res.status(404).json({ error: "Category not found" });
-    return;
+  // Storage cleanup happens only after the database transaction succeeds.
+  for (const p of products) {
+    deleteProductImageSet(p.thumbUrl).catch(() => {});
   }
 
   res.json(AdminDeleteCategoryResponse.parse({ success: true }));

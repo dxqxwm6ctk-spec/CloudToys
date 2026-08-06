@@ -91,7 +91,11 @@ export default function CategoriesList() {
         queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
       },
       onError: (err: any) => {
-        const message = err?.response?.data?.error || "Failed to delete";
+        const message =
+          err?.data?.error ||
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to delete";
         toast({ title: message, variant: "destructive" });
       }
     });
