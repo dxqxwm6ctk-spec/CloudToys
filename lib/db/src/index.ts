@@ -17,8 +17,12 @@ function getConnectionString(): string {
   }
   // Fall back to a fully-formed URL
   if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
+  // Heroku, Render, and Railway provide the database connection as
+  // DATABASE_URL. Keep this fallback aligned with the deployment guide so
+  // the API can connect to the same Supabase Postgres pooler outside Replit.
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
   throw new Error(
-    "Database not configured. Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, or SUPABASE_DB_URL.",
+    "Database not configured. Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, SUPABASE_DB_URL, or DATABASE_URL.",
   );
 }
 

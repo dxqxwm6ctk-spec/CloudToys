@@ -11,7 +11,8 @@ function getConnectionString(): string {
     return `postgresql://${user}:${encodeURIComponent(password)}@${host}:${port}/${dbName}`;
   }
   if (process.env.SUPABASE_DB_URL) return process.env.SUPABASE_DB_URL;
-  throw new Error("Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, or SUPABASE_DB_URL.");
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  throw new Error("Set SUPABASE_DB_USER + SUPABASE_DB_HOST + SUPABASE_DB_PASSWORD, SUPABASE_DB_URL, or DATABASE_URL.");
 }
 
 export default defineConfig({
