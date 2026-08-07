@@ -22,7 +22,10 @@ app.set("trust proxy", 1);
 // Keep the currently deployed admin origin available even if an older
 // Heroku config still has an incomplete ALLOWED_ORIGINS value. Additional
 // storefront/custom origins can still be supplied through the environment.
-const defaultAllowedOrigins = ["https://admintoy.netlify.app"];
+const defaultAllowedOrigins = [
+  "https://admintoys.netlify.app",
+  "https://cloudtoys.netlify.app",
+];
 const configuredAllowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
   .split(",")
   .map((origin) => origin.trim())
