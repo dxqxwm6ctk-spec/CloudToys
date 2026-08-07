@@ -241,7 +241,7 @@ router.post("/admin/products", requireRole("admin", "manager"), async (req, res)
     return;
   }
 
-  let inserted: typeof productsTable.$inferSelect;
+  let inserted: { id: number };
   try {
     [inserted] = await db
       .insert(productsTable)
@@ -264,7 +264,12 @@ router.post("/admin/products", requireRole("admin", "manager"), async (req, res)
         badge: badge ?? null,
         features: features ?? [],
       })
-      .returning();
+      // Do not use returning() without a projection here. The Supabase
+      // database may be one schema revision behind the Drizzle model
+      // (for example, before the optional Arabic columns were added), and
+      // returning every model column would make an otherwise valid INSERT
+      // fail with "column does not exist".
+      .returning({ id: productsTable.id });
   } catch (error) {
     req.log.error(
       { err: error, slug, categoryId: numericCategoryId },
