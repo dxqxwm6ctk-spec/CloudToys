@@ -572,14 +572,59 @@ router.post("/admin/categories", requireRole("admin", "manager"), async (req, re
     return;
   }
 
+  let insertedId: number;
+  try {
+    // The external Supabase database can be one schema revision behind the
+    // Drizzle model. Do not use returning() here: it would reference newer
+    // columns (such as optional translations) that may not exist yet.
+    const [inserted] = await db
+      .insert(categoriesTable)
+      .values({
+        name: parsed.data.name,
+        slug: parsed.data.slug,
+        imageUrl: parsed.data.imageUrl,
+      })
+      .returning({ id: categoriesTable.id });
+    insertedId = inserted.id;
+  } catch (error) {
+    req.log.error({ err: error, slug: parsed.data.slug }, "Failed to create category");
+
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String((error as { code?: unknown }).code)
+        : "";
+    if (code === "23505") {
+      res.status(409).json({
+        error: "A category with this slug already exists. Choose a different slug.",
+      });
+      return;
+    }
+    if (code === "42703" || code === "42P01") {
+      res.status(500).json({
+        error: "The Supabase database schema is missing a category field. Apply the latest database schema, then try again.",
+      });
+      return;
+    }
+    res.status(500).json({
+      error: `Category could not be created in Supabase${code ? ` (database error ${code})` : ""}.`,
+    });
+    return;
+  }
+
   const [inserted] = await db
-    .insert(categoriesTable)
-    .values({
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      imageUrl: parsed.data.imageUrl,
+    .select({
+      id: categoriesTable.id,
+      name: categoriesTable.name,
+      slug: categoriesTable.slug,
+      imageUrl: categoriesTable.imageUrl,
     })
-    .returning();
+    .from(categoriesTable)
+    .where(eq(categoriesTable.id, insertedId));
+
+  if (!inserted) {
+    res.status(500).json({ error: "Category was created but could not be loaded." });
+    return;
+  }
 
   res.status(201).json(
     AdminCreateCategoryResponse.parse({
@@ -618,7 +663,9 @@ router.put("/admin/categories/:id", requireRole("admin", "manager"), async (req,
     .update(categoriesTable)
     .set(updates)
     .where(eq(categoriesTable.id, Number(params.data.id)))
-    .returning();
+    // Keep the returning projection limited to columns needed for the
+    // follow-up query; the live Supabase schema may lag the Drizzle model.
+    .returning({ id: categoriesTable.id });
 
   if (!updated) {
     res.status(404).json({ error: "Category not found" });

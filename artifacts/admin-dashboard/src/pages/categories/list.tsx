@@ -109,7 +109,15 @@ export default function CategoriesList() {
           queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
           setIsDialogOpen(false);
         },
-        onError: () => toast({ title: "Failed to update", variant: "destructive" })
+        onError: (err: any) => {
+          const message =
+            err?.body?.error ||
+            err?.data?.error ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Failed to update";
+          toast({ title: message, variant: "destructive" });
+        }
       });
     } else {
       createCategory.mutate({ data }, {
@@ -118,7 +126,15 @@ export default function CategoriesList() {
           queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
           setIsDialogOpen(false);
         },
-        onError: () => toast({ title: "Failed to create", variant: "destructive" })
+        onError: (err: any) => {
+          const message =
+            err?.body?.error ||
+            err?.data?.error ||
+            err?.response?.data?.error ||
+            err?.message ||
+            "Failed to create";
+          toast({ title: message, variant: "destructive" });
+        }
       });
     }
   };
