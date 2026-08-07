@@ -19,10 +19,18 @@ app.set("trust proxy", 1);
 // deployment where the frontends live on a different origin than the API
 // (Netlify, custom domains, etc). Left unset, all origins are allowed, which
 // is fine for local dev / Replit's same-origin path-based preview proxy.
-const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+// Keep the currently deployed admin origin available even if an older
+// Heroku config still has an incomplete ALLOWED_ORIGINS value. Additional
+// storefront/custom origins can still be supplied through the environment.
+const defaultAllowedOrigins = ["https://admintoy.netlify.app"];
+const configuredAllowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
+const allowedOrigins = [...new Set([
+  ...defaultAllowedOrigins,
+  ...configuredAllowedOrigins,
+])];
 
 if (allowedOrigins.length === 0) {
   logger.warn(
