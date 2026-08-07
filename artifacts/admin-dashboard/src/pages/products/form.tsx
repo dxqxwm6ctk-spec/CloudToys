@@ -11,6 +11,7 @@ import {
   useGetProduct,
   useAdminListCategories,
   getAdminListProductsQueryKey,
+  getAdminListCategoriesQueryKey,
   getGetProductQueryKey,
   resolveMediaUrl
 } from '@workspace/api-client-react';
