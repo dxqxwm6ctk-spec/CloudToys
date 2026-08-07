@@ -192,7 +192,11 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
             setLocation('/products');
           },
           onError: (err: any) => {
+            // The generated client stores the parsed response on `body`;
+            // older versions used `data`. Keep both so production API errors
+            // are visible instead of being reduced to a generic toast.
             const message =
+              err?.body?.error ||
               err?.data?.error ||
               err?.response?.data?.error ||
               err?.message ||
