@@ -49,7 +49,8 @@ builds only this service, but needs its workspace siblings present.
 | `ALLOWED_ORIGINS` | Yes in production | Comma-separated exact origins of the deployed storefront + admin sites, e.g. `https://cloud-toys.netlify.app,https://cloud-toys-admin.netlify.app`. Without it, CORS allows every origin. |
 | `PORT` | Auto-set | Do not set manually — the platform injects it. |
 | `LOG_LEVEL` | No | Defaults to info-level logging. |
-| `DEFAULT_OBJECT_STORAGE_BUCKET_ID`, `PUBLIC_OBJECT_SEARCH_PATHS`, `PRIVATE_OBJECT_DIR` | Only for image uploads | See "Object storage" below — not usable as-is outside Replit. |
+| `SUPABASE_URL` | Yes for image uploads | Supabase project URL. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes for image uploads | Supabase `service_role` secret key; server-side only, never expose it to a frontend. |
 
 ## 4. Database schema
 
@@ -60,27 +61,16 @@ existing one), push the schema to it once before the first request:
 DATABASE_URL="<new-connection-string>" pnpm --filter @workspace/db run push
 ```
 
-## 5. Object storage (product image uploads) — currently disabled outside Replit
+## 5. Object storage (product image uploads)
 
-> Decision: for now this is left as-is (working on Replit only). Image
-> uploads via `/api/admin/images/upload` and `/api/images/p/...` will fail
-> on Render/Railway until this is revisited — see below when ready.
+Image uploads use the Supabase Storage bucket `product-images`. The API
+creates the bucket on first use if it does not already exist, so deployments
+outside Replit only need the two Supabase variables listed above. The
+`SUPABASE_SERVICE_ROLE_KEY` must remain a server-side secret.
 
-
-`src/lib/objectStorage.ts` currently authenticates to Google Cloud Storage
-through Replit's built-in Object Storage sidecar
-(`http://127.0.0.1:1106`), which only exists inside a Replit workspace.
-Deployed to Render/Railway as-is, any request that uploads or serves a
-product image (`POST /api/admin/images/upload`, `GET /api/images/p/...`)
-will fail because that sidecar is unreachable.
-
-To make image uploads work outside Replit, this code needs to be updated to
-authenticate with either:
-- a standard Google Cloud service account (JSON key as an env var/secret), or
-- a different storage provider (S3-compatible, Cloudinary, etc).
-
-This is a real code change, not just a config value — flag it if you want
-it done before going live with image uploads on Render/Railway.
+After adding the variables, restart/redeploy the API service before testing
+`POST /api/admin/images/upload`. Existing image URLs remain served through
+the same API route.
 
 ## 6. Connecting the deployed frontends
 

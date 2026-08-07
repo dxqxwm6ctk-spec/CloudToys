@@ -12,8 +12,14 @@ function getSupabaseClient() {
   if (_supabase) return _supabase;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) throw new Error("SUPABASE_URL not set. Add your Supabase project URL.");
-  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY not set. Add your Supabase service_role secret key.");
+  if (!url) {
+    throw new Error("Image storage is not configured: SUPABASE_URL is missing.");
+  }
+  if (!key) {
+    throw new Error(
+      "Image storage is not configured: SUPABASE_SERVICE_ROLE_KEY is missing.",
+    );
+  }
   _supabase = createClient(url, key, { auth: { persistSession: false } });
   return _supabase;
 }

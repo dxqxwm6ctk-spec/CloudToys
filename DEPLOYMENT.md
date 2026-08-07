@@ -94,4 +94,14 @@ Then restart the Heroku dyno: **More → Restart all dynos**.
 
 ## ⚠️ Image Uploads
 
-Product image uploads rely on Replit's built-in Object Storage, which is **not available on Heroku**. Images already in the database will display correctly, but uploading new images from the admin will not work until you wire up an external storage provider (GCS, S3, or Cloudinary). See `artifacts/api-server/src/routes/images.ts` for the upload logic.
+Product image uploads use Supabase Storage. Add these server-side config vars
+to the Heroku API app before testing uploads:
+
+| Key | Value |
+|-----|-------|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Your Supabase `service_role` secret key |
+
+The API creates/uses the `product-images` bucket. Never add the service role
+key to either Netlify site or any `VITE_*` variable. Restart the Heroku app
+after saving the variables.

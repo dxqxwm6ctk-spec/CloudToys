@@ -6,7 +6,7 @@
  */
 import path from "path";
 import { randomUUID } from "crypto";
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import multer from "multer";
 import sharp from "sharp";
 import rateLimit from "express-rate-limit";
@@ -159,6 +159,30 @@ const uploadRateLimit = rateLimit({
   message: { error: "Too many uploads, slow down" },
 });
 
+// Multer errors happen before the route handler runs. Convert them to the
+// same JSON shape used by the handler so the admin UI can show the real cause
+// (unsupported format or file too large) instead of a generic HTML 500 page.
+const uploadSingleFile: RequestHandler = (req, res, next): void => {
+  upload.single("file")(req, res, (err: unknown) => {
+    if (!err) {
+      next();
+      return;
+    }
+
+    if (err instanceof multer.MulterError) {
+      if (err.code === "LIMIT_FILE_SIZE") {
+        res.status(413).json({ error: "Image is too large. Maximum size is 10 MB." });
+        return;
+      }
+      res.status(400).json({ error: `Image upload failed: ${err.message}` });
+      return;
+    }
+
+    const message = err instanceof Error ? err.message : "Unsupported image file";
+    res.status(400).json({ error: message });
+  });
+};
+
 // ── Router ─────────────────────────────────────────────────────────────────
 
 const router: IRouter = Router();
@@ -168,7 +192,7 @@ router.post(
   "/admin/images/upload",
   requireRole("admin", "manager"),
   uploadRateLimit,
-  upload.single("file"),
+  uploadSingleFile,
   async (req, res): Promise<void> => {
     if (!req.file) {
       res.status(400).json({ error: "No file provided" });
@@ -212,7 +236,13 @@ router.post(
       });
     } catch (err) {
       req.log.error({ err }, "Image processing failed");
-      res.status(500).json({ error: "Image processing failed" });
+      const message = err instanceof Error ? err.message : "Unknown image upload error";
+      const isStorageConfigError = /Image storage is not configured/.test(message);
+      res.status(isStorageConfigError ? 503 : 500).json({
+        error: isStorageConfigError
+          ? `${message} Add the missing Supabase secret to the API deployment and restart it.`
+          : "Image processing failed. Check that the file is a supported image under 10 MB.",
+      });
     }
   },
 );

@@ -141,7 +141,10 @@ export default function CategoriesList() {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error ?? 'Upload failed');
+        throw new Error(
+          (err as { error?: string }).error ??
+            `Upload failed (HTTP ${response.status})`,
+        );
       }
 
       const result = (await response.json()) as { mediumUrl: string };
