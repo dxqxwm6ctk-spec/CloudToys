@@ -140,6 +140,24 @@ export default function ProductForm({ id, isEdit = false }: ProductFormProps) {
   }, [existingProduct, isEdit, form, categories]);
 
   const onSubmit = (data: ProductFormValues) => {
+    // A category can be deleted in another browser/session while this form
+    // is open. Do not send a stale category id to PostgreSQL; refresh the
+    // category list and ask the user to choose a current one instead.
+    const selectedCategory = categories?.find((category) => category.id === data.categoryId);
+    if (!selectedCategory) {
+      form.setError('categoryId', {
+        type: 'validate',
+        message: 'This category is no longer available. Refresh and select a current category.',
+      });
+      queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
+      toast({
+        title: 'Please select a valid category',
+        description: 'The selected category was removed or is out of date.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const payload = {
       ...data,
       features: data.features?.map(f => f.value).filter(Boolean),
