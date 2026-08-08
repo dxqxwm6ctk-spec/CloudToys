@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/admin-mobile/"
+title = "Cloud Toys Admin Mobile"
+description = "A native iOS and Android admin app for managing Cloud Toys products, orders, customers, staff, images, and store settings through the existing admin API."
+version = "1.0.0"
+id = "artifacts/cloud-toys-admin-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/admin-mobile/" ]
+localPort = 25178
+
+[services.development]
+run = "pnpm --filter @workspace/cloud-toys-admin-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cloud-toys-admin-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/cloud-toys-admin-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "25178"
+BASE_PATH = "/admin-mobile/"
