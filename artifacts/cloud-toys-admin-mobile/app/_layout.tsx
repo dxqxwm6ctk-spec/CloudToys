@@ -5,6 +5,7 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AuthProvider } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext';
 import { getApiOrigin, getStoredAdminToken } from '@/lib/auth';
 import { setAuthTokenGetter, setBaseUrl } from '@workspace/api-client-react';
 import { useColors } from '@/hooks/useColors';

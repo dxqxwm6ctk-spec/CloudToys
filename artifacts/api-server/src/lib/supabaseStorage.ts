@@ -8,6 +8,10 @@ import { createClient } from "@supabase/supabase-js";
 
 let _supabase: ReturnType<typeof createClient> | null = null;
 
+export function isImageStorageConfigured(): boolean {
+  return Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
 function getSupabaseClient() {
   if (_supabase) return _supabase;
   const url = process.env.SUPABASE_URL;

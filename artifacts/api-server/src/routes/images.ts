@@ -15,6 +15,7 @@ import {
   fileExists,
   downloadFile,
   deleteByPrefix,
+  isImageStorageConfigured,
   listImageObjects,
 } from "../lib/supabaseStorage";
 import { requireRole } from "../middleware/requireAdmin";
@@ -464,6 +465,11 @@ router.get("/images/p/:productId/:uuid/:size", async (req, res): Promise<void> =
   const ext = isWebp ? "webp" : "avif";
   const contentType = isWebp ? "image/webp" : "image/avif";
   const objectPath = imageObjectPath(productId, uuid, sizeName, ext);
+
+  if (!isImageStorageConfigured()) {
+    res.status(404).json({ error: "Image not found" });
+    return;
+  }
 
   try {
     const exists = await fileExists(objectPath);

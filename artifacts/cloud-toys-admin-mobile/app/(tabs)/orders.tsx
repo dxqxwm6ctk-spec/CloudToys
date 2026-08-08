@@ -226,7 +226,7 @@ export default function OrdersScreen() {
                   {item.total == null ? '—' : `${item.total.toFixed(2)} JOD`}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           );
         }}
         ListFooterComponent={

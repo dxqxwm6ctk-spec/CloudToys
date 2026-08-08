@@ -73,14 +73,20 @@ interface ProductPictureProps extends HTMLMotionProps<"img"> {
 
 export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
   (
-    { src, avifSrcSet, sizes, alt, lqip, onLoad, ...motionProps },
+    { src, avifSrcSet, sizes, alt, lqip, onLoad, onError, style, ...motionProps },
     ref,
   ) => {
     const [loaded, setLoaded] = useState(false);
+    const [imageFailed, setImageFailed] = useState(false);
 
     const handleLoad: React.ReactEventHandler<HTMLImageElement> = (e) => {
       setLoaded(true);
       if (typeof onLoad === "function") onLoad(e);
+    };
+
+    const handleError: React.ReactEventHandler<HTMLImageElement> = (e) => {
+      setImageFailed(true);
+      if (typeof onError === "function") onError(e);
     };
 
     const internal = isInternalUrl(src);
@@ -109,7 +115,7 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
           // Slight scale prevents blurred edges from showing at the container border
           transform: "scale(1.08)",
           transition: "opacity 0.5s ease",
-          opacity: loaded ? 0 : 1,
+           opacity: loaded || imageFailed ? 0 : 1,
           pointerEvents: "none",
           // Sit below the real image in stacking order
           zIndex: 0,
@@ -133,7 +139,13 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
           src={webpSrc ?? resolvedSrc}
           alt={alt}
           onLoad={handleLoad}
-          style={{ position: "relative", zIndex: 1 }}
+           onError={handleError}
+           style={{
+             ...style,
+             position: "relative",
+             zIndex: 1,
+             opacity: imageFailed ? 0 : undefined,
+           }}
           {...motionProps}
         />
       </picture>
@@ -144,7 +156,13 @@ export const ProductPicture = forwardRef<HTMLImageElement, ProductPictureProps>(
         src={resolvedSrc}
         alt={alt}
         onLoad={handleLoad}
-        style={{ position: "relative", zIndex: 1 }}
+        onError={handleError}
+        style={{
+          ...style,
+          position: "relative",
+          zIndex: 1,
+          opacity: imageFailed ? 0 : undefined,
+        }}
         {...motionProps}
       />
     );

@@ -117,7 +117,7 @@ export default function ProductFormScreen() {
 
   const categoriesQuery = useAdminListCategories();
   const productQuery = useGetProduct(productId ?? '', {
-    query: { enabled: Boolean(productId) },
+    query: { queryKey: ['products', productId], enabled: Boolean(productId) },
   });
   const createProduct = useAdminCreateProduct();
   const updateProduct = useAdminUpdateProduct();

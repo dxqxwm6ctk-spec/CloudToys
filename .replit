@@ -74,6 +74,7 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 ADMIN_ALLOWED_EMAILS = "Alhasanfarg2@gmail.com"
 ALERT_EMAIL_TO = "Alhasanfarg2@gmail.com"
 VITE_API_BASE_URL = "https://cloud-toys-73e35f9572be.herokuapp.com"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyeGN4eXBueXRnYnJ6b3NhbGVxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTYwODQyNCwiZXhwIjoyMTAxMTg0NDI0fQ.DyO1oFwgqg6R5Gj7RX9ietw19q42Hq7DbZMCUsPElBk"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-7793dcf0-b0f4-4ab1-8e8e-ae3254302774"
