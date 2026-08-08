@@ -36,6 +36,7 @@ function RootLayoutNav() {
       <Stack.Screen name="categories" options={{ title: 'Categories' }} />
       <Stack.Screen name="users" options={{ title: 'Users' }} />
       <Stack.Screen name="settings" options={{ headerShown: false }} />
+      <Stack.Screen name="security" options={{ title: 'Security' }} />
       <Stack.Screen name="images" options={{ title: 'Images' }} />
       <Stack.Screen name="newsletter" options={{ title: 'Newsletter' }} />
       <Stack.Screen name="staff" options={{ title: 'Staff & admins' }} />

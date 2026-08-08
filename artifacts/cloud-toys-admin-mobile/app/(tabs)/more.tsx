@@ -10,8 +10,9 @@ const tools = [
   { label: 'Images', description: 'Browse uploaded store media', icon: 'image' as const, route: '/images' as const },
   { label: 'Users', description: 'View customer accounts', icon: 'users' as const },
   { label: 'Staff & admins', description: 'Manage team access', icon: 'shield' as const, route: '/staff' as const },
+  { label: 'Security', description: 'Review abuse and blocked IPs', icon: 'shield' as const, route: '/security' as const },
   { label: 'Newsletter', description: 'View subscribers', icon: 'mail' as const, route: '/newsletter' as const },
-  { label: 'Store settings', description: 'Payment and delivery settings', icon: 'sliders' as const },
+  { label: 'Store settings', description: 'Payment and delivery settings', icon: 'sliders' as const, route: '/settings' as const },
 ];
 
 export default function MoreScreen() {

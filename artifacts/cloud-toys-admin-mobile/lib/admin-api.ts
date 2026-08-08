@@ -34,11 +34,28 @@ export interface ShippingSetting {
 }
 
 export interface DeliverySetting {
-  estimatedDays: number;
+  days: number;
 }
 
 export interface TextSetting {
   value: string;
+}
+
+export interface ReturnPolicySetting {
+  enabled: boolean;
+  days: number;
+}
+
+export interface WarrantyPolicySetting {
+  enabled: boolean;
+  duration: number;
+  unit: 'months' | 'years';
+}
+
+export interface ContactSetting {
+  email: string;
+  phone: string;
+  address: string;
 }
 
 export interface ShippingZoneSetting {
@@ -56,6 +73,30 @@ export interface UploadedImage {
   lqip?: string | null;
   originalFilename?: string;
   uuid?: string;
+}
+
+export interface SecurityEvent {
+  id: number;
+  ip: string;
+  method: string;
+  path: string;
+  reason: string;
+  userId: string | null;
+  email: string | null;
+  createdAt: string;
+}
+
+export interface SecuritySummary {
+  ip: string;
+  count: number;
+  lastSeen: string;
+  reasons: string[];
+}
+
+export interface BlockedIp {
+  ip: string;
+  reason: string | null;
+  createdAt: string;
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -157,6 +198,39 @@ export function updateTextSetting(
   });
 }
 
+export function getReturnPolicySetting(): Promise<ReturnPolicySetting> {
+  return request<ReturnPolicySetting>('/api/admin/settings/returns');
+}
+
+export function updateReturnPolicySetting(data: ReturnPolicySetting): Promise<ReturnPolicySetting> {
+  return request<ReturnPolicySetting>('/api/admin/settings/returns', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getWarrantyPolicySetting(): Promise<WarrantyPolicySetting> {
+  return request<WarrantyPolicySetting>('/api/admin/settings/warranty');
+}
+
+export function updateWarrantyPolicySetting(data: WarrantyPolicySetting): Promise<WarrantyPolicySetting> {
+  return request<WarrantyPolicySetting>('/api/admin/settings/warranty', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getContactSetting(): Promise<ContactSetting> {
+  return request<ContactSetting>('/api/admin/settings/contact');
+}
+
+export function updateContactSetting(data: ContactSetting): Promise<ContactSetting> {
+  return request<ContactSetting>('/api/admin/settings/contact', {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
 export function listShippingZones(): Promise<ShippingZoneSetting[]> {
   return request<ShippingZoneSetting[]>('/api/admin/settings/shipping-zones');
 }
@@ -182,4 +256,29 @@ export function updateShippingZone(
 
 export function deleteShippingZone(id: string): Promise<void> {
   return request<void>(`/api/admin/settings/shipping-zones/${id}`, { method: 'DELETE' });
+}
+
+export function listSecurityEvents(): Promise<SecurityEvent[]> {
+  return request<SecurityEvent[]>('/api/admin/security/events');
+}
+
+export function listSecuritySummary(): Promise<SecuritySummary[]> {
+  return request<SecuritySummary[]>('/api/admin/security/summary');
+}
+
+export function listBlockedIps(): Promise<BlockedIp[]> {
+  return request<BlockedIp[]>('/api/admin/security/blocked-ips');
+}
+
+export function blockIp(ip: string, reason?: string): Promise<{ ip: string }> {
+  return request<{ ip: string }>('/api/admin/security/blocked-ips', {
+    method: 'POST',
+    body: JSON.stringify({ ip, reason: reason?.trim() || undefined }),
+  });
+}
+
+export function unblockIp(ip: string): Promise<void> {
+  return request<void>(`/api/admin/security/blocked-ips/${encodeURIComponent(ip)}`, {
+    method: 'DELETE',
+  });
 }
