@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Image,
   Pressable,
@@ -10,16 +11,27 @@ import {
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminListProducts, resolveMediaUrl } from '@workspace/api-client-react';
+import {
+  getAdminListProductsQueryKey,
+  resolveMediaUrl,
+  useAdminDeleteProduct,
+  useAdminListProducts,
+} from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { ErrorState } from '@/components/ScreenState';
+import { useAuth } from '@/context/AuthContext';
 
 const PAGE_SIZE = 10;
 
 export default function ProductsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
+  const deleteProduct = useAdminDeleteProduct();
+  const { identity } = useAuth();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const query = useAdminListProducts({
@@ -31,6 +43,31 @@ export default function ProductsScreen() {
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
   const topInset = insets.top < 67 ? 67 : insets.top;
   const bottomInset = insets.bottom < 34 ? 34 : insets.bottom;
+  const canManageProducts = identity?.role === 'admin' || identity?.role === 'manager';
+
+  const handleDelete = (id: string, name: string) => {
+    Alert.alert(
+      'Delete product',
+      `Delete "${name}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteProduct.mutate(
+              { id },
+              {
+                onSuccess: () => {
+                  void queryClient.invalidateQueries({ queryKey: getAdminListProductsQueryKey() });
+                },
+              },
+            );
+          },
+        },
+      ],
+    );
+  };
 
   if (query.isError) {
     return (
@@ -95,6 +132,17 @@ export default function ProductsScreen() {
             {query.isLoading ? (
               <ActivityIndicator style={styles.headerLoader} color={colors.primary} />
             ) : null}
+                   {canManageProducts ? <Pressable
+                     accessibilityRole="button"
+                     onPress={() => router.push('/product-form')}
+                     style={({ pressed }) => [
+                       styles.addButton,
+                       { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 },
+                     ]}
+                   >
+                     <Feather name="plus" size={16} color={colors.primaryForeground} />
+                     <Text style={[styles.addButtonText, { color: colors.primaryForeground }]}>Add product</Text>
+                   </Pressable> : null}
           </View>
         }
         ListEmptyComponent={
@@ -109,7 +157,13 @@ export default function ProductsScreen() {
           )
         }
         renderItem={({ item }) => (
-          <View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Pressable
+            onPress={() => router.push({ pathname: '/product-form', params: { id: item.id } })}
+            style={({ pressed }) => [
+              styles.productCard,
+              { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.78 : 1 },
+            ]}
+          >
             <Image
               source={{ uri: resolveMediaUrl(item.thumbUrl ?? item.imageUrl) ?? undefined }}
               style={[styles.productImage, { backgroundColor: colors.muted }]}
@@ -134,7 +188,21 @@ export default function ProductsScreen() {
                 </View>
               </View>
             </View>
-          </View>
+            <View style={styles.productActions}>
+              <Feather name="edit-2" size={16} color={colors.mutedForeground} />
+              {canManageProducts ? <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Delete ${item.name}`}
+                hitSlop={10}
+                onPress={(event) => {
+                  event.stopPropagation();
+                  handleDelete(item.id, item.name);
+                }}
+              >
+                <Feather name="trash-2" size={16} color={colors.destructive} />
+              </Pressable> : null}
+            </View>
+          </Pressable>
         )}
         ListFooterComponent={
           <View style={styles.pagination}>
@@ -177,12 +245,15 @@ const styles = StyleSheet.create({
   searchBox: { minHeight: 50, borderRadius: 11, borderWidth: 1, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   searchInput: { flex: 1, minHeight: 48, fontFamily: 'Inter_400Regular', fontSize: 14 },
   headerLoader: { alignSelf: 'flex-start' },
-  productCard: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, padding: 10, marginBottom: 10, gap: 12 },
+  addButton: { alignSelf: 'flex-start', minHeight: 38, borderRadius: 9, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  addButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  productCard: { flexDirection: 'row', borderWidth: 1, borderRadius: 14, padding: 10, marginBottom: 10, gap: 12, alignItems: 'center' },
   productImage: { width: 76, height: 76, borderRadius: 10 },
   productCopy: { flex: 1, justifyContent: 'center', gap: 4 },
   productName: { fontFamily: 'Inter_600SemiBold', fontSize: 15, lineHeight: 20 },
   category: { fontFamily: 'Inter_400Regular', fontSize: 12 },
   productMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 3 },
+  productActions: { alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 2 },
   price: { fontFamily: 'Inter_700Bold', fontSize: 13 },
   stockPill: { flexDirection: 'row', alignItems: 'center', borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4, gap: 5 },
   stockDot: { width: 6, height: 6, borderRadius: 3 },

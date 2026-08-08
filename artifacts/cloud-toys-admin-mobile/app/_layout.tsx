@@ -32,7 +32,10 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: 'Back', headerTintColor: colors.primary }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="product-form" options={{ headerShown: false }} />
       <Stack.Screen name="categories" options={{ title: 'Categories' }} />
+      <Stack.Screen name="users" options={{ title: 'Users' }} />
+      <Stack.Screen name="settings" options={{ headerShown: false }} />
       <Stack.Screen name="images" options={{ title: 'Images' }} />
       <Stack.Screen name="newsletter" options={{ title: 'Newsletter' }} />
       <Stack.Screen name="staff" options={{ title: 'Staff & admins' }} />

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -9,7 +10,12 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAdminListOrders } from '@workspace/api-client-react';
+import {
+  getAdminListOrdersQueryKey,
+  useAdminListOrders,
+  useAdminUpdateOrderStatus,
+} from '@workspace/api-client-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useColors } from '@/hooks/useColors';
 import { ErrorState } from '@/components/ScreenState';
 
@@ -25,6 +31,8 @@ function statusColor(status: string, colors: ReturnType<typeof useColors>): stri
 export default function OrdersScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
+  const updateStatus = useAdminUpdateOrderStatus();
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const query = useAdminListOrders({
@@ -36,6 +44,20 @@ export default function OrdersScreen() {
   const totalPages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
   const topInset = insets.top < 67 ? 67 : insets.top;
   const bottomInset = insets.bottom < 34 ? 34 : insets.bottom;
+
+  const changeStatus = (id: string, nextStatus: string) => {
+    updateStatus.mutate(
+      { id, data: { status: nextStatus } },
+      {
+        onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
+        },
+        onError: (error) => {
+          Alert.alert('Could not update order', error instanceof Error ? error.message : 'The API rejected this update.');
+        },
+      },
+    );
+  };
 
   if (query.isError) {
     return (
@@ -118,14 +140,39 @@ export default function OrdersScreen() {
         renderItem={({ item }) => {
           const accent = statusColor(item.status, colors);
           return (
-            <View style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+             <Pressable
+               onPress={() => {
+                 Alert.alert(
+                   `Order #${item.orderNumber}`,
+                   [
+                     `Customer: ${item.customerName ?? '—'}`,
+                     `Phone: ${item.customerPhone ?? '—'}`,
+                     `Payment: ${item.paymentMethod ?? '—'}`,
+                     `Address: ${item.shippingAddress ?? '—'}`,
+                     `Total: ${item.total == null ? '—' : `${item.total.toFixed(2)} JOD`}`,
+                   ].join('\n'),
+                   [
+                     { text: 'Close', style: 'cancel' },
+                     ...(item.status !== 'processing' ? [{ text: 'Mark processing', onPress: () => changeStatus(item.id, 'processing') }] : []),
+                     ...(item.status !== 'shipped' ? [{ text: 'Mark shipped', onPress: () => changeStatus(item.id, 'shipped') }] : []),
+                     ...(item.status !== 'out_for_delivery' ? [{ text: 'Out for delivery', onPress: () => changeStatus(item.id, 'out_for_delivery') }] : []),
+                     ...(item.status !== 'delivered' ? [{ text: 'Mark delivered', onPress: () => changeStatus(item.id, 'delivered') }] : []),
+                     ...(item.status !== 'cancelled' ? [{ text: 'Cancel order', style: 'destructive' as const, onPress: () => changeStatus(item.id, 'cancelled') }] : []),
+                   ],
+                 );
+               }}
+               style={({ pressed }) => [
+                 styles.orderCard,
+                 { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.76 : 1 },
+               ]}
+             >
               <View style={styles.orderTop}>
                 <View>
                   <Text style={[styles.orderNumber, { color: colors.foreground }]}>#{item.orderNumber}</Text>
                   <Text style={[styles.customer, { color: colors.mutedForeground }]} numberOfLines={1}>
                     {item.customerName ?? 'Customer'}
                   </Text>
-                </View>
+             </Pressable>
                 <View style={[styles.statusPill, { backgroundColor: colors.accent }]}>
                   <View style={[styles.statusDot, { backgroundColor: accent }]} />
                   <Text style={[styles.statusText, { color: accent }]}>{item.status}</Text>
