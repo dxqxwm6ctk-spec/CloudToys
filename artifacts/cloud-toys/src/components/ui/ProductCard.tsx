@@ -41,7 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
       : null;
 
   return (
-    <Link href={`/product/${product.id}`} className="group block">
+    <Link href={`/product/${product.slug}`} className="group block">
       {/* Image Container */}
       <div
         className="relative overflow-hidden rounded-[20px] bg-[#F8F6F3] mb-4"

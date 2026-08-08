@@ -1255,7 +1255,7 @@ export const getAdminListImagesUrl = (params?: AdminListImagesParams,) => {
 }
 
 /**
- * @summary List all stored product images (admin view)
+ * @summary List stored product image groups with product usage (admin view)
  */
 export const adminListImages = async (params?: AdminListImagesParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminImageListResult> => {
 
@@ -1302,7 +1302,7 @@ export type AdminListImagesQueryError = ErrorType<unknown>
 
 
 /**
- * @summary List all stored product images (admin view)
+ * @summary List stored product image groups with product usage (admin view)
  */
 
 export function useAdminListImages<TData = Awaited<ReturnType<typeof adminListImages>>, TError = ErrorType<unknown>>(
@@ -1339,7 +1339,7 @@ export const getAdminDeleteImageUrl = (params: AdminDeleteImageParams,) => {
 }
 
 /**
- * @summary Delete one stored product image
+ * @summary Delete a complete stored product image group
  */
 export const adminDeleteImage = async (params: AdminDeleteImageParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminDeleteImageResult> => {
 
@@ -1388,7 +1388,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type AdminDeleteImageMutationError = ErrorType<void>
 
     /**
- * @summary Delete one stored product image
+ * @summary Delete a complete stored product image group
  */
 export const useAdminDeleteImage = <TError = ErrorType<void>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteImage>>, TError,{params: AdminDeleteImageParams}, TContext>, request?: SecondParameter<typeof customFetch>}

@@ -6,8 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdminDeleteImageResult {
-  success: boolean;
-  path: string;
-  deletedCount: number;
+export interface AdminImageProduct {
+  id: string;
+  name: string;
 }

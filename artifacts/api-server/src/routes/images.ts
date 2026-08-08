@@ -16,7 +16,6 @@ import {
   downloadFile,
   deleteByPrefix,
   listImageObjects,
-  deleteObject,
 } from "../lib/supabaseStorage";
 import { requireRole } from "../middleware/requireAdmin";
 import { db, productsTable } from "@workspace/db";
@@ -73,6 +72,26 @@ function parseInternalImageUrl(url: string): { productId: string; uuid: string }
   if (!match) return null;
   return { productId: match[1], uuid: match[2] };
 }
+
+function parseStorageImagePath(value: string): { productId: string; uuid: string } | null {
+  const match = value.match(
+    /^products\/([a-zA-Z0-9_-]+)\/([0-9a-f-]{36})(?:\/(?:thumb|medium|large)\.(?:avif|webp))?$/,
+  );
+  return match ? { productId: match[1], uuid: match[2] } : null;
+}
+
+type ImageGroup = {
+  path: string;
+  name: string;
+  size: number;
+  mimeType: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  publicUrl: string;
+  variantCount: number;
+  used: boolean;
+  products: Array<{ id: string; name: string }>;
+};
 
 /**
  * Delete all stored image files (AVIF + WebP, all sizes) for a product image set.
@@ -194,13 +213,94 @@ const uploadSingleFile: RequestHandler = (req, res, next): void => {
 
 const router: IRouter = Router();
 
-// GET /admin/images — list every object in the product-images bucket
+// GET /admin/images — list one item per uploaded image group and annotate usage
 router.get("/admin/images", async (req, res): Promise<void> => {
   try {
     const search = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase() : "";
-    const items = (await listImageObjects()).filter((item) =>
-      !search || item.path.toLowerCase().includes(search),
-    );
+    const storedObjects = await listImageObjects();
+    const products = await db
+      .select({
+        id: productsTable.id,
+        name: productsTable.name,
+        imageUrl: productsTable.imageUrl,
+        galleryUrls: productsTable.galleryUrls,
+        thumbUrl: productsTable.thumbUrl,
+        mediumUrl: productsTable.mediumUrl,
+        largeUrl: productsTable.largeUrl,
+      })
+      .from(productsTable);
+
+    const productGroups = new Map<string, Array<{ id: string; name: string }>>();
+    for (const product of products) {
+      const urls = [
+        product.imageUrl,
+        ...(product.galleryUrls ?? []),
+        product.thumbUrl,
+        product.mediumUrl,
+        product.largeUrl,
+      ].filter((url): url is string => Boolean(url));
+      const groupKeys = new Set(
+        urls
+          .map(parseInternalImageUrl)
+          .filter((parsed): parsed is { productId: string; uuid: string } => Boolean(parsed))
+          .map((parsed) => `products/${parsed.productId}/${parsed.uuid}`),
+      );
+      for (const key of groupKeys) {
+        const existing = productGroups.get(key) ?? [];
+        existing.push({ id: String(product.id), name: product.name });
+        productGroups.set(key, existing);
+      }
+    }
+
+    const groups = new Map<string, ImageGroup>();
+    for (const object of storedObjects) {
+      const parsed = parseStorageImagePath(object.path);
+      const groupPath = parsed
+        ? `products/${parsed.productId}/${parsed.uuid}`
+        : object.path;
+      const existing = groups.get(groupPath);
+      if (existing) {
+        existing.size += object.size;
+        existing.variantCount += 1;
+        existing.createdAt =
+          existing.createdAt && object.createdAt
+            ? new Date(existing.createdAt) < new Date(object.createdAt)
+              ? existing.createdAt
+              : object.createdAt
+            : existing.createdAt ?? object.createdAt;
+        existing.updatedAt =
+          existing.updatedAt && object.updatedAt
+            ? new Date(existing.updatedAt) > new Date(object.updatedAt)
+              ? existing.updatedAt
+              : object.updatedAt
+            : existing.updatedAt ?? object.updatedAt;
+        if (object.path.endsWith("/medium.avif") || object.path.endsWith("/thumb.avif")) {
+          existing.publicUrl = object.publicUrl;
+          existing.mimeType = object.mimeType;
+        }
+        continue;
+      }
+
+      const usedProducts = productGroups.get(groupPath) ?? [];
+      groups.set(groupPath, {
+        path: groupPath,
+        name: parsed?.uuid ?? object.name,
+        size: object.size,
+        mimeType: object.mimeType,
+        createdAt: object.createdAt,
+        updatedAt: object.updatedAt,
+        publicUrl: object.publicUrl,
+        variantCount: 1,
+        used: usedProducts.length > 0,
+        products: usedProducts,
+      });
+    }
+
+    const items = [...groups.values()]
+      .filter((item) => !search || `${item.path} ${item.name} ${item.products.map((p) => p.name).join(" ")}`
+        .toLowerCase()
+        .includes(search))
+      .sort((a, b) => a.path.localeCompare(b.path));
     res.json({ items, total: items.length });
   } catch (err) {
     req.log.error({ err }, "Image listing failed");
@@ -208,7 +308,7 @@ router.get("/admin/images", async (req, res): Promise<void> => {
   }
 });
 
-// DELETE /admin/images?path=... — delete one exact object
+// DELETE /admin/images?path=... — delete all variants in one image group
 router.delete(
   "/admin/images",
   requireRole("admin", "manager"),
@@ -227,8 +327,53 @@ router.delete(
     }
 
     try {
-      await deleteObject(objectPath);
-      res.json({ success: true, path: objectPath });
+      const parsed = parseStorageImagePath(objectPath);
+      if (!parsed) {
+        res.status(400).json({ error: "Invalid image group path" });
+        return;
+      }
+
+      const usageRows = await db
+        .select({
+          id: productsTable.id,
+          name: productsTable.name,
+          imageUrl: productsTable.imageUrl,
+          galleryUrls: productsTable.galleryUrls,
+          thumbUrl: productsTable.thumbUrl,
+          mediumUrl: productsTable.mediumUrl,
+          largeUrl: productsTable.largeUrl,
+        })
+        .from(productsTable);
+      const usedBy = usageRows.filter((product) => {
+        const urls = [
+          product.imageUrl,
+          ...(product.galleryUrls ?? []),
+          product.thumbUrl,
+          product.mediumUrl,
+          product.largeUrl,
+        ].filter((url): url is string => Boolean(url));
+        return urls.some((url) => {
+          const referenced = parseInternalImageUrl(url);
+          return referenced?.productId === parsed.productId && referenced.uuid === parsed.uuid;
+        });
+      });
+
+      const confirmUsed = req.query.confirmUsed === "true";
+      if (usedBy.length > 0 && !confirmUsed) {
+        res.status(409).json({
+          error: `This image is currently used by ${usedBy.map((product) => product.name).join(", ")}. Confirm deletion to remove it from storage.`,
+          usedBy: usedBy.map((product) => ({ id: String(product.id), name: product.name })),
+        });
+        return;
+      }
+
+      const objectPaths = (await listImageObjects())
+        .filter((item) => item.path.startsWith(`${objectPath}/`))
+        .map((item) => item.path);
+      if (objectPaths.length > 0) {
+        await deleteByPrefix(`${objectPath}/`);
+      }
+      res.json({ success: true, path: objectPath, deletedCount: objectPaths.length });
     } catch (err) {
       req.log.error({ err, objectPath }, "Image deletion failed");
       res.status(500).json({ error: "Failed to delete stored image" });

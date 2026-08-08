@@ -314,7 +314,7 @@ paths:
     get:
       operationId: adminListImages
       tags: [admin]
-      summary: List all stored product images (admin view)
+      summary: List stored product image groups with product usage (admin view)
       parameters:
         - name: search
           in: query
@@ -330,13 +330,18 @@ paths:
     delete:
       operationId: adminDeleteImage
       tags: [admin]
-      summary: Delete one stored product image
+      summary: Delete a complete stored product image group
       parameters:
         - name: path
           in: query
           required: true
           schema:
             type: string
+        - name: confirmUsed
+          in: query
+          description: Required when the image is currently referenced by one or more products.
+          schema:
+            type: boolean
       responses:
         "200":
           description: Image deleted
@@ -922,9 +927,16 @@ components:
         storageLimitBytes: { type: number }
         storageFileCount: { type: number }
 
+    AdminImageProduct:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+
     AdminImage:
       type: object
-      required: [path, name, size, mimeType, createdAt, updatedAt, publicUrl]
+      required: [path, name, size, mimeType, createdAt, updatedAt, publicUrl, variantCount, used, products]
       properties:
         path: { type: string }
         name: { type: string }
@@ -933,6 +945,12 @@ components:
         createdAt: { type: ["string", "null"] }
         updatedAt: { type: ["string", "null"] }
         publicUrl: { type: string }
+        variantCount: { type: number }
+        used: { type: boolean }
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminImageProduct"
 
     AdminImageListResult:
       type: object
@@ -946,10 +964,11 @@ components:
 
     AdminDeleteImageResult:
       type: object
-      required: [success, path]
+      required: [success, path, deletedCount]
       properties:
         success: { type: boolean }
         path: { type: string }
+        deletedCount: { type: number }
 
     AdminProduct:
       type: object

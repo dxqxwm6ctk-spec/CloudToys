@@ -406,7 +406,7 @@ export const AdminCreateProductResponse = zod.object({
 
 
 /**
- * @summary List all stored product images (admin view)
+ * @summary List stored product image groups with product usage (admin view)
  */
 export const AdminListImagesQueryParams = zod.object({
   "search": zod.coerce.string().optional()
@@ -420,22 +420,30 @@ export const AdminListImagesResponse = zod.object({
   "mimeType": zod.string().nullable(),
   "createdAt": zod.string().nullable(),
   "updatedAt": zod.string().nullable(),
-  "publicUrl": zod.string()
+  "publicUrl": zod.string(),
+  "variantCount": zod.number(),
+  "used": zod.boolean(),
+  "products": zod.array(zod.object({
+  "id": zod.string(),
+  "name": zod.string()
+}))
 })),
   "total": zod.number()
 })
 
 
 /**
- * @summary Delete one stored product image
+ * @summary Delete a complete stored product image group
  */
 export const AdminDeleteImageQueryParams = zod.object({
-  "path": zod.coerce.string()
+  "path": zod.coerce.string(),
+  "confirmUsed": zod.coerce.boolean().optional().describe('Required when the image is currently referenced by one or more products.')
 })
 
 export const AdminDeleteImageResponse = zod.object({
   "success": zod.boolean(),
-  "path": zod.string()
+  "path": zod.string(),
+  "deletedCount": zod.number()
 })
 
 

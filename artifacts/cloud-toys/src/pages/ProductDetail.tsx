@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useRoute } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useGetProduct } from '@workspace/api-client-react';
+import { useGetProduct, useListProducts } from '@workspace/api-client-react';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useToast } from '@/hooks/use-toast';
@@ -10,6 +10,7 @@ import { formatPrice as formatCurrency } from '../lib/currency';
 import { useShippingThreshold, useReturnPolicy, useWarrantyPolicy } from '../hooks/useStoreSettings';
 import { motion } from 'framer-motion';
 import { ProductPicture } from '../components/ui/ProductPicture';
+import { ProductCard } from '../components/ui/ProductCard';
 import { resolveMediaUrl } from '@workspace/api-client-react';
 
 export function ProductDetail() {
@@ -17,6 +18,11 @@ export function ProductDetail() {
   const slug = params?.slug || '';
   
   const { data: product, isLoading, error } = useGetProduct(slug);
+  const { data: allProducts } = useListProducts({
+    sort: 'featured',
+    page: 1,
+    pageSize: 8,
+  });
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
@@ -96,6 +102,9 @@ export function ProductDetail() {
   };
 
   const formatPrice = (price: number) => formatCurrency(price, product.currency);
+  const otherProducts = (allProducts?.items ?? [])
+    .filter((item) => item.id !== product.id && item.slug !== product.slug)
+    .slice(0, 4);
 
   return (
     <PageTransition>
@@ -282,6 +291,38 @@ export function ProductDetail() {
               ))}
             </ul>
           </div>
+        )}
+
+        {otherProducts.length > 0 && (
+          <section className="mt-20 border-t border-border pt-12 md:mt-24 md:pt-16" aria-labelledby="other-products-title">
+            <div className="mb-8 flex items-end justify-between gap-4">
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+                  Keep exploring
+                </p>
+                <h2 id="other-products-title" className="font-serif text-3xl font-semibold md:text-4xl">
+                  Other products you may like
+                </h2>
+              </div>
+              <a
+                href="/shop"
+                className="hidden text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 sm:block"
+              >
+                View all
+              </a>
+            </div>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:grid-cols-2 sm:gap-x-5 lg:grid-cols-4 lg:gap-6">
+              {otherProducts.map((item) => (
+                <ProductCard key={item.id} product={item} />
+              ))}
+            </div>
+            <a
+              href="/shop"
+              className="mt-8 block text-center text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 sm:hidden"
+            >
+              View all products
+            </a>
+          </section>
         )}
       </div>
     </PageTransition>

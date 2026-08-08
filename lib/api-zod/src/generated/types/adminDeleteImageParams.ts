@@ -8,4 +8,8 @@
 
 export type AdminDeleteImageParams = {
 path: string;
+/**
+ * Required when the image is currently referenced by one or more products.
+ */
+confirmUsed?: boolean;
 };

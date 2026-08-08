@@ -226,6 +226,11 @@ export interface AdminStats {
   storageFileCount: number;
 }
 
+export interface AdminImageProduct {
+  id: string;
+  name: string;
+}
+
 export interface AdminImage {
   path: string;
   name: string;
@@ -237,6 +242,9 @@ export interface AdminImage {
   /** @nullable */
   updatedAt: string | null;
   publicUrl: string;
+  variantCount: number;
+  used: boolean;
+  products: AdminImageProduct[];
 }
 
 export interface AdminImageListResult {
@@ -247,6 +255,7 @@ export interface AdminImageListResult {
 export interface AdminDeleteImageResult {
   success: boolean;
   path: string;
+  deletedCount: number;
 }
 
 export interface AdminProduct {
@@ -424,6 +433,10 @@ search?: string;
 
 export type AdminDeleteImageParams = {
 path: string;
+/**
+ * Required when the image is currently referenced by one or more products.
+ */
+confirmUsed?: boolean;
 };
 
 export type AdminDeleteProduct200 = {

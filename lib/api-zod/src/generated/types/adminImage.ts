@@ -5,6 +5,7 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { AdminImageProduct } from './adminImageProduct';
 
 export interface AdminImage {
   path: string;
@@ -17,4 +18,7 @@ export interface AdminImage {
   /** @nullable */
   updatedAt: string | null;
   publicUrl: string;
+  variantCount: number;
+  used: boolean;
+  products: AdminImageProduct[];
 }

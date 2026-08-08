@@ -13,6 +13,7 @@ export * from './adminDeleteProduct200';
 export * from './adminDeleteStaff200';
 export * from './adminImage';
 export * from './adminImageListResult';
+export * from './adminImageProduct';
 export * from './adminListImagesParams';
 export * from './adminListOrdersParams';
 export * from './adminListProductsParams';

@@ -6,7 +6,7 @@ import {
   type AdminImage,
 } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, FileImage, Loader2, RefreshCw, Search, Trash2, X } from 'lucide-react';
+import { AlertTriangle, FileImage, Loader2, RefreshCw, Search, Trash2, X, ShieldAlert, Link2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { authHeader } from '@/lib/auth-token';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,7 @@ export default function ImagesList() {
   const queryClient = useQueryClient();
   const [search, setSearch] = React.useState('');
   const [preview, setPreview] = React.useState<AdminImage | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<AdminImage | null>(null);
 
   const listQuery = useAdminListImages(
     { search: search.trim() || undefined },
@@ -51,20 +52,23 @@ export default function ImagesList() {
 
   const handleDelete = (image: AdminImage) => {
     if (role === 'supervisor') return;
+    setDeleteTarget(image);
+  };
 
-    const confirmed = window.confirm(
-      `Delete "${image.path}"?\n\nThis removes the file permanently and may affect a product or category that references it.`,
-    );
-    if (!confirmed) return;
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    const image = deleteTarget;
+    const confirmUsed = image.used;
 
     deleteImage.mutate(
-      { params: { path: image.path } },
+      { params: { path: image.path, confirmUsed } },
       {
         onSuccess: () => {
           setPreview((current) => (current?.path === image.path ? null : current));
+          setDeleteTarget(null);
           toast({
             title: 'Image deleted',
-            description: `${image.name} was removed from Supabase Storage.`,
+            description: `${image.variantCount} stored variants were removed from Supabase Storage.`,
           });
           queryClient.invalidateQueries({ queryKey: getAdminListImagesQueryKey() });
         },
@@ -91,7 +95,7 @@ export default function ImagesList() {
             Images
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse and manage every file in the product-images Supabase bucket.
+            Each card represents one uploaded image and all of its stored size variants.
           </p>
         </div>
         <Button
@@ -175,8 +179,8 @@ export default function ImagesList() {
       ) : (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              {listQuery.data?.total ?? images.length} file
+              <p className="text-sm text-muted-foreground">
+               {listQuery.data?.total ?? images.length} image
               {(listQuery.data?.total ?? images.length) === 1 ? '' : 's'}
               {search ? ` matching “${search}”` : ''}
             </p>
@@ -199,7 +203,9 @@ export default function ImagesList() {
                     loading="lazy"
                     className="h-full w-full object-contain p-3 transition-transform duration-200 group-hover:scale-105"
                   />
-                  <Badge className="absolute left-3 top-3">{fileLabel(image)}</Badge>
+                    <Badge className={image.used ? "absolute left-3 top-3 bg-amber-100 text-amber-900 hover:bg-amber-100" : "absolute left-3 top-3 bg-emerald-100 text-emerald-900 hover:bg-emerald-100"}>
+                      {image.used ? 'Used' : 'Unused'}
+                    </Badge>
                 </button>
                 <CardHeader className="space-y-1 p-4 pb-2">
                   <CardTitle className="truncate font-sans text-sm" title={image.path}>
@@ -211,17 +217,25 @@ export default function ImagesList() {
                 </CardHeader>
                 <CardContent className="flex items-center justify-between gap-3 p-4 pt-2">
                   <div className="min-w-0 text-xs text-muted-foreground">
-                    <div>{formatBytes(image.size)}</div>
+                    <div>{image.variantCount} variants · {formatBytes(image.size)}</div>
                     <div>{formatDate(image.updatedAt ?? image.createdAt)}</div>
+                    {image.used ? (
+                      <div className="mt-2 flex items-start gap-1 text-amber-800">
+                        <Link2 className="mt-0.5 h-3 w-3 shrink-0" />
+                        <span>Products: {image.products.map((product) => product.name).join(', ')}</span>
+                      </div>
+                    ) : (
+                      <div className="mt-2 font-semibold text-emerald-700">Unused — safe to delete</div>
+                    )}
                   </div>
-                  {role !== 'supervisor' && (
+                 {role !== 'supervisor' && (
                     <Button
                       variant="ghost"
                       size="icon"
                       className="shrink-0 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => handleDelete(image)}
                       disabled={deleteImage.isPending}
-                      title={`Delete ${image.name}`}
+                       title={image.used ? `Delete ${image.name} (used by products)` : `Delete ${image.name}`}
                       aria-label={`Delete ${image.name}`}
                     >
                       {deleteImage.isPending && deleteImage.variables?.params.path === image.path ? (
@@ -268,10 +282,20 @@ export default function ImagesList() {
             </div>
             <div className="p-5">
               <p className="break-all font-mono text-xs text-muted-foreground">{preview.path}</p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {formatBytes(preview.size)} · {fileLabel(preview)} · Updated{' '}
+               <p className="mt-2 text-sm text-muted-foreground">
+                 {preview.variantCount} variants · {formatBytes(preview.size)} · {fileLabel(preview)} · Updated{' '}
                 {formatDate(preview.updatedAt ?? preview.createdAt)}
               </p>
+               <div className={`mt-3 rounded-lg border p-3 text-sm ${preview.used ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-emerald-200 bg-emerald-50 text-emerald-800'}`}>
+                 {preview.used ? (
+                   <>
+                     <p className="flex items-center gap-2 font-semibold"><ShieldAlert className="h-4 w-4" /> Used in products</p>
+                     <p className="mt-1">{preview.products.map((product) => product.name).join(', ')}</p>
+                   </>
+                 ) : (
+                   <p className="font-semibold">Unused — this image is not linked to any product.</p>
+                 )}
+               </div>
               {role !== 'supervisor' && (
                 <Button
                   variant="destructive"
@@ -282,7 +306,49 @@ export default function ImagesList() {
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete image
                 </Button>
-              )}
+       )}
+
+      {deleteTarget && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-image-title"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4"
+          onClick={() => !deleteImage.isPending && setDeleteTarget(null)}
+        >
+          <div className="w-full max-w-lg rounded-xl bg-card p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className={`rounded-full p-2 ${deleteTarget.used ? 'bg-amber-100 text-amber-700' : 'bg-destructive/10 text-destructive'}`}>
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 id="delete-image-title" className="font-serif text-xl font-bold">Delete image and all sizes?</h2>
+                <p className="mt-1 break-all font-mono text-xs text-muted-foreground">{deleteTarget.path}</p>
+              </div>
+            </div>
+            {deleteTarget.used ? (
+              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p className="font-bold">تحذير: هذه الصورة مستخدمة حاليًا في المنتجات التالية:</p>
+                <ul className="mt-2 list-inside list-disc">
+                  {deleteTarget.products.map((product) => <li key={product.id}>{product.name}</li>)}
+                </ul>
+                <p className="mt-3">سيؤدي الحذف إلى إزالة ملفات الصورة الثلاثة/كل الأحجام من التخزين، وقد تظهر المنتجات بدون هذه الصورة.</p>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">
+                هذه الصورة غير مستخدمة. سيتم حذف كل الأحجام المخزنة لها معًا ولا يمكن التراجع عن ذلك.
+              </p>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleteImage.isPending}>Cancel</Button>
+              <Button variant="destructive" onClick={confirmDelete} disabled={deleteImage.isPending}>
+                {deleteImage.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                {deleteTarget.used ? 'Delete anyway' : 'Delete all sizes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
             </div>
           </div>
         </div>
