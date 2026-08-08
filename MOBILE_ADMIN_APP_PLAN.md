@@ -171,56 +171,57 @@
 
 ### المرحلة 1 — أساس التطبيق والملاحة
 
-- [ ] إنشاء مشروع Expo Router.
-- [ ] إضافة Root Layout وProviders.
-- [ ] إضافة React Query.
-- [ ] إضافة Safe Area وKeyboard handling.
-- [ ] إعداد ألوان Cloud Toys والخطوط والمسافات.
-- [ ] إنشاء Bottom Tabs أو Navigation مناسبة للموبايل.
-- [ ] إنشاء شاشة تحميل وشاشة خطأ عامة وشاشات Empty State.
-- [ ] إضافة Error Boundary.
+- [x] إنشاء مشروع Expo Router.
+- [x] إضافة Root Layout وProviders.
+- [x] إضافة React Query.
+- [x] إضافة Safe Area وKeyboard handling.
+- [x] إعداد ألوان Cloud Toys والخطوط والمسافات.
+- [x] إنشاء Bottom Tabs أو Navigation مناسبة للموبايل.
+- [x] إنشاء شاشة تحميل وشاشة خطأ عامة وشاشات Empty State.
+- [x] إضافة Error Boundary.
 
 ### المرحلة 2 — المصادقة والحماية
 
-- [ ] ربط `setBaseUrl` بعنوان API المخصص للتطبيق.
-- [ ] ربط `setAuthTokenGetter`.
-- [ ] حفظ التوكن في Secure Storage.
-- [ ] بناء Auth Context.
-- [ ] تنفيذ login/logout/me.
+- [x] ربط `setBaseUrl` بعنوان API المخصص للتطبيق.
+- [x] ربط `setAuthTokenGetter`.
+- [x] حفظ التوكن في Secure Storage.
+- [x] بناء Auth Context.
+- [x] تنفيذ login/logout/me.
 - [ ] إضافة Google OAuth إن تم اعتماده.
 - [ ] اختبار انتهاء الجلسة والعودة إلى Login.
 
 ### المرحلة 3 — البيانات المشتركة والمكونات
 
-- [ ] اعتماد hooks المولدة من `@workspace/api-client-react`.
-- [ ] عدم إنشاء fetch wrappers مكررة للـ endpoints الموجودة.
+- [x] اعتماد hooks المولدة من `@workspace/api-client-react`.
+- [x] عدم إنشاء fetch wrappers مكررة للـ endpoints الموجودة.
 - [ ] إضافة مكونات مشتركة:
   - [ ] Header.
-  - [ ] بطاقة إحصائية.
-  - [ ] Search input.
+  - [x] بطاقة إحصائية.
+  - [x] Search input.
   - [ ] Filter sheet.
   - [ ] Product image picker.
   - [ ] Confirm dialog.
   - [ ] Toast/feedback.
-  - [ ] Loading skeleton.
-  - [ ] Pull-to-refresh.
-  - [ ] Pagination أو infinite list.
+  - [x] Loading skeleton.
+  - [x] Pull-to-refresh.
+  - [x] Pagination أو infinite list.
 
 ### المرحلة 4 — بناء شاشات الإدارة الأساسية
 
-- [ ] Dashboard.
-- [ ] Products list.
+- [x] Dashboard.
+- [x] Products list.
 - [ ] Product details/create/edit.
-- [ ] Categories.
-- [ ] Orders.
+- [x] Categories list.
+- [ ] Categories create/edit/delete.
+- [x] Orders.
 - [ ] Users.
 
 ### المرحلة 5 — الأقسام الإدارية المتقدمة
 
-- [ ] Images.
-- [ ] Staff & Admins.
+- [x] Images list.
+- [x] Staff & Admins list.
 - [ ] Security.
-- [ ] Newsletter.
+- [x] Newsletter subscribers list.
 - [ ] Settings بجميع أقسامها.
 
 ### المرحلة 6 — الصور وميزات الجهاز

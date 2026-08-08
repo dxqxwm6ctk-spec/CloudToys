@@ -1,59 +1,52 @@
 /**
- * Semantic design tokens for the mobile app.
+ * Cloud Toys mobile semantic design tokens.
  *
- * These tokens mirror the naming conventions used in web artifacts (index.css)
- * so that multi-artifact projects share a cohesive visual identity.
- *
- * Replace the placeholder values below with values that match the project's
- * brand. If a sibling web artifact exists, read its index.css and convert the
- * HSL values to hex so both artifacts use the same palette.
- *
- * To add dark mode, add a `dark` key with the same token names.
- * The useColors() hook will automatically pick it up.
+ * Synced with the admin web artifact: burgundy primary actions, soft gold
+ * emphasis, and warm neutral surfaces.
  */
-
 const colors = {
   light: {
-    // Legacy aliases (kept for backward compatibility)
-    text: '#0a0a0a',
-    tint: '#2f95dc',
-
-    // Core surfaces
-    background: '#ffffff',
-    foreground: '#0a0a0a',
-
-    // Cards / elevated surfaces
-    card: '#f9f9f9',
-    cardForeground: '#0a0a0a',
-
-    // Primary action color (buttons, links, active states)
-    primary: '#2f95dc',
-    primaryForeground: '#ffffff',
-
-    // Secondary / less-emphasis interactive surfaces
-    secondary: '#f0f0f0',
-    secondaryForeground: '#1a1a1a',
-
-    // Muted / subdued elements (dividers, timestamps, placeholders)
-    muted: '#f0f0f0',
-    mutedForeground: '#737373',
-
-    // Accent highlights (badges, selected items, focus rings)
-    accent: '#f0f0f0',
-    accentForeground: '#1a1a1a',
-
-    // Destructive actions (delete, error states)
-    destructive: '#ef4444',
+    text: '#351a25',
+    tint: '#7a1f3d',
+    background: '#faf8f5',
+    foreground: '#351a25',
+    card: '#ffffff',
+    cardForeground: '#351a25',
+    primary: '#7a1f3d',
+    primaryForeground: '#faf8f5',
+    secondary: '#c99b26',
+    secondaryForeground: '#351a25',
+    muted: '#ede7e3',
+    mutedForeground: '#765b66',
+    accent: '#f4ead0',
+    accentForeground: '#5d3a16',
+    destructive: '#c62828',
     destructiveForeground: '#ffffff',
-
-    // Borders and input outlines
-    border: '#e5e5e5',
-    input: '#e5e5e5',
+    border: '#dfd5d0',
+    input: '#dfd5d0',
   },
-
-  // Border radius (in px). Sync from the sibling web artifact's --radius
-  // CSS variable. This value applies to cards, buttons, inputs, and modals.
-  radius: 8,
+  dark: {
+    text: '#f5eee8',
+    tint: '#d7a84b',
+    background: '#21131a',
+    foreground: '#f5eee8',
+    card: '#2c1a22',
+    cardForeground: '#f5eee8',
+    primary: '#a94768',
+    primaryForeground: '#fff8f2',
+    secondary: '#d7a84b',
+    secondaryForeground: '#321d11',
+    muted: '#38252d',
+    mutedForeground: '#c9aeb6',
+    accent: '#4a323b',
+    accentForeground: '#f5eee8',
+    destructive: '#ef6b6b',
+    destructiveForeground: '#2b1118',
+    border: '#503640',
+    input: '#503640',
+  },
+  // Synced from the web artifact's --radius: 0.25rem.
+  radius: 4,
 };
 
 export default colors;
