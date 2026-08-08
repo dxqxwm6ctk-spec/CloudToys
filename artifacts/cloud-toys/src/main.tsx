@@ -10,7 +10,9 @@ import './index.css';
 //   https://api.cloudtoys.com
 // All /api/… calls made by the API client will be prefixed with that URL.
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
-if (apiBaseUrl) {
+// In Replit development, the artifact router serves the API from the same
+// origin at /api. Keep the external URL for standalone production builds.
+if (apiBaseUrl && !import.meta.env.DEV) {
   setBaseUrl(apiBaseUrl);
 }
 
