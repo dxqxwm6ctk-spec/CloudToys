@@ -25,6 +25,7 @@ import WarrantyPolicySettings from '@/pages/settings/warranty';
 import UsersList from '@/pages/users/list';
 import SecurityDashboard from '@/pages/security/index';
 import StaffList from '@/pages/staff/list';
+import ImagesList from '@/pages/images/list';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,7 @@ function Router() {
         <Route path="/products/new">{() => <ProductForm />}</Route>
         <Route path="/products/:id/edit" component={EditProductRoute} />
         <Route path="/categories" component={CategoriesList} />
+        <Route path="/images" component={ImagesList} />
         <Route path="/orders" component={OrdersList} />
         <Route path="/users" component={UsersList} />
         <Route path="/staff">{() => <AdminOnlyRoute component={StaffList} />}</Route>

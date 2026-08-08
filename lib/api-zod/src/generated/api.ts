@@ -406,6 +406,40 @@ export const AdminCreateProductResponse = zod.object({
 
 
 /**
+ * @summary List all stored product images (admin view)
+ */
+export const AdminListImagesQueryParams = zod.object({
+  "search": zod.coerce.string().optional()
+})
+
+export const AdminListImagesResponse = zod.object({
+  "items": zod.array(zod.object({
+  "path": zod.string(),
+  "name": zod.string(),
+  "size": zod.number(),
+  "mimeType": zod.string().nullable(),
+  "createdAt": zod.string().nullable(),
+  "updatedAt": zod.string().nullable(),
+  "publicUrl": zod.string()
+})),
+  "total": zod.number()
+})
+
+
+/**
+ * @summary Delete one stored product image
+ */
+export const AdminDeleteImageQueryParams = zod.object({
+  "path": zod.coerce.string()
+})
+
+export const AdminDeleteImageResponse = zod.object({
+  "success": zod.boolean(),
+  "path": zod.string()
+})
+
+
+/**
  * @summary Update an existing product
  */
 export const AdminUpdateProductParams = zod.object({

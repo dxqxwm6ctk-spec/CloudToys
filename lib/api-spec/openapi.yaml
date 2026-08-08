@@ -310,6 +310,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/AdminProduct"
 
+  /admin/images:
+    get:
+      operationId: adminListImages
+      tags: [admin]
+      summary: List all stored product images (admin view)
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Stored image objects
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminImageListResult"
+    delete:
+      operationId: adminDeleteImage
+      tags: [admin]
+      summary: Delete one stored product image
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Image deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteImageResult"
+        "400":
+          description: Invalid storage path
+
   /admin/products/{id}:
     put:
       operationId: adminUpdateProduct
@@ -884,6 +921,35 @@ components:
         storageUsedBytes: { type: number }
         storageLimitBytes: { type: number }
         storageFileCount: { type: number }
+
+    AdminImage:
+      type: object
+      required: [path, name, size, mimeType, createdAt, updatedAt, publicUrl]
+      properties:
+        path: { type: string }
+        name: { type: string }
+        size: { type: number }
+        mimeType: { type: ["string", "null"] }
+        createdAt: { type: ["string", "null"] }
+        updatedAt: { type: ["string", "null"] }
+        publicUrl: { type: string }
+
+    AdminImageListResult:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminImage"
+        total: { type: number }
+
+    AdminDeleteImageResult:
+      type: object
+      required: [success, path]
+      properties:
+        success: { type: boolean }
+        path: { type: string }
 
     AdminProduct:
       type: object

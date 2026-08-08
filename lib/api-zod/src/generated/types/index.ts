@@ -7,8 +7,13 @@
  */
 
 export * from './adminDeleteCategory200';
+export * from './adminDeleteImageParams';
+export * from './adminDeleteImageResult';
 export * from './adminDeleteProduct200';
 export * from './adminDeleteStaff200';
+export * from './adminImage';
+export * from './adminImageListResult';
+export * from './adminListImagesParams';
 export * from './adminListOrdersParams';
 export * from './adminListProductsParams';
 export * from './adminNewsletterSubscriber';

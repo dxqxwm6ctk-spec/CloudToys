@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'wouter';
-import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail, PackageCheck, ShieldCheck, Users, ShieldAlert, UserCog } from 'lucide-react';
+import { Package, LayoutDashboard, FolderTree, ShoppingBag, Settings, Truck, Contact, LogOut, MapPin, Mail, PackageCheck, ShieldCheck, Users, ShieldAlert, UserCog, Images } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 
@@ -12,6 +12,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     { href: '/', label: 'Overview', icon: LayoutDashboard },
     { href: '/products', label: 'Products', icon: Package },
     { href: '/categories', label: 'Categories', icon: FolderTree },
+    { href: '/images', label: 'Images', icon: Images },
     { href: '/orders', label: 'Orders', icon: ShoppingBag },
     { href: '/users', label: 'Users', icon: Users },
     ...(role === 'admin' ? [{ href: '/staff', label: 'Staff & Admins', icon: UserCog }] : []),

@@ -226,6 +226,29 @@ export interface AdminStats {
   storageFileCount: number;
 }
 
+export interface AdminImage {
+  path: string;
+  name: string;
+  size: number;
+  /** @nullable */
+  mimeType: string | null;
+  /** @nullable */
+  createdAt: string | null;
+  /** @nullable */
+  updatedAt: string | null;
+  publicUrl: string;
+}
+
+export interface AdminImageListResult {
+  items: AdminImage[];
+  total: number;
+}
+
+export interface AdminDeleteImageResult {
+  success: boolean;
+  path: string;
+}
+
 export interface AdminProduct {
   id: string;
   slug: string;
@@ -393,6 +416,14 @@ search?: string;
 category?: string;
 page?: number;
 pageSize?: number;
+};
+
+export type AdminListImagesParams = {
+search?: string;
+};
+
+export type AdminDeleteImageParams = {
+path: string;
 };
 
 export type AdminDeleteProduct200 = {

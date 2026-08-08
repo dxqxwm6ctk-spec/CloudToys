@@ -10,7 +10,14 @@ import { Router, type IRouter, type RequestHandler } from "express";
 import multer from "multer";
 import sharp from "sharp";
 import rateLimit from "express-rate-limit";
-import { uploadFile, fileExists, downloadFile, deleteByPrefix } from "../lib/supabaseStorage";
+import {
+  uploadFile,
+  fileExists,
+  downloadFile,
+  deleteByPrefix,
+  listImageObjects,
+  deleteObject,
+} from "../lib/supabaseStorage";
 import { requireRole } from "../middleware/requireAdmin";
 import { db, productsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -186,6 +193,48 @@ const uploadSingleFile: RequestHandler = (req, res, next): void => {
 // ── Router ─────────────────────────────────────────────────────────────────
 
 const router: IRouter = Router();
+
+// GET /admin/images — list every object in the product-images bucket
+router.get("/admin/images", async (req, res): Promise<void> => {
+  try {
+    const search = typeof req.query.search === "string" ? req.query.search.trim().toLowerCase() : "";
+    const items = (await listImageObjects()).filter((item) =>
+      !search || item.path.toLowerCase().includes(search),
+    );
+    res.json({ items, total: items.length });
+  } catch (err) {
+    req.log.error({ err }, "Image listing failed");
+    res.status(500).json({ error: "Failed to list stored images" });
+  }
+});
+
+// DELETE /admin/images?path=... — delete one exact object
+router.delete(
+  "/admin/images",
+  requireRole("admin", "manager"),
+  async (req, res): Promise<void> => {
+    const objectPath = typeof req.query.path === "string" ? req.query.path : "";
+    const segments = objectPath.split("/");
+    if (
+      !objectPath ||
+      objectPath.startsWith("/") ||
+      objectPath.includes("\\") ||
+      segments.some((segment) => segment === ".." || segment === ".") ||
+      segments.some((segment) => segment.length === 0)
+    ) {
+      res.status(400).json({ error: "Invalid storage path" });
+      return;
+    }
+
+    try {
+      await deleteObject(objectPath);
+      res.json({ success: true, path: objectPath });
+    } catch (err) {
+      req.log.error({ err, objectPath }, "Image deletion failed");
+      res.status(500).json({ error: "Failed to delete stored image" });
+    }
+  },
+);
 
 // POST /admin/images/upload
 router.post(

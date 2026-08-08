@@ -88,3 +88,64 @@ export async function deleteByPrefix(prefix: string): Promise<void> {
   const { error: removeErr } = await getSupabaseClient().storage.from(IMAGES_BUCKET).remove(paths);
   if (removeErr) throw removeErr;
 }
+
+export interface StorageObjectInfo {
+  path: string;
+  name: string;
+  size: number;
+  mimeType: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  publicUrl: string;
+}
+
+/**
+ * Supabase Storage's list() operation is directory-scoped and does not recurse.
+ * Walk folders explicitly so the admin UI can manage every object in the bucket.
+ */
+export async function listImageObjects(): Promise<StorageObjectInfo[]> {
+  await ensureImagesBucket();
+  const storage = getSupabaseClient().storage.from(IMAGES_BUCKET);
+  const objects: StorageObjectInfo[] = [];
+  const pendingPrefixes = [""];
+
+  while (pendingPrefixes.length > 0) {
+    const prefix = pendingPrefixes.pop()!;
+    const { data, error } = await storage.list(prefix, {
+      limit: 1000,
+      offset: 0,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) throw error;
+
+    for (const entry of data ?? []) {
+      const path = prefix ? `${prefix}/${entry.name}` : entry.name;
+      // Folder entries have no id/metadata in Supabase's storage response.
+      if (!entry.id && !entry.metadata) {
+        pendingPrefixes.push(path);
+        continue;
+      }
+
+      const publicUrl = getSupabaseClient().storage
+        .from(IMAGES_BUCKET)
+        .getPublicUrl(path).data.publicUrl;
+      objects.push({
+        path,
+        name: entry.name,
+        size: Number(entry.metadata?.size ?? 0),
+        mimeType: entry.metadata?.mimetype ?? null,
+        createdAt: entry.created_at ?? null,
+        updatedAt: entry.updated_at ?? null,
+        publicUrl,
+      });
+    }
+  }
+
+  return objects.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+export async function deleteObject(objectPath: string): Promise<void> {
+  await ensureImagesBucket();
+  const { error } = await getSupabaseClient().storage.from(IMAGES_BUCKET).remove([objectPath]);
+  if (error) throw error;
+}

@@ -21,8 +21,12 @@ import type {
 
 import type {
   AdminDeleteCategory200,
+  AdminDeleteImageParams,
+  AdminDeleteImageResult,
   AdminDeleteProduct200,
   AdminDeleteStaff200,
+  AdminImageListResult,
+  AdminListImagesParams,
   AdminListOrdersParams,
   AdminListProductsParams,
   AdminNewsletterSubscriber,
@@ -1233,6 +1237,168 @@ export const useAdminCreateProduct = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAdminCreateProductMutationOptions(options));
+    }
+
+export const getAdminListImagesUrl = (params?: AdminListImagesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/images?${stringifiedParams}` : `/api/admin/images`
+}
+
+/**
+ * @summary List all stored product images (admin view)
+ */
+export const adminListImages = async (params?: AdminListImagesParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminImageListResult> => {
+
+  return customFetch<AdminImageListResult>(getAdminListImagesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminListImagesQueryKey = (params?: AdminListImagesParams,) => {
+    return [
+    `/api/admin/images`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getAdminListImagesQueryOptions = <TData = Awaited<ReturnType<typeof adminListImages>>, TError = ErrorType<unknown>>(params?: AdminListImagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListImages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getAdminListImagesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListImages>>> = ({ signal }) => adminListImages(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof adminListImages>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type AdminListImagesQueryResult = NonNullable<Awaited<ReturnType<typeof adminListImages>>>
+export type AdminListImagesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List all stored product images (admin view)
+ */
+
+export function useAdminListImages<TData = Awaited<ReturnType<typeof adminListImages>>, TError = ErrorType<unknown>>(
+ params?: AdminListImagesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof adminListImages>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getAdminListImagesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getAdminDeleteImageUrl = (params: AdminDeleteImageParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/admin/images?${stringifiedParams}` : `/api/admin/images`
+}
+
+/**
+ * @summary Delete one stored product image
+ */
+export const adminDeleteImage = async (params: AdminDeleteImageParams, options?: Parameters<typeof customFetch>[1]): Promise<AdminDeleteImageResult> => {
+
+  return customFetch<AdminDeleteImageResult>(getAdminDeleteImageUrl(params),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getAdminDeleteImageMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteImage>>, TError,{params: AdminDeleteImageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteImage>>, TError,{params: AdminDeleteImageParams}, TContext> => {
+
+const mutationKey = ['adminDeleteImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteImage>>, {params: AdminDeleteImageParams}> = (props) => {
+          const {params} = props ?? {};
+
+          return  adminDeleteImage(params,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AdminDeleteImageMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteImage>>>
+
+    export type AdminDeleteImageMutationError = ErrorType<void>
+
+    /**
+ * @summary Delete one stored product image
+ */
+export const useAdminDeleteImage = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteImage>>, TError,{params: AdminDeleteImageParams}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteImage>>,
+        TError,
+        {params: AdminDeleteImageParams},
+        TContext
+      > => {
+      return useMutation(getAdminDeleteImageMutationOptions(options));
     }
 
 export const getAdminUpdateProductUrl = (id: string,) => {
