@@ -8,7 +8,7 @@ import { useColors } from '@/hooks/useColors';
 const tools = [
   { label: 'Categories', description: 'Organize your product catalog', icon: 'folder' as const, route: '/categories' as const },
   { label: 'Images', description: 'Browse uploaded store media', icon: 'image' as const, route: '/images' as const },
-  { label: 'Users', description: 'View customer accounts', icon: 'users' as const },
+  { label: 'Users', description: 'View customer accounts', icon: 'users' as const, route: '/users' as const },
   { label: 'Staff & admins', description: 'Manage team access', icon: 'shield' as const, route: '/staff' as const },
   { label: 'Security', description: 'Review abuse and blocked IPs', icon: 'shield' as const, route: '/security' as const },
   { label: 'Newsletter', description: 'View subscribers', icon: 'mail' as const, route: '/newsletter' as const },
@@ -21,6 +21,12 @@ export default function MoreScreen() {
   const insets = useSafeAreaInsets();
   const topInset = insets.top < 67 ? 67 : insets.top;
   const bottomInset = insets.bottom < 34 ? 34 : insets.bottom;
+  const visibleTools = tools.filter((tool) => {
+    if (tool.label === 'Staff & admins' || tool.label === 'Security' || tool.label === 'Store settings') {
+      return identity?.role === 'admin';
+    }
+    return true;
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -36,7 +42,7 @@ export default function MoreScreen() {
           </Text>
         </View>
         <View style={styles.toolList}>
-          {tools.map((tool) => (
+          {visibleTools.map((tool) => (
             <Pressable
               key={tool.label}
               accessibilityRole="button"

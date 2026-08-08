@@ -3,9 +3,11 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -35,6 +37,7 @@ export default function OrdersScreen() {
   const updateStatus = useAdminUpdateOrderStatus();
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
+  const [deliveryOrder, setDeliveryOrder] = useState<{ id: string; status: string; value: string } | null>(null);
   const query = useAdminListOrders({
     status: status === 'all' ? undefined : status,
     page,
@@ -55,6 +58,26 @@ export default function OrdersScreen() {
         onError: (error) => {
           Alert.alert('Could not update order', error instanceof Error ? error.message : 'The API rejected this update.');
         },
+      },
+    );
+  };
+
+  const saveDeliveryDate = () => {
+    if (!deliveryOrder?.value.trim()) return;
+    updateStatus.mutate(
+      {
+        id: deliveryOrder.id,
+        data: { status: deliveryOrder.status, estimatedDelivery: deliveryOrder.value.trim() },
+      },
+      {
+        onSuccess: () => {
+          setDeliveryOrder(null);
+          void queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
+        },
+        onError: (error) => Alert.alert(
+          'Could not update delivery date',
+          error instanceof Error ? error.message : 'The API rejected this update.',
+        ),
       },
     );
   };
@@ -140,39 +163,52 @@ export default function OrdersScreen() {
         renderItem={({ item }) => {
           const accent = statusColor(item.status, colors);
           return (
-             <Pressable
-               onPress={() => {
-                 Alert.alert(
-                   `Order #${item.orderNumber}`,
-                   [
-                     `Customer: ${item.customerName ?? '—'}`,
-                     `Phone: ${item.customerPhone ?? '—'}`,
-                     `Payment: ${item.paymentMethod ?? '—'}`,
-                     `Address: ${item.shippingAddress ?? '—'}`,
-                     `Total: ${item.total == null ? '—' : `${item.total.toFixed(2)} JOD`}`,
-                   ].join('\n'),
-                   [
-                     { text: 'Close', style: 'cancel' },
-                     ...(item.status !== 'processing' ? [{ text: 'Mark processing', onPress: () => changeStatus(item.id, 'processing') }] : []),
-                     ...(item.status !== 'shipped' ? [{ text: 'Mark shipped', onPress: () => changeStatus(item.id, 'shipped') }] : []),
-                     ...(item.status !== 'out_for_delivery' ? [{ text: 'Out for delivery', onPress: () => changeStatus(item.id, 'out_for_delivery') }] : []),
-                     ...(item.status !== 'delivered' ? [{ text: 'Mark delivered', onPress: () => changeStatus(item.id, 'delivered') }] : []),
-                     ...(item.status !== 'cancelled' ? [{ text: 'Cancel order', style: 'destructive' as const, onPress: () => changeStatus(item.id, 'cancelled') }] : []),
-                   ],
-                 );
-               }}
-               style={({ pressed }) => [
-                 styles.orderCard,
-                 { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.76 : 1 },
-               ]}
-             >
+            <Pressable
+              onPress={() => {
+                const tracking = item.steps.length
+                  ? `\nTracking:\n${item.steps.map((step) => `${step.completed ? '✓' : '○'} ${step.label}`).join('\n')}`
+                  : '';
+                Alert.alert(
+                  `Order #${item.orderNumber}`,
+                  [
+                    `Customer: ${item.customerName ?? '—'}`,
+                    `Phone: ${item.customerPhone ?? '—'}`,
+                    `Payment: ${item.paymentMethod ?? '—'}`,
+                    `Address: ${item.shippingAddress ?? '—'}`,
+                    `Estimated delivery: ${item.estimatedDelivery || '—'}`,
+                    `Total: ${item.total == null ? '—' : `${item.total.toFixed(2)} JOD`}`,
+                    tracking,
+                  ].filter(Boolean).join('\n'),
+                  [
+                    { text: 'Close', style: 'cancel' },
+                    {
+                      text: 'Edit delivery',
+                      onPress: () => setDeliveryOrder({
+                        id: item.id,
+                        status: item.status,
+                        value: item.estimatedDelivery ?? '',
+                      }),
+                    },
+                    ...(item.status !== 'processing' ? [{ text: 'Mark processing', onPress: () => changeStatus(item.id, 'processing') }] : []),
+                    ...(item.status !== 'shipped' ? [{ text: 'Mark shipped', onPress: () => changeStatus(item.id, 'shipped') }] : []),
+                    ...(item.status !== 'out_for_delivery' ? [{ text: 'Out for delivery', onPress: () => changeStatus(item.id, 'out_for_delivery') }] : []),
+                    ...(item.status !== 'delivered' ? [{ text: 'Mark delivered', onPress: () => changeStatus(item.id, 'delivered') }] : []),
+                    ...(item.status !== 'cancelled' ? [{ text: 'Cancel order', style: 'destructive' as const, onPress: () => changeStatus(item.id, 'cancelled') }] : []),
+                  ],
+                );
+              }}
+              style={({ pressed }) => [
+                styles.orderCard,
+                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.76 : 1 },
+              ]}
+            >
               <View style={styles.orderTop}>
                 <View>
                   <Text style={[styles.orderNumber, { color: colors.foreground }]}>#{item.orderNumber}</Text>
                   <Text style={[styles.customer, { color: colors.mutedForeground }]} numberOfLines={1}>
                     {item.customerName ?? 'Customer'}
                   </Text>
-             </Pressable>
+                </View>
                 <View style={[styles.statusPill, { backgroundColor: colors.accent }]}>
                   <View style={[styles.statusDot, { backgroundColor: accent }]} />
                   <Text style={[styles.statusText, { color: accent }]}>{item.status}</Text>
@@ -219,6 +255,35 @@ export default function OrdersScreen() {
           </View>
         }
       />
+      <Modal visible={Boolean(deliveryOrder)} transparent animationType="slide" onRequestClose={() => setDeliveryOrder(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setDeliveryOrder(null)}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>Estimated delivery</Text>
+            <Text style={[styles.modalHint, { color: colors.mutedForeground }]}>
+              Enter the date or delivery note customers should see.
+            </Text>
+            <TextInput
+              value={deliveryOrder?.value ?? ''}
+              onChangeText={(value) => setDeliveryOrder((current) => current ? { ...current, value } : current)}
+              placeholder="e.g. 2026-08-15"
+              placeholderTextColor={colors.mutedForeground}
+              style={[styles.modalInput, { color: colors.foreground, borderColor: colors.input, backgroundColor: colors.background }]}
+            />
+            <View style={styles.modalActions}>
+              <Pressable onPress={() => setDeliveryOrder(null)} style={[styles.modalButton, { borderColor: colors.border }]}>
+                <Text style={[styles.modalButtonText, { color: colors.mutedForeground }]}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                disabled={!deliveryOrder?.value.trim() || updateStatus.isPending}
+                onPress={saveDeliveryDate}
+                style={[styles.modalButton, { backgroundColor: colors.primary, opacity: !deliveryOrder?.value.trim() || updateStatus.isPending ? 0.6 : 1 }]}
+              >
+                <Text style={[styles.modalButtonText, { color: colors.primaryForeground }]}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -253,4 +318,12 @@ const styles = StyleSheet.create({
   pagination: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, paddingVertical: 16 },
   pageButton: { width: 38, height: 38, borderWidth: 1, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   pageText: { fontFamily: 'Inter_500Medium', fontSize: 13 },
+  modalBackdrop: { flex: 1, backgroundColor: '#00000066', justifyContent: 'flex-end' },
+  modalCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, gap: 12 },
+  modalTitle: { fontFamily: 'Inter_700Bold', fontSize: 18 },
+  modalHint: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 19 },
+  modalInput: { minHeight: 48, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontFamily: 'Inter_400Regular', fontSize: 14 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalButton: { minHeight: 46, flex: 1, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  modalButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
 });

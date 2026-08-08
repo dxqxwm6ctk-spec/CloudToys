@@ -2,6 +2,7 @@ import { useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   StyleSheet,
   Switch,
@@ -26,13 +27,18 @@ import {
   updateContactSetting,
   updateDeliverySetting,
   updatePaymentMethod,
+  createShippingZone,
+  deleteShippingZone,
   updateReturnPolicySetting,
+  updateShippingZone,
   updateShippingSetting,
   updateWarrantyPolicySetting,
+  listShippingZones,
   type ContactSetting,
   type DeliverySetting,
   type PaymentMethodSetting,
   type ReturnPolicySetting,
+  type ShippingZoneSetting,
   type ShippingSetting,
   type WarrantyPolicySetting,
 } from '@/lib/admin-api';
@@ -135,20 +141,22 @@ export default function SettingsScreen() {
   const returnsQuery = useQuery({ queryKey: ['admin', 'settings', 'returns'], queryFn: getReturnPolicySetting });
   const warrantyQuery = useQuery({ queryKey: ['admin', 'settings', 'warranty'], queryFn: getWarrantyPolicySetting });
   const contactQuery = useQuery({ queryKey: ['admin', 'settings', 'contact'], queryFn: getContactSetting });
+  const zonesQuery = useQuery({ queryKey: ['admin', 'settings', 'shipping-zones'], queryFn: listShippingZones });
 
   const [shipping, setShipping] = useState<ShippingSetting | null>(null);
   const [delivery, setDelivery] = useState<DeliverySetting | null>(null);
   const [returns, setReturns] = useState<ReturnPolicySetting | null>(null);
   const [warranty, setWarranty] = useState<WarrantyPolicySetting | null>(null);
   const [contact, setContact] = useState<ContactSetting | null>(null);
+  const [zoneForm, setZoneForm] = useState<ShippingZoneSetting | null>(null);
 
   const shippingForm = shipping ?? shippingQuery.data;
   const deliveryForm = delivery ?? deliveryQuery.data;
   const returnsForm = returns ?? returnsQuery.data;
   const warrantyForm = warranty ?? warrantyQuery.data;
   const contactForm = contact ?? contactQuery.data;
-  const hasError = [paymentQuery, shippingQuery, deliveryQuery, returnsQuery, warrantyQuery, contactQuery].some((query) => query.isError);
-  const isLoading = [paymentQuery, shippingQuery, deliveryQuery, returnsQuery, warrantyQuery, contactQuery].some((query) => query.isLoading);
+  const hasError = [paymentQuery, shippingQuery, deliveryQuery, returnsQuery, warrantyQuery, contactQuery, zonesQuery].some((query) => query.isError);
+  const isLoading = [paymentQuery, shippingQuery, deliveryQuery, returnsQuery, warrantyQuery, contactQuery, zonesQuery].some((query) => query.isLoading);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -182,6 +190,7 @@ export default function SettingsScreen() {
       returnsQuery.refetch(),
       warrantyQuery.refetch(),
       contactQuery.refetch(),
+      zonesQuery.refetch(),
     ]);
   };
 
@@ -247,6 +256,56 @@ export default function SettingsScreen() {
               <NumberField label="Delivery days" value={deliveryForm ? String(deliveryForm.days) : ''} onChangeText={(days) => setDelivery((current) => ({ ...(current ?? deliveryForm!), days: Number(days) || 0 }))} colors={colors} suffix="days" />
             </View>
           </View>
+          <View style={styles.zoneHeader}>
+            <View style={styles.settingCopy}>
+              <Text style={[styles.rowTitle, { color: colors.foreground }]}>Shipping zones</Text>
+              <Text style={[styles.rowDescription, { color: colors.mutedForeground }]}>
+                Set delivery prices by governorate.
+              </Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => setZoneForm({ id: '', name: '', governorates: [], price: 0, isDefault: false })}
+              style={[styles.smallButton, { backgroundColor: colors.primary }]}
+            >
+              <Feather name="plus" size={15} color={colors.primaryForeground} />
+              <Text style={[styles.smallButtonText, { color: colors.primaryForeground }]}>Add</Text>
+            </Pressable>
+          </View>
+          {(zonesQuery.data ?? []).map((zone) => (
+            <View key={zone.id} style={[styles.zoneRow, { borderColor: colors.border }]}>
+              <View style={styles.settingCopy}>
+                <Text style={[styles.rowTitle, { color: colors.foreground }]}>{zone.name}</Text>
+                <Text style={[styles.rowDescription, { color: colors.mutedForeground }]}>
+                  {zone.governorates.join(', ') || 'All governorates'} · {zone.price.toFixed(2)} JOD
+                  {zone.isDefault ? ' · Default' : ''}
+                </Text>
+              </View>
+              <Pressable onPress={() => setZoneForm(zone)} hitSlop={8}>
+                <Feather name="edit-2" size={16} color={colors.primary} />
+              </Pressable>
+              <Pressable
+                onPress={() => Alert.alert('Delete shipping zone', `Delete "${zone.name}"?`, [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: () => {
+                      void deleteShippingZone(zone.id).then(() => {
+                        void queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'shipping-zones'] });
+                      }).catch((error: unknown) => Alert.alert(
+                        'Could not delete zone',
+                        error instanceof Error ? error.message : 'The API rejected the deletion.',
+                      ));
+                    },
+                  },
+                ])}
+                hitSlop={8}
+              >
+                <Feather name="trash-2" size={16} color={colors.destructive} />
+              </Pressable>
+            </View>
+          ))}
         </Section>
 
         <Section title="Customer policies" icon="file-text" colors={colors}>
@@ -287,6 +346,81 @@ export default function SettingsScreen() {
           <Text style={[styles.saveText, { color: colors.primaryForeground }]}>{saveMutation.isPending ? 'Saving...' : 'Save changes'}</Text>
         </Pressable>
       </KeyboardAwareScrollViewCompat>
+      <Modal visible={Boolean(zoneForm)} transparent animationType="slide" onRequestClose={() => setZoneForm(null)}>
+        <Pressable style={styles.modalBackdrop} onPress={() => setZoneForm(null)}>
+          <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {zoneForm?.id ? 'Edit shipping zone' : 'Add shipping zone'}
+            </Text>
+            <TextField
+              label="Zone name"
+              value={zoneForm?.name ?? ''}
+              onChangeText={(name) => setZoneForm((current) => current ? { ...current, name } : current)}
+              colors={colors}
+            />
+            <TextField
+              label="Governorates (comma separated)"
+              value={zoneForm?.governorates.join(', ') ?? ''}
+              onChangeText={(value) => setZoneForm((current) => current ? {
+                ...current,
+                governorates: value.split(',').map((item) => item.trim()).filter(Boolean),
+              } : current)}
+              colors={colors}
+            />
+            <NumberField
+              label="Price"
+              value={zoneForm ? String(zoneForm.price) : ''}
+              onChangeText={(value) => setZoneForm((current) => current ? { ...current, price: Number(value) || 0 } : current)}
+              colors={colors}
+              suffix="JOD"
+            />
+            <View style={styles.settingRow}>
+              <View style={styles.settingCopy}>
+                <Text style={[styles.rowTitle, { color: colors.foreground }]}>Default zone</Text>
+                <Text style={[styles.rowDescription, { color: colors.mutedForeground }]}>Used when no governorate matches.</Text>
+              </View>
+              <Switch
+                value={zoneForm?.isDefault ?? false}
+                onValueChange={(isDefault) => setZoneForm((current) => current ? { ...current, isDefault } : current)}
+                trackColor={{ false: colors.muted, true: colors.secondary }}
+                thumbColor={zoneForm?.isDefault ? colors.primary : colors.mutedForeground}
+              />
+            </View>
+            <View style={styles.modalActions}>
+              <Pressable onPress={() => setZoneForm(null)} style={[styles.modalButton, { borderColor: colors.border }]}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: 'Inter_600SemiBold' }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (!zoneForm?.name.trim()) {
+                    Alert.alert('Missing zone name', 'Enter a name before saving.');
+                    return;
+                  }
+                  const payload = {
+                    name: zoneForm.name.trim(),
+                    governorates: zoneForm.governorates,
+                    price: Number(zoneForm.price) || 0,
+                    isDefault: zoneForm.isDefault,
+                  };
+                  const saveZone = zoneForm.id
+                    ? updateShippingZone(zoneForm.id, payload)
+                    : createShippingZone(payload);
+                  void saveZone.then(() => {
+                    setZoneForm(null);
+                    void queryClient.invalidateQueries({ queryKey: ['admin', 'settings', 'shipping-zones'] });
+                  }).catch((error: unknown) => Alert.alert(
+                    'Could not save zone',
+                    error instanceof Error ? error.message : 'The API rejected the zone.',
+                  ));
+                }}
+                style={[styles.modalButton, { backgroundColor: colors.primary }]}
+              >
+                <Text style={{ color: colors.primaryForeground, fontFamily: 'Inter_600SemiBold' }}>Save</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -305,6 +439,10 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: 'Inter_700Bold', fontSize: 16 },
   settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 3 },
   policyRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  zoneHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 },
+  zoneRow: { flexDirection: 'row', alignItems: 'center', gap: 12, borderTopWidth: 1, paddingTop: 12 },
+  smallButton: { borderRadius: 9, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  smallButtonText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
   settingCopy: { flex: 1, gap: 3 },
   rowTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   rowDescription: { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17 },
@@ -321,4 +459,8 @@ const styles = StyleSheet.create({
   saveText: { fontFamily: 'Inter_700Bold', fontSize: 14 },
   emptyTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 17 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 13, textAlign: 'center', lineHeight: 19 },
+  modalBackdrop: { flex: 1, backgroundColor: '#00000066', justifyContent: 'flex-end' },
+  modalCard: { borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, gap: 13 },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  modalButton: { minHeight: 46, flex: 1, borderRadius: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 });

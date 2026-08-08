@@ -15,7 +15,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { router, Stack, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -27,6 +27,21 @@ setAuthTokenGetter(getStoredAdminToken);
 
 function RootLayoutNav() {
   const colors = useColors();
+  const segments = useSegments();
+  const { identity, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+    const firstSegment = segments[0];
+    const onLogin = firstSegment === 'login';
+    const onEntry = !firstSegment;
+
+    if (!identity && !onLogin && !onEntry) {
+      router.replace('/login');
+    } else if (identity && onLogin) {
+      router.replace('/(tabs)');
+    }
+  }, [identity, isLoading, segments]);
 
   return (
     <Stack screenOptions={{ headerBackTitle: 'Back', headerTintColor: colors.primary }}>

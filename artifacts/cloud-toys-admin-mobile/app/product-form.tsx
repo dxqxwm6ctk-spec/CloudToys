@@ -40,6 +40,7 @@ type FormState = {
   compareAtPrice: string;
   currency: string;
   imageUrl: string;
+  galleryUrls: string[];
   categoryId: string;
   stockQuantity: string;
   badge: string;
@@ -55,6 +56,7 @@ const emptyForm: FormState = {
   compareAtPrice: '',
   currency: 'JOD',
   imageUrl: '',
+  galleryUrls: [],
   categoryId: '',
   stockQuantity: '0',
   badge: '',
@@ -108,6 +110,7 @@ export default function ProductFormScreen() {
   const isEdit = Boolean(productId);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<'main' | 'gallery'>('main');
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
   const { identity } = useAuth();
@@ -132,6 +135,7 @@ export default function ProductFormScreen() {
       compareAtPrice: product.compareAtPrice == null ? '' : String(product.compareAtPrice),
       currency: product.currency,
       imageUrl: product.imageUrl,
+      galleryUrls: product.galleryUrls ?? [],
       categoryId: category?.id ?? '',
       stockQuantity: String(product.stockQuantity),
       badge: product.badge ?? '',
@@ -154,7 +158,12 @@ export default function ProductFormScreen() {
     setError('');
   };
 
-  const chooseImage = async (source: 'library' | 'camera') => {
+  const openImagePicker = (target: 'main' | 'gallery') => {
+    setPickerTarget(target);
+    setIsPickerOpen(true);
+  };
+
+  const chooseImage = async (source: 'library' | 'camera', gallery = false) => {
     setIsPickerOpen(false);
     const result = source === 'camera'
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
@@ -169,7 +178,12 @@ export default function ProductFormScreen() {
         { uri: asset.uri, name: asset.fileName ?? 'product-image.jpg', type: asset.mimeType ?? 'image/jpeg' },
         productId ?? 'unassigned',
       );
-      setForm((current) => ({ ...current, imageUrl: uploaded.mediumUrl }));
+      setForm((current) => ({
+        ...current,
+        ...(gallery
+          ? { galleryUrls: [...current.galleryUrls, uploaded.mediumUrl] }
+          : { imageUrl: uploaded.mediumUrl }),
+      }));
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : 'Image upload failed');
     } finally {
@@ -206,6 +220,7 @@ export default function ProductFormScreen() {
       compareAtPrice: form.compareAtPrice.trim() ? Number(form.compareAtPrice) : null,
       currency: form.currency.trim().toUpperCase() || 'JOD',
       imageUrl: form.imageUrl.trim(),
+      galleryUrls: form.galleryUrls.filter(Boolean),
       categoryId: form.categoryId,
       stockQuantity,
       badge: form.badge || null,
@@ -262,7 +277,7 @@ export default function ProductFormScreen() {
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Product image</Text>
             <Pressable
-              onPress={() => setIsPickerOpen(true)}
+              onPress={() => openImagePicker('main')}
               disabled={isUploading}
               style={[styles.imagePicker, { backgroundColor: colors.muted, borderColor: colors.border }]}
             >
@@ -277,6 +292,44 @@ export default function ProductFormScreen() {
               {isUploading ? <ActivityIndicator style={styles.imageLoader} color={colors.primary} /> : null}
             </Pressable>
             <Field label="Image URL" value={form.imageUrl} onChangeText={set('imageUrl')} colors={colors} placeholder="https://..." />
+            <View style={styles.galleryHeader}>
+              <View style={styles.galleryCopy}>
+                <Text style={[styles.label, { color: colors.foreground }]}>Gallery images</Text>
+                <Text style={[styles.helper, { color: colors.mutedForeground }]}>
+                  Add supporting product photos. The main image stays separate.
+                </Text>
+              </View>
+              <Pressable
+                disabled={isUploading}
+                onPress={() => openImagePicker('gallery')}
+                style={[styles.addGalleryButton, { borderColor: colors.border, opacity: isUploading ? 0.6 : 1 }]}
+              >
+                <Feather name="plus" size={15} color={colors.primary} />
+                <Text style={[styles.addGalleryText, { color: colors.primary }]}>Add</Text>
+              </Pressable>
+            </View>
+            {form.galleryUrls.length ? (
+              <View style={styles.galleryGrid}>
+                {form.galleryUrls.map((url, index) => (
+                  <View key={`${url}-${index}`} style={styles.galleryItem}>
+                    <Image source={{ uri: resolveMediaUrl(url) ?? url }} style={styles.galleryImage} resizeMode="cover" />
+                    <Pressable
+                      accessibilityLabel={`Remove gallery image ${index + 1}`}
+                      onPress={() => setForm((current) => ({
+                        ...current,
+                        galleryUrls: current.galleryUrls.filter((_, itemIndex) => itemIndex !== index),
+                      }))}
+                      style={[styles.removeGalleryButton, { backgroundColor: colors.destructive }]}
+                      hitSlop={6}
+                    >
+                      <Feather name="x" size={13} color={colors.destructiveForeground} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.helper, { color: colors.mutedForeground }]}>No gallery images added yet.</Text>
+            )}
           </View>
 
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -352,11 +405,11 @@ export default function ProductFormScreen() {
         <Pressable style={styles.modalBackdrop} onPress={() => setIsPickerOpen(false)}>
           <View style={[styles.modalCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>Product image</Text>
-            <Pressable style={styles.modalAction} onPress={() => void chooseImage('library')}>
+            <Pressable style={styles.modalAction} onPress={() => void chooseImage('library', pickerTarget === 'gallery')}>
               <Feather name="image" size={19} color={colors.primary} />
               <Text style={[styles.modalActionText, { color: colors.foreground }]}>Choose from library</Text>
             </Pressable>
-            <Pressable style={styles.modalAction} onPress={() => void chooseImage('camera')}>
+            <Pressable style={styles.modalAction} onPress={() => void chooseImage('camera', pickerTarget === 'gallery')}>
               <Feather name="camera" size={19} color={colors.primary} />
               <Text style={[styles.modalActionText, { color: colors.foreground }]}>Take a photo</Text>
             </Pressable>
@@ -390,6 +443,14 @@ const styles = StyleSheet.create({
   preview: { width: '100%', height: '100%', minHeight: 165 },
   imageText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
   imageLoader: { position: 'absolute' },
+  galleryHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  galleryCopy: { flex: 1, gap: 5 },
+  addGalleryButton: { minHeight: 36, borderWidth: 1, borderRadius: 9, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  addGalleryText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+  galleryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
+  galleryItem: { width: 82, height: 82, borderRadius: 10, overflow: 'visible' },
+  galleryImage: { width: '100%', height: '100%', borderRadius: 10 },
+  removeGalleryButton: { position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   categoryWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   categoryChip: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8 },
   helper: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: -6 },
