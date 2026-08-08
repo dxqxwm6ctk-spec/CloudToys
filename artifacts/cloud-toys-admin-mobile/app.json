@@ -28,7 +28,14 @@
         }
       ],
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cloud Toys Admin uses your photos for product and category images.",
+          "cameraPermission": "Cloud Toys Admin uses your camera for product images."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

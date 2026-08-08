@@ -51,7 +51,10 @@ export default function CategoriesScreen() {
         void queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() });
         setEditing(null);
       },
-      onError: () => Alert.alert('Could not save category', 'The API rejected this category.'),
+      onError: (error: unknown) => Alert.alert(
+        'Could not save category',
+        error instanceof Error ? error.message : 'The API rejected this category.',
+      ),
     };
     if (editing.id) updateCategory.mutate({ id: editing.id, data }, options);
     else createCategory.mutate({ data }, options);
@@ -65,7 +68,10 @@ export default function CategoriesScreen() {
         style: 'destructive',
         onPress: () => deleteCategory.mutate({ id }, {
           onSuccess: () => void queryClient.invalidateQueries({ queryKey: getAdminListCategoriesQueryKey() }),
-          onError: () => Alert.alert('Could not delete category', 'The API rejected this deletion.'),
+          onError: (error: unknown) => Alert.alert(
+            'Could not delete category',
+            error instanceof Error ? error.message : 'The API rejected this deletion.',
+          ),
         }),
       },
     ]);
@@ -191,6 +197,11 @@ export default function CategoriesScreen() {
             <Pressable
               disabled={isUploading}
               onPress={async () => {
+                const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (!permission.granted) {
+                  Alert.alert('Photo access needed', 'Allow photo access to choose a category image.');
+                  return;
+                }
                 const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
                 if (result.canceled || !result.assets[0]) return;
                 setIsUploading(true);

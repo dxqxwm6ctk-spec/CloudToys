@@ -165,6 +165,19 @@ export default function ProductFormScreen() {
 
   const chooseImage = async (source: 'library' | 'camera', gallery = false) => {
     setIsPickerOpen(false);
+    const permission = source === 'camera'
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      setError(
+        source === 'camera'
+          ? 'Camera permission is required to take a product photo.'
+          : 'Photo library permission is required to choose a product image.',
+      );
+      return;
+    }
+
     const result = source === 'camera'
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });

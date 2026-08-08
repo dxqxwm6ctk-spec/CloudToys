@@ -210,11 +210,11 @@
 
 - [x] Dashboard.
 - [x] Products list.
-- [ ] Product details/create/edit.
+- [x] Product details/create/edit.
 - [x] Categories list.
-- [ ] Categories create/edit/delete.
+- [x] Categories create/edit/delete.
 - [x] Orders.
-- [ ] Users.
+- [x] Users.
 
 ### المرحلة 5 — الأقسام الإدارية المتقدمة
 
@@ -222,12 +222,12 @@
 - [x] Staff & Admins list and management.
 - [x] Security.
 - [x] Newsletter subscribers list.
-- [ ] Settings بجميع أقسامها.
+- [x] Settings بجميع أقسامها.
 
 ### المرحلة 6 — الصور وميزات الجهاز
 
-- [ ] ربط Image Picker.
-- [ ] ربط Camera permissions.
+- [x] ربط Image Picker.
+- [x] ربط Camera permissions.
 - [ ] ضغط الصور قبل الرفع عند الحاجة.
 - [ ] عرض نسبة/حالة الرفع.
 - [ ] التعامل مع إلغاء اختيار الصورة.
