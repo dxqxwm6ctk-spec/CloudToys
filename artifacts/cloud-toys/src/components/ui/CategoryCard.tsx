@@ -4,7 +4,7 @@ import { resolveMediaUrl, type Category } from '@workspace/api-client-react';
 
 export function CategoryCard({ category }: { category: Category }) {
   return (
-    <Link href={`/shop?category=${category.slug}`} className="group relative block overflow-hidden rounded-2xl aspect-square">
+    <Link href={`/shop?category=${encodeURIComponent(category.slug)}`} className="group relative block overflow-hidden rounded-2xl aspect-square">
       <motion.div
         className="w-full h-full"
         whileHover={{ scale: 1.05 }}

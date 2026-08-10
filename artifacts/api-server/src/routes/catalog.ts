@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, gte, ilike, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, lte, or, sql } from "drizzle-orm";
 import {
   db,
   categoriesTable,
@@ -381,6 +381,13 @@ router.get("/products/:id", async (req, res): Promise<void> => {
   }
   const idOrSlug = params.data.id;
   const numericId = Number(idOrSlug);
+  // Product cards navigate with the product slug. Imported catalog data uses
+  // numeric-looking slugs (for example "113"), so treating every numeric
+  // route value as an id makes valid slug links return 404. Prefer the slug
+  // and retain the numeric id lookup as a backwards-compatible fallback.
+  const productLookup = Number.isNaN(numericId)
+    ? eq(productsTable.slug, idOrSlug)
+    : or(eq(productsTable.slug, idOrSlug), eq(productsTable.id, numericId));
 
   const [row] = await db
     .select({
@@ -415,11 +422,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
       categoriesTable,
       eq(productsTable.categoryId, categoriesTable.id),
     )
-    .where(
-      Number.isNaN(numericId)
-        ? eq(productsTable.slug, idOrSlug)
-        : eq(productsTable.id, numericId),
-    );
+    .where(productLookup);
 
   if (!row) {
     res.status(404).json({ error: "Product not found" });

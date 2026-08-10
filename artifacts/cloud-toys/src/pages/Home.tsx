@@ -3,10 +3,9 @@ import { PageTransition } from '../components/ui/PageTransition';
 import { useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
 import { motion } from 'framer-motion';
-import { useLocation, useSearch } from 'wouter';
+import { useSearch } from 'wouter';
 
 export function Home() {
-  const [, setLocation] = useLocation();
   const search = useSearch();
   const categoryParam = new URLSearchParams(search).get('category') || undefined;
 
@@ -21,24 +20,14 @@ export function Home() {
 
   const { data: categories } = useListCategories();
 
-  const updateCategory = (slug: string | undefined) => {
-    const params = new URLSearchParams(window.location.search);
-    if (slug) {
-      params.set('category', slug);
-    } else {
-      params.delete('category');
-    }
-    setLocation(`/?${params.toString()}`);
-  };
-
   return (
     <PageTransition>
 
       {/* Category pills */}
       <section className="py-3 border-b border-border bg-white sticky top-16 md:top-20 z-30 shadow-sm">
         <div className="flex gap-2 overflow-x-auto px-4 lg:max-w-7xl lg:mx-auto lg:px-8 scrollbar-none">
-          <button
-            onClick={() => updateCategory(undefined)}
+          <Link
+            href="/shop"
             className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               !categoryParam
                 ? 'bg-primary text-white'
@@ -46,11 +35,11 @@ export function Home() {
             }`}
           >
             All
-          </button>
-          {categories?.map(cat => (
-            <button
+          </Link>
+          {categories?.filter(cat => cat.productCount > 0).map(cat => (
+            <Link
               key={cat.id}
-              onClick={() => updateCategory(cat.slug)}
+              href={`/shop?category=${encodeURIComponent(cat.slug)}`}
               className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                 categoryParam === cat.slug
                   ? 'bg-primary text-white'
@@ -58,7 +47,7 @@ export function Home() {
               }`}
             >
               {cat.name}
-            </button>
+            </Link>
           ))}
         </div>
       </section>
@@ -100,12 +89,12 @@ export function Home() {
         ) : (
           <div className="text-center py-16 text-muted-foreground">
             <p className="text-lg font-medium mb-2">No products found</p>
-            <button
-              onClick={() => updateCategory(undefined)}
+            <Link
+              href="/shop"
               className="text-sm text-primary underline"
             >
               Clear filters
-            </button>
+            </Link>
           </div>
         )}
       </section>
