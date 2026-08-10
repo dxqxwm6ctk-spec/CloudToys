@@ -15,7 +15,10 @@ export function Shop() {
   const sortParam = (searchParams.get('sort') as ListProductsSort) || undefined;
 
   const [page, setPage] = useState(1);
-  const pageSize = 12;
+  // Keep the full catalog visible in one grid. The previous 12-item page
+  // made the remaining products look missing unless the user noticed the
+  // pagination controls below the grid.
+  const pageSize = 100;
 
   const { data, isLoading, isError, error, refetch } = useListProducts({
     category: categoryParam,

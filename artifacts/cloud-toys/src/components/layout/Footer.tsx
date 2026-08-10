@@ -112,7 +112,7 @@ export function Footer() {
               ['All Products', '/shop'],
               ['Categories', '/categories'],
               ['New Arrivals', '/shop?sort=newest'],
-              ['Best Sellers', '/shop?sort=best-sellers'],
+              ['Best Sellers', '/shop?sort=rating'],
               ['Featured', '/shop?sort=featured'],
             ].map(([label, href]) => (
               <li key={href}>

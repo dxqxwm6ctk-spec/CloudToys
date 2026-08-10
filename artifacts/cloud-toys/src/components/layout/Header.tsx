@@ -10,7 +10,7 @@ const SIDEBAR_SHOP_LINKS = [
   { label: 'All Products', href: '/shop' },
   { label: 'Categories', href: '/categories' },
   { label: 'New Arrivals', href: '/shop?sort=newest' },
-  { label: 'Best Sellers', href: '/shop?sort=best-sellers' },
+  { label: 'Best Sellers', href: '/shop?sort=rating' },
   { label: 'Featured', href: '/shop?sort=featured' },
 ];
 

@@ -14,7 +14,9 @@ export function Home() {
     category: categoryParam,
     sort: 'featured',
     page: 1,
-    pageSize: 20,
+    // The home catalog is the storefront's main product browser. Request the
+    // full collection so products are not silently hidden after the first 20.
+    pageSize: 100,
   });
 
   const { data: categories } = useListCategories();
