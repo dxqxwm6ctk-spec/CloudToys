@@ -1,9 +1,9 @@
 import { useLocation } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
-import { useListProducts, useListCategories } from '@workspace/api-client-react';
+import { resolveMediaUrl, useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
-import { useState, useEffect } from 'react';
-import { Filter, ChevronDown, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Filter, Check, LayoutGrid } from 'lucide-react';
 import type { ListProductsSort } from '@workspace/api-client-react';
 
 export function Shop() {
@@ -65,7 +65,70 @@ export function Shop() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12 flex flex-col md:flex-row gap-8">
+      {/* Mobile-first category rail: visual, quick to scan, and touch friendly. */}
+      <div className="border-b border-border bg-background">
+        <div className="container mx-auto px-4 py-4 md:py-5">
+          <div className="flex items-center justify-between gap-4 mb-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Browse the collection</p>
+              <h2 className="font-serif text-lg md:text-xl font-semibold">Shop by category</h2>
+            </div>
+            <div className="hidden md:block text-sm text-muted-foreground">{data?.total || 0} products</div>
+          </div>
+          <div
+            className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            data-testid="category-rail"
+          >
+            <button
+              type="button"
+              data-testid="category-all"
+              onClick={() => updateFilters('category', undefined)}
+              className={`group flex min-w-[76px] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border px-2.5 py-2.5 transition-colors md:min-w-[92px] ${
+                !categoryParam
+                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                  : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'
+              }`}
+            >
+              <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full md:h-14 md:w-14 ${
+                !categoryParam ? 'bg-primary-foreground/15' : 'bg-secondary'
+              }`}>
+                <LayoutGrid className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <span className="max-w-full truncate text-[11px] font-semibold md:text-xs">All toys</span>
+            </button>
+            {categories?.filter((category) => category.productCount > 0).map((category) => {
+              const selected = categoryParam === category.slug;
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  data-testid={`category-${category.id}`}
+                  onClick={() => updateFilters('category', category.slug)}
+                  className={`group flex min-w-[76px] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border px-2.5 py-2.5 transition-colors md:min-w-[92px] ${
+                    selected
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : 'border-border bg-card text-foreground hover:border-primary/40'
+                  }`}
+                >
+                  <span className={`block h-12 w-12 overflow-hidden rounded-full md:h-14 md:w-14 ${
+                    selected ? 'ring-2 ring-primary-foreground/70 ring-offset-2 ring-offset-primary' : 'bg-secondary'
+                  }`}>
+                    <img
+                      src={resolveMediaUrl(category.imageUrl)}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  </span>
+                  <span className="max-w-[78px] truncate text-[11px] font-semibold md:max-w-[100px] md:text-xs">{category.name}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto flex flex-col gap-4 px-4 py-5 md:flex-row md:gap-8 md:py-12">
         {/* Mobile Filter Toggle */}
         <div className="md:hidden flex justify-between items-center pb-4 border-b border-border">
           <button 
@@ -141,7 +204,7 @@ export function Shop() {
           </div>
 
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-6 lg:grid-cols-3 lg:gap-8">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="bg-secondary rounded-2xl aspect-[4/5] mb-4"></div>
@@ -177,7 +240,7 @@ export function Shop() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-7 sm:gap-6 lg:grid-cols-3 lg:gap-8">
                 {data?.items.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}

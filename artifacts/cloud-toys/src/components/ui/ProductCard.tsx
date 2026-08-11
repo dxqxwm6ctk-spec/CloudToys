@@ -52,8 +52,8 @@ export function ProductCard({ product }: { product: Product }) {
     <Link href={`/product/${product.slug}`} className="group block">
       {/* Image Container */}
       <div
-        className="relative overflow-hidden rounded-[20px] bg-[#F8F6F3] mb-4"
-        style={{ aspectRatio: '3/4', boxShadow: hovered ? '0 20px 60px rgba(122,31,61,0.12)' : '0 4px 24px rgba(0,0,0,0.06)', transition: 'box-shadow 0.4s ease' }}
+        className="relative mb-2.5 aspect-square overflow-hidden rounded-[16px] bg-[#F8F6F3] shadow-[0_3px_18px_rgba(0,0,0,0.05)] transition-shadow duration-300 sm:mb-4 sm:aspect-[3/4] sm:rounded-[20px] sm:shadow-none"
+        style={{ boxShadow: hovered ? '0 20px 60px rgba(122,31,61,0.12)' : undefined }}
         onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHovered(false); }}
         onClick={handleImageClick}
@@ -69,7 +69,7 @@ export function ProductCard({ product }: { product: Product }) {
           alt={product.imageAlt ?? product.name}
           lqip={product.lqip}
           loading="lazy"
-          className="w-full h-full object-cover object-center"
+          className="h-full w-full object-contain object-center p-1.5 sm:p-0"
           animate={{ scale: hovered ? 1.06 : 1 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         />
@@ -84,23 +84,23 @@ export function ProductCard({ product }: { product: Product }) {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {product.badge === 'new' && (
-            <span className="bg-[#7A1F3D] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">New</span>
+            <span className="bg-[#7A1F3D] text-white text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest sm:text-[10px] sm:px-2.5 sm:py-1">New</span>
           )}
           {product.badge === 'sale' && discountPct && (
-            <span className="bg-[#C9A227] text-white text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest">−{discountPct}%</span>
+            <span className="bg-[#C9A227] text-white text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest sm:text-[10px] sm:px-2.5 sm:py-1">−{discountPct}%</span>
           )}
           {product.badge === 'bestseller' && (
-            <span className="bg-white/90 text-[#7A1F3D] text-[10px] font-semibold px-2.5 py-1 rounded-full uppercase tracking-widest border border-[#7A1F3D]/20">Best Seller</span>
+            <span className="bg-white/90 text-[#7A1F3D] text-[9px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest border border-[#7A1F3D]/20 sm:text-[10px] sm:px-2.5 sm:py-1">Best Seller</span>
           )}
         </div>
 
         {/* Wishlist button — always visible on mobile, hover on desktop */}
         <button
           onClick={handleWishlist}
-          className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center bg-white shadow-md transition-all duration-200 hover:scale-110 ${isWishlisted ? 'text-[#7A1F3D]' : 'text-gray-400 hover:text-[#7A1F3D]'} md:opacity-0 md:group-hover:opacity-100`}
+          className={`absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-md transition-all duration-200 hover:scale-110 sm:right-3 sm:top-3 sm:h-9 sm:w-9 ${isWishlisted ? 'text-[#7A1F3D]' : 'text-gray-400 hover:text-[#7A1F3D]'} md:opacity-0 md:group-hover:opacity-100`}
           aria-label="Wishlist"
         >
-          <Heart className="w-4 h-4" fill={isWishlisted ? 'currentColor' : 'none'} strokeWidth={2} />
+           <Heart className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill={isWishlisted ? 'currentColor' : 'none'} strokeWidth={2} />
         </button>
 
         {/* Hover Actions */}
@@ -116,7 +116,7 @@ export function ProductCard({ product }: { product: Product }) {
               <button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className="pointer-events-auto flex-1 bg-white text-[#7A1F3D] h-10 rounded-full text-sm font-semibold hover:bg-[#7A1F3D] hover:text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+               className="pointer-events-auto flex-1 bg-white text-[#7A1F3D] h-10 rounded-full text-sm font-semibold hover:bg-[#7A1F3D] hover:text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ShoppingBag className="w-4 h-4" />
                 {product.inStock ? 'Add to Bag' : 'Out of Stock'}
@@ -133,15 +133,15 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       {/* Info */}
-      <div className="px-1 space-y-1.5">
-        <p className="text-[10px] text-[#C9A227] font-semibold uppercase tracking-[0.15em]">{product.categoryName}</p>
-        <h3 className="font-serif text-[15px] font-medium text-gray-900 group-hover:text-[#7A1F3D] transition-colors duration-200 line-clamp-2 leading-snug">
+       <div className="space-y-1 px-0.5 sm:px-1">
+         <p className="truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-[#C9A227] sm:text-[10px] sm:tracking-[0.15em]">{product.categoryName}</p>
+         <h3 className="line-clamp-2 font-serif text-[12px] font-medium leading-snug text-gray-900 transition-colors duration-200 group-hover:text-[#7A1F3D] sm:text-[15px]">
           {product.name}
         </h3>
-        <div className="flex items-center gap-2 pt-0.5">
-          <span className="text-[15px] font-semibold text-gray-900">{formatPrice(product.price)}</span>
+         <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 pt-0.5">
+           <span className="text-[13px] font-semibold text-gray-900 sm:text-[15px]">{formatPrice(product.price)}</span>
           {product.compareAtPrice && product.compareAtPrice > product.price && (
-            <span className="text-sm text-gray-400 line-through">{formatPrice(product.compareAtPrice)}</span>
+             <span className="text-[10px] text-gray-400 line-through sm:text-sm">{formatPrice(product.compareAtPrice)}</span>
           )}
         </div>
       </div>
