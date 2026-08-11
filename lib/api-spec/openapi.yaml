@@ -638,6 +638,62 @@ paths:
         "404":
           description: Order not found
 
+  /admin/users/{userId}/orders/{orderId}:
+    delete:
+      operationId: adminDeleteUserOrder
+      tags: [admin]
+      summary: Delete a customer's order before shipping or dispatch
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: number }
+      responses:
+        "200":
+          description: Order deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteOrderResponse"
+        "404":
+          description: User or order not found
+        "409":
+          description: Order has shipped or is out for delivery
+
+  /admin/users/{userId}/orders/{orderId}/items/{productId}:
+    delete:
+      operationId: adminDeleteUserOrderItem
+      tags: [admin]
+      summary: Delete one item from a customer's order before shipping or dispatch
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: orderId
+          in: path
+          required: true
+          schema: { type: number }
+        - name: productId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Item deleted; deleting the last item deletes the order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteOrderItemResponse"
+        "404":
+          description: User, order, or item not found
+        "409":
+          description: Order has shipped or is out for delivery
+
   /admin/newsletter/subscribers:
     get:
       operationId: adminListNewsletterSubscribers
@@ -1140,6 +1196,19 @@ components:
       type: object
       properties:
         success: { type: boolean }
+        orderNumber: { type: string }
+
+    AdminDeleteOrderItemResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        orderNumber: { type: string }
+        orderDeleted: { type: boolean }
+        total: { type: number }
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
 
     OrderStatusUpdate:
       type: object

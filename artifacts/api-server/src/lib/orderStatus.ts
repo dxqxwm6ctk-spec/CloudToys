@@ -62,3 +62,8 @@ export function buildSteps(
 export function isCustomerEditable(status: string): boolean {
   return status === "pending";
 }
+
+/** Admins can only remove orders/items before shipping or dispatch. */
+export function isOrderDeletable(status: string): boolean {
+  return !["shipped", "out_for_delivery", "delivered"].includes(status);
+}

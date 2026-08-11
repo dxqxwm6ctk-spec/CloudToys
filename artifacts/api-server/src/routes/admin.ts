@@ -11,7 +11,7 @@ import {
   newsletterSubscribersTable,
 } from "@workspace/db";
 import { deleteProductImageSet } from "./images";
-import { buildSteps } from "../lib/orderStatus";
+import { buildSteps, isOrderDeletable } from "../lib/orderStatus";
 import { requireRole } from "../middleware/requireAdmin";
 import * as z from "zod";
 import {
@@ -870,6 +870,21 @@ router.delete("/admin/orders/:id", requireRole("admin", "manager"), async (req, 
   const params = AdminDeleteOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [existing] = await db
+    .select({ status: ordersTable.status })
+    .from(ordersTable)
+    .where(eq(ordersTable.id, Number(params.data.id)));
+
+  if (!existing) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  if (!isOrderDeletable(existing.status)) {
+    res.status(409).json({ error: "Orders cannot be deleted after shipping or dispatch" });
     return;
   }
 

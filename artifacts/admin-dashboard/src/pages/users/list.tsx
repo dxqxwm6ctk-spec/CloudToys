@@ -19,10 +19,20 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/currency';
-import { Loader2, Search, ShieldOff, ShieldCheck, Mail, Package } from 'lucide-react';
+import { Loader2, Search, ShieldOff, ShieldCheck, Mail, Package, Trash2 } from 'lucide-react';
 import { getApiBase } from '@/lib/api-url';
 import { authHeader } from '@/lib/auth-token';
 
@@ -45,7 +55,15 @@ interface AdminUser {
 
 interface AdminUserDetail extends AdminUser {
   address: string | null;
-  orders: { orderNumber: string; status: string; total: number; createdAt: string | null }[];
+  orders: {
+    id: string;
+    orderNumber: string;
+    status: string;
+    total: number;
+    shippingFee: number;
+    items: { productId: string; name: string; quantity: number; price: number }[] | null;
+    createdAt: string | null;
+  }[];
 }
 
 async function fetchUsers(): Promise<AdminUser[]> {
@@ -79,6 +97,37 @@ async function unbanUser(id: string): Promise<void> {
   if (!res.ok) throw new Error('Failed to unban user');
 }
 
+async function deleteUserOrder(userId: string, orderId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/admin/users/${userId}/orders/${orderId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: authHeader(),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || 'Failed to delete order');
+  }
+}
+
+async function deleteUserOrderItem(userId: string, orderId: string, productId: string): Promise<void> {
+  const res = await fetch(
+    `${BASE}/api/admin/users/${userId}/orders/${orderId}/items/${encodeURIComponent(productId)}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: authHeader(),
+    },
+  );
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error || 'Failed to delete order item');
+  }
+}
+
+function canEditOrder(status: string): boolean {
+  return !['shipped', 'out_for_delivery', 'delivered'].includes(status);
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -90,6 +139,11 @@ export default function UsersList() {
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [banReason, setBanReason] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<
+    | { type: 'order'; orderId: string; orderNumber: string }
+    | { type: 'item'; orderId: string; orderNumber: string; productId: string; itemName: string }
+    | null
+  >(null);
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin', 'users'],
@@ -123,6 +177,28 @@ export default function UsersList() {
       toast({ title: 'User unbanned' });
     },
     onError: () => toast({ title: 'Failed to unban user', variant: 'destructive' }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedId || !deleteTarget) return;
+      if (deleteTarget.type === 'order') {
+        await deleteUserOrder(selectedId, deleteTarget.orderId);
+      } else {
+        await deleteUserOrderItem(selectedId, deleteTarget.orderId, deleteTarget.productId);
+      }
+    },
+    onSuccess: () => {
+      invalidate();
+      toast({
+        title: deleteTarget?.type === 'order' ? 'Order deleted' : 'Order item deleted',
+        description: 'The customer details were updated.',
+      });
+      setDeleteTarget(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || 'Delete failed', variant: 'destructive' });
+    },
   });
 
   const filtered = (users ?? []).filter((u) => {
@@ -251,15 +327,81 @@ export default function UsersList() {
                     <p className="text-muted-foreground text-xs">No orders yet.</p>
                   ) : (
                     <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                      {detail.orders.map((o) => (
-                        <div key={o.orderNumber} className="flex items-center justify-between bg-muted/40 rounded-lg px-3 py-2">
-                          <div>
-                            <p className="font-mono text-xs font-medium">{o.orderNumber}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{o.status.replace(/_/g, ' ')} · {formatDate(o.createdAt)}</p>
+                      {detail.orders.map((o) => {
+                        const editable = canEditOrder(o.status);
+                        return (
+                          <div key={o.id} className="bg-muted/40 rounded-lg px-3 py-2 space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <div>
+                                <p className="font-mono text-xs font-medium">{o.orderNumber}</p>
+                                <p className="text-xs text-muted-foreground capitalize">
+                                  {o.status.replace(/_/g, ' ')} · {formatDate(o.createdAt)}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-medium">{formatPrice(o.total)}</p>
+                                {editable && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    title="Delete order"
+                                    aria-label={`Delete order ${o.orderNumber}`}
+                                    onClick={() => setDeleteTarget({
+                                      type: 'order',
+                                      orderId: o.id,
+                                      orderNumber: o.orderNumber,
+                                    })}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+
+                            {o.items && o.items.length > 0 && (
+                              <div className="space-y-1 border-t border-border/60 pt-2">
+                                {o.items.map((item) => (
+                                  <div key={`${o.id}-${item.productId}`} className="flex items-center justify-between gap-2 text-xs">
+                                    <span className="min-w-0 truncate">
+                                      {item.name} × {item.quantity}
+                                    </span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="text-muted-foreground">
+                                        {formatPrice(Number(item.price) * item.quantity)}
+                                      </span>
+                                      {editable && (
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                          title="Delete item"
+                                          aria-label={`Delete ${item.name}`}
+                                          onClick={() => setDeleteTarget({
+                                            type: 'item',
+                                            orderId: o.id,
+                                            orderNumber: o.orderNumber,
+                                            productId: item.productId,
+                                            itemName: item.name,
+                                          })}
+                                        >
+                                          <Trash2 className="w-3 h-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {!editable && (
+                              <p className="text-[11px] text-muted-foreground">
+                                Locked after shipping or dispatch
+                              </p>
+                            )}
                           </div>
-                          <p className="text-xs font-medium">{formatPrice(o.total)}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -301,6 +443,38 @@ export default function UsersList() {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && !deleteMutation.isPending && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteTarget?.type === 'order' ? 'Delete this order?' : 'Delete this item from the order?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget?.type === 'order'
+                ? `This will permanently delete ${deleteTarget.orderNumber}.`
+                : `This will remove ${deleteTarget?.itemName ?? 'this item'} from ${deleteTarget?.orderNumber ?? 'the order'}. If it is the last item, the whole order will be deleted.`}
+              {' '}This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                deleteMutation.mutate();
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import * as z from "zod";
 import { db, profilesTable, ordersTable } from "@workspace/db";
 import { requireRole } from "../middleware/requireAdmin";
 import { logger } from "../lib/logger";
+import { isOrderDeletable } from "../lib/orderStatus";
 
 const router: IRouter = Router();
 
@@ -131,9 +132,12 @@ router.get("/admin/users/:id", async (req, res): Promise<void> => {
 
   const orders = await db
     .select({
+      id: ordersTable.id,
       orderNumber: ordersTable.orderNumber,
       status: ordersTable.status,
       total: ordersTable.total,
+      shippingFee: ordersTable.shippingFee,
+      items: ordersTable.items,
       createdAt: ordersTable.createdAt,
     })
     .from(ordersTable)
@@ -152,13 +156,130 @@ router.get("/admin/users/:id", async (req, res): Promise<void> => {
     bannedReason: profile?.bannedReason ?? null,
     bannedAt: profile?.bannedAt ? profile.bannedAt.toISOString() : null,
     orders: orders.map((o) => ({
+      id: String(o.id),
       orderNumber: o.orderNumber,
       status: o.status,
       total: o.total != null ? Number(o.total) : 0,
+      shippingFee: o.shippingFee != null ? Number(o.shippingFee) : 0,
+      items: o.items ?? null,
       createdAt: o.createdAt ? o.createdAt.toISOString() : null,
     })),
   });
 });
+
+// ── Order removal from customer details ──────────────────────────────────
+const UserOrderParams = z.object({
+  userId: z.string().uuid(),
+  orderId: z.coerce.number().int().positive(),
+});
+
+const UserOrderItemParams = UserOrderParams.extend({
+  productId: z.string().min(1),
+});
+
+async function getEditableUserOrder(userId: string, orderId: number) {
+  const [order] = await db
+    .select()
+    .from(ordersTable)
+    .where(sql`${ordersTable.id} = ${orderId} AND ${ordersTable.userId} = ${userId}`);
+
+  if (!order) return { error: "Order not found", status: 404 as const };
+  if (!isOrderDeletable(order.status)) {
+    return {
+      error: "Orders cannot be changed after shipping or dispatch",
+      status: 409 as const,
+    };
+  }
+  return { order };
+}
+
+router.delete(
+  "/admin/users/:userId/orders/:orderId",
+  requireRole("admin", "manager"),
+  async (req, res): Promise<void> => {
+    const params = UserOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const result = await getEditableUserOrder(params.data.userId, params.data.orderId);
+    if ("error" in result) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+
+    await db
+      .delete(ordersTable)
+      .where(eq(ordersTable.id, params.data.orderId));
+
+    res.json({ success: true, orderNumber: result.order.orderNumber });
+  },
+);
+
+router.delete(
+  "/admin/users/:userId/orders/:orderId/items/:productId",
+  requireRole("admin", "manager"),
+  async (req, res): Promise<void> => {
+    const params = UserOrderItemParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const result = await getEditableUserOrder(params.data.userId, params.data.orderId);
+    if ("error" in result) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+
+    const currentItems = Array.isArray(result.order.items) ? result.order.items : [];
+    const removedItem = currentItems.find(
+      (item) => String(item.productId) === params.data.productId,
+    );
+    if (!removedItem) {
+      res.status(404).json({ error: "Order item not found" });
+      return;
+    }
+
+    if (currentItems.length === 1) {
+      await db.delete(ordersTable).where(eq(ordersTable.id, params.data.orderId));
+      res.json({
+        success: true,
+        orderNumber: result.order.orderNumber,
+        orderDeleted: true,
+      });
+      return;
+    }
+
+    const remainingItems = currentItems.filter(
+      (item) => String(item.productId) !== params.data.productId,
+    );
+    const removedAmount = Number(removedItem.price) * removedItem.quantity;
+    const currentTotal = result.order.total != null ? Number(result.order.total) : null;
+    const nextTotal =
+      currentTotal == null
+        ? remainingItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0) +
+          (result.order.shippingFee != null ? Number(result.order.shippingFee) : 0)
+        : Math.max(0, currentTotal - removedAmount);
+
+    await db
+      .update(ordersTable)
+      .set({
+        items: remainingItems,
+        total: String(nextTotal),
+      })
+      .where(eq(ordersTable.id, params.data.orderId));
+
+    res.json({
+      success: true,
+      orderNumber: result.order.orderNumber,
+      orderDeleted: false,
+      total: nextTotal,
+      items: remainingItems,
+    });
+  },
+);
 
 // ── Ban / unban ───────────────────────────────────────────────────────────
 const BanBody = z.object({ reason: z.string().trim().max(500).optional() });
