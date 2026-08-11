@@ -58,9 +58,9 @@ export function buildSteps(
   });
 }
 
-/** Only `pending` orders can still be edited or cancelled by the customer. */
+/** Newly placed orders can still be cancelled by the customer. */
 export function isCustomerEditable(status: string): boolean {
-  return status === "pending";
+  return status === "pending" || status === "processing";
 }
 
 /** Admins can only remove orders/items before shipping or dispatch. */

@@ -7,7 +7,7 @@ import { Router, type IRouter } from "express";
 import { createClient } from "@supabase/supabase-js";
 import { eq, sql } from "drizzle-orm";
 import * as z from "zod";
-import { db, profilesTable, ordersTable } from "@workspace/db";
+import { db, profilesTable, ordersTable, productsTable } from "@workspace/db";
 import { requireRole } from "../middleware/requireAdmin";
 import { logger } from "../lib/logger";
 import { isOrderDeletable } from "../lib/orderStatus";
@@ -137,6 +137,8 @@ router.get("/admin/users/:id", async (req, res): Promise<void> => {
       status: ordersTable.status,
       total: ordersTable.total,
       shippingFee: ordersTable.shippingFee,
+      shippingAddress: ordersTable.shippingAddress,
+      paymentMethod: ordersTable.paymentMethod,
       items: ordersTable.items,
       createdAt: ordersTable.createdAt,
     })
@@ -161,6 +163,8 @@ router.get("/admin/users/:id", async (req, res): Promise<void> => {
       status: o.status,
       total: o.total != null ? Number(o.total) : 0,
       shippingFee: o.shippingFee != null ? Number(o.shippingFee) : 0,
+      shippingAddress: o.shippingAddress ?? null,
+      paymentMethod: o.paymentMethod ?? null,
       items: o.items ?? null,
       createdAt: o.createdAt ? o.createdAt.toISOString() : null,
     })),
@@ -240,6 +244,18 @@ router.delete(
     if (!removedItem) {
       res.status(404).json({ error: "Order item not found" });
       return;
+    }
+
+    const removedProductId = Number(removedItem.productId);
+    const removedQuantity = Number(removedItem.quantity);
+    if (Number.isInteger(removedProductId) && Number.isInteger(removedQuantity) && removedQuantity > 0) {
+      await db
+        .update(productsTable)
+        .set({
+          stockQuantity: sql`${productsTable.stockQuantity} + ${removedQuantity}`,
+          inStock: true,
+        })
+        .where(eq(productsTable.id, removedProductId));
     }
 
     if (currentItems.length === 1) {

@@ -5,7 +5,7 @@ import { TrackOrderParams, TrackOrderResponse } from "@workspace/api-zod";
 import * as z from "zod";
 import { requireCustomer } from "../lib/supabaseAuth";
 import { verifyTurnstileToken } from "../lib/turnstile";
-import { buildSteps } from "../lib/orderStatus";
+import { buildSteps, isCustomerEditable } from "../lib/orderStatus";
 import { checkoutRateLimit, trackOrderRateLimit } from "../lib/security";
 import { lookupShippingFee } from "../lib/shippingFee";
 
@@ -126,7 +126,13 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
   // admin configured, in JOD, with no client-side influence.
   const productIds = [...quantityByProductId.keys()];
   const authoritativeProducts = await db
-    .select({ id: productsTable.id, name: productsTable.name, price: productsTable.price })
+    .select({
+      id: productsTable.id,
+      name: productsTable.name,
+      price: productsTable.price,
+      imageUrl: productsTable.imageUrl,
+      thumbUrl: productsTable.thumbUrl,
+    })
     .from(productsTable)
     .where(inArray(productsTable.id, productIds));
 
@@ -145,6 +151,7 @@ router.post("/orders", checkoutRateLimit, requireCustomer, async (req, res): Pro
       name: product.name,
       quantity: item.quantity,
       price: Number(product.price),
+      imageUrl: product.thumbUrl ?? product.imageUrl,
     };
   });
   const subtotal = pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -325,6 +332,76 @@ router.delete(
     }
 
     res.status(204).end();
+  },
+);
+
+// ── Cancel an order (customer-side) ───────────────────────────────────────
+// Cancellation is only available while the order is still processing. The
+// reserved stock is returned so cancelling cannot permanently reduce inventory.
+router.patch(
+  "/orders/:orderNumber/mine/cancel",
+  requireCustomer,
+  async (req, res): Promise<void> => {
+    const params = RemoveMyOrderParams.safeParse(req.params);
+    if (!params.success) {
+      res.status(400).json({ error: params.error.message });
+      return;
+    }
+
+    const result = await db.transaction(async (tx) => {
+      const [order] = await tx
+        .select()
+        .from(ordersTable)
+        .where(
+          sql`${ordersTable.orderNumber} = ${params.data.orderNumber} AND ${ordersTable.userId} = ${req.customer!.id}`,
+        );
+
+      if (!order) return { kind: "not_found" as const };
+      if (!isCustomerEditable(order.status)) return { kind: "locked" as const };
+
+      const [updated] = await tx
+        .update(ordersTable)
+        .set({ status: "cancelled", steps: buildSteps(order.steps, "cancelled") })
+        .where(
+          sql`${ordersTable.id} = ${order.id} AND ${ordersTable.status} IN ('pending', 'processing')`,
+        )
+        .returning({
+          orderNumber: ordersTable.orderNumber,
+          status: ordersTable.status,
+          steps: ordersTable.steps,
+          items: ordersTable.items,
+        });
+
+      if (!updated) return { kind: "locked" as const };
+
+      const items = Array.isArray(updated.items) ? updated.items : [];
+      for (const item of items) {
+        const productId = Number(item.productId);
+        const quantity = Number(item.quantity);
+        if (Number.isInteger(productId) && Number.isInteger(quantity) && quantity > 0) {
+          await tx
+            .update(productsTable)
+            .set({
+              stockQuantity: sql`${productsTable.stockQuantity} + ${quantity}`,
+              inStock: true,
+            })
+            .where(eq(productsTable.id, productId));
+        }
+      }
+
+      return { kind: "updated" as const, order: updated };
+    });
+
+    if (result.kind === "not_found") {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+    if (result.kind === "locked") {
+      res.status(409).json({ error: "This order can no longer be cancelled because it has started processing." });
+      return;
+    }
+
+    res.json(result.order);
   },
 );
 

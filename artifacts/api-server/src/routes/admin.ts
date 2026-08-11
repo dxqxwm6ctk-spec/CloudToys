@@ -866,6 +866,78 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
   );
 });
 
+// Remove one line item from an editable order. This is separate from deleting
+// the whole order so the admin can correct an order without losing its history.
+router.delete(
+  "/admin/orders/:id/items/:productId",
+  requireRole("admin", "manager"),
+  async (req, res): Promise<void> => {
+    const orderId = Number(req.params.id);
+    const productId = String(req.params.productId);
+    if (!Number.isInteger(orderId) || orderId <= 0 || !productId) {
+      res.status(400).json({ error: "Invalid order or product id" });
+      return;
+    }
+
+    const [order] = await db
+      .select()
+      .from(ordersTable)
+      .where(eq(ordersTable.id, orderId));
+
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+    if (!isOrderDeletable(order.status)) {
+      res.status(409).json({ error: "Order items cannot be changed after shipping or dispatch" });
+      return;
+    }
+
+    const currentItems = Array.isArray(order.items) ? order.items : [];
+    const removedItem = currentItems.find((item) => String(item.productId) === productId);
+    if (!removedItem) {
+      res.status(404).json({ error: "Order item not found" });
+      return;
+    }
+
+    const removedProductId = Number(removedItem.productId);
+    const removedQuantity = Number(removedItem.quantity);
+    if (Number.isInteger(removedProductId) && Number.isInteger(removedQuantity) && removedQuantity > 0) {
+      await db
+        .update(productsTable)
+        .set({
+          stockQuantity: sql`${productsTable.stockQuantity} + ${removedQuantity}`,
+          inStock: true,
+        })
+        .where(eq(productsTable.id, removedProductId));
+    }
+
+    if (currentItems.length === 1) {
+      await db.delete(ordersTable).where(eq(ordersTable.id, orderId));
+      res.json({ success: true, orderNumber: order.orderNumber, orderDeleted: true });
+      return;
+    }
+
+    const remainingItems = currentItems.filter((item) => String(item.productId) !== productId);
+    const shippingFee = order.shippingFee != null ? Number(order.shippingFee) : 0;
+    const nextTotal =
+      remainingItems.reduce((sum, item) => sum + Number(item.price) * item.quantity, 0) + shippingFee;
+
+    await db
+      .update(ordersTable)
+      .set({ items: remainingItems, total: String(nextTotal) })
+      .where(eq(ordersTable.id, orderId));
+
+    res.json({
+      success: true,
+      orderNumber: order.orderNumber,
+      orderDeleted: false,
+      total: nextTotal,
+      items: remainingItems,
+    });
+  },
+);
+
 router.delete("/admin/orders/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
   const params = AdminDeleteOrderParams.safeParse(req.params);
   if (!params.success) {

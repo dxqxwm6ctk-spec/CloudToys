@@ -32,6 +32,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { formatPrice } from '@/lib/currency';
+import { resolveMediaUrl } from '@workspace/api-client-react';
 import { Loader2, Search, ShieldOff, ShieldCheck, Mail, Package, Trash2 } from 'lucide-react';
 import { getApiBase } from '@/lib/api-url';
 import { authHeader } from '@/lib/auth-token';
@@ -61,7 +62,9 @@ interface AdminUserDetail extends AdminUser {
     status: string;
     total: number;
     shippingFee: number;
-    items: { productId: string; name: string; quantity: number; price: number }[] | null;
+    shippingAddress: string | null;
+    paymentMethod: string | null;
+    items: { productId: string; name: string; quantity: number; price: number; imageUrl?: string | null }[] | null;
     createdAt: string | null;
   }[];
 }
@@ -337,6 +340,9 @@ export default function UsersList() {
                                 <p className="text-xs text-muted-foreground capitalize">
                                   {o.status.replace(/_/g, ' ')} · {formatDate(o.createdAt)}
                                 </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {o.paymentMethod || 'Payment not recorded'} · {o.shippingAddress || 'Address not recorded'}
+                                </p>
                               </div>
                               <div className="flex items-center gap-2">
                                 <p className="text-xs font-medium">{formatPrice(o.total)}</p>
@@ -360,12 +366,21 @@ export default function UsersList() {
                             </div>
 
                             {o.items && o.items.length > 0 && (
-                              <div className="space-y-1 border-t border-border/60 pt-2">
+                              <div className="space-y-2 border-t border-border/60 pt-2">
                                 {o.items.map((item) => (
                                   <div key={`${o.id}-${item.productId}`} className="flex items-center justify-between gap-2 text-xs">
-                                    <span className="min-w-0 truncate">
-                                      {item.name} × {item.quantity}
-                                    </span>
+                                    <div className="flex min-w-0 items-center gap-2">
+                                      <div className="h-9 w-9 shrink-0 overflow-hidden rounded bg-background">
+                                        {item.imageUrl ? (
+                                          <img src={resolveMediaUrl(item.imageUrl)} alt={item.name} className="h-full w-full object-cover" />
+                                        ) : (
+                                          <Package className="m-2 h-5 w-5 text-muted-foreground" />
+                                        )}
+                                      </div>
+                                      <span className="min-w-0 truncate">
+                                        {item.name} × {item.quantity}
+                                      </span>
+                                    </div>
                                     <div className="flex items-center gap-2 shrink-0">
                                       <span className="text-muted-foreground">
                                         {formatPrice(Number(item.price) * item.quantity)}

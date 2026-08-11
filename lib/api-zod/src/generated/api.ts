@@ -286,7 +286,8 @@ export const TrackOrderResponse = zod.object({
   "productId": zod.string(),
   "name": zod.string(),
   "quantity": zod.number(),
-  "price": zod.number()
+  "price": zod.number(),
+  "imageUrl": zod.string().nullish()
 })).nullish(),
   "subtotal": zod.number(),
   "shippingFee": zod.number(),
@@ -698,7 +699,8 @@ export const AdminListOrdersResponse = zod.object({
   "productId": zod.string(),
   "name": zod.string(),
   "quantity": zod.number(),
-  "price": zod.number()
+  "price": zod.number(),
+  "imageUrl": zod.string().nullish()
 })).nullish()
 })),
   "total": zod.number(),

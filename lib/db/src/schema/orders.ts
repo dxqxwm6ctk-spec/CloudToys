@@ -13,6 +13,7 @@ export interface OrderLineItem {
   name: string;
   quantity: number;
   price: number;
+  imageUrl?: string | null;
 }
 
 export const ordersTable = pgTable("orders", {

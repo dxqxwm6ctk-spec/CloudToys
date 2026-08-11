@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatPrice } from '@/lib/currency';
-import { useAdminDeleteOrder, useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
+import { resolveMediaUrl, useAdminDeleteOrder, useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   Table, 
@@ -33,6 +33,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { authHeader } from '@/lib/auth-token';
+import { getApiBase } from '@/lib/api-url';
 import {
   Package,
   Truck,
@@ -61,6 +63,7 @@ const DELIVERY_DURATION_OPTIONS = [
   { days: 14, label: '14 days' },
   { days: 21, label: '21 days' },
 ];
+const BASE = getApiBase();
 
 function formatDeliveryDate(daysFromNow: number): string {
   const d = new Date();
@@ -84,6 +87,39 @@ export default function OrdersList() {
   const updateStatus = useAdminUpdateOrderStatus();
   const deleteOrder = useAdminDeleteOrder();
   const [orderToDelete, setOrderToDelete] = React.useState<AdminOrder | null>(null);
+  const [itemToDelete, setItemToDelete] = React.useState<{ order: AdminOrder; productId: string; name: string } | null>(null);
+
+  const deleteItem = useMutation({
+    mutationFn: async () => {
+      if (!itemToDelete) return null;
+      const response = await fetch(
+        `${BASE}/api/admin/orders/${itemToDelete.order.id}/items/${encodeURIComponent(itemToDelete.productId)}`,
+        { method: 'DELETE', credentials: 'include', headers: authHeader() },
+      );
+      const body = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(body?.error || 'Failed to delete order item');
+      return body as { orderDeleted?: boolean; items?: AdminOrder['items']; total?: number };
+    },
+    onSuccess: (result) => {
+      const target = itemToDelete;
+      setItemToDelete(null);
+      if (!target) return;
+      if (result?.orderDeleted) {
+        setSelectedOrder(null);
+      } else {
+        setSelectedOrder((current) => current ? {
+          ...current,
+          items: result?.items ?? current.items,
+          total: result?.total ?? current.total,
+        } : current);
+      }
+      queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
+      toast({ title: 'Order item deleted' });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message, variant: 'destructive' });
+    },
+  });
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     updateStatus.mutate(
@@ -208,6 +244,7 @@ export default function OrdersList() {
               <TableHead>Status</TableHead>
               <TableHead>Est. Delivery</TableHead>
               <TableHead className="text-right">Total</TableHead>
+              <TableHead className="text-right">Item actions</TableHead>
               <TableHead className="text-right">Details</TableHead>
               <TableHead className="text-right">Update Status</TableHead>
               <TableHead className="text-right">Delete</TableHead>
@@ -230,7 +267,7 @@ export default function OrdersList() {
               ))
             ) : data?.items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={10} className="h-32 text-center text-muted-foreground">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -255,6 +292,9 @@ export default function OrdersList() {
                     {order.total != null ? (
                       <div>{formatPrice(Number(order.total))}</div>
                     ) : '—'}
+                  </TableCell>
+                  <TableCell className="text-right text-xs text-muted-foreground">
+                    {order.items?.length ? `${order.items.length} line${order.items.length === 1 ? '' : 's'}` : '—'}
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -488,18 +528,47 @@ export default function OrdersList() {
                               <TableHead className="text-xs text-center w-16">Qty</TableHead>
                               <TableHead className="text-xs text-right w-24">Unit Price</TableHead>
                               <TableHead className="text-xs text-right w-24">Subtotal</TableHead>
+                              <TableHead className="text-xs text-right w-12">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {selectedOrder.items.map((item, i) => (
                               <TableRow key={i}>
-                                <TableCell className="text-sm font-medium py-3">{item.name}</TableCell>
+                                <TableCell className="py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                                      {item.imageUrl ? (
+                                        <img src={resolveMediaUrl(item.imageUrl)} alt={item.name} className="h-full w-full object-cover" />
+                                      ) : (
+                                        <Package className="m-3 h-6 w-6 text-muted-foreground" />
+                                      )}
+                                    </div>
+                                    <span className="text-sm font-medium">{item.name}</span>
+                                  </div>
+                                </TableCell>
                                 <TableCell className="text-sm text-center py-3">{item.quantity}</TableCell>
                                 <TableCell className="text-sm text-right py-3">
                                   {formatPrice(Number(item.price))}
                                 </TableCell>
                                 <TableCell className="text-sm text-right py-3 font-medium">
                                   {formatPrice(Number(item.price) * item.quantity)}
+                                </TableCell>
+                                <TableCell className="py-3 text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    title="Delete item"
+                                    aria-label={`Delete ${item.name}`}
+                                    disabled={!['processing', 'pending', 'confirmed', 'preparing'].includes(selectedOrder.status) || deleteItem.isPending}
+                                    onClick={() => setItemToDelete({
+                                      order: selectedOrder,
+                                      productId: item.productId,
+                                      name: item.name,
+                                    })}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -595,6 +664,33 @@ export default function OrdersList() {
               disabled={deleteOrder.isPending}
             >
               {deleteOrder.isPending ? 'Deleting…' : 'Delete order'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!itemToDelete}
+        onOpenChange={(open) => !open && !deleteItem.isPending && setItemToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this item from the order?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove {itemToDelete?.name ?? 'the selected item'} from {itemToDelete?.order.orderNumber ?? 'the order'} and recalculate the total. It is allowed only before shipping or dispatch.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteItem.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                deleteItem.mutate();
+              }}
+              disabled={deleteItem.isPending}
+            >
+              {deleteItem.isPending ? 'Deleting…' : 'Delete item'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

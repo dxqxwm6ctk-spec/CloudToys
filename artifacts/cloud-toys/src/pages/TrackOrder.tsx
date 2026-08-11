@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { PageTransition } from '../components/ui/PageTransition';
 import { useTrackOrder } from '@workspace/api-client-react';
-import { Search, Package, Truck, CheckCircle2 } from 'lucide-react';
+import { Search, Package, Truck, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { CopyOrderNumber } from '../components/ui/CopyOrderNumber';
 import { formatJOD } from '../lib/currency';
+import { resolveMediaUrl } from '@workspace/api-client-react';
+import { useCustomerAuth } from '../context/CustomerAuthContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '../hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
+import { getApiBase } from '../lib/api-url';
 
 export function TrackOrder() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -12,6 +18,30 @@ export function TrackOrder() {
   
   const [orderNumberInput, setOrderNumberInput] = useState(initialOrder);
   const [searchOrder, setSearchOrder] = useState(initialOrder);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const { user, getAccessToken } = useCustomerAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      const token = await getAccessToken();
+      const res = await fetch(`${getApiBase()}/api/orders/${searchOrder}/mine/cancel`, {
+        method: 'PATCH',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(body?.error || 'Could not cancel order');
+    },
+    onSuccess: () => {
+      setCancelOpen(false);
+      toast({ title: 'Order cancelled' });
+      queryClient.invalidateQueries({ queryKey: ['trackOrder', searchOrder] });
+    },
+    onError: (error: Error) => {
+      setCancelOpen(false);
+      toast({ title: error.message, variant: 'destructive' });
+    },
+  });
 
   const { data: tracking, isLoading, error } = useTrackOrder(searchOrder, {
     query: {
@@ -83,6 +113,27 @@ export function TrackOrder() {
                 <p className="text-xl font-medium text-primary">{new Date(tracking.estimatedDelivery).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</p>
               </div>
             </div>
+            {user && (tracking.status === 'processing' || tracking.status === 'pending') && (
+              <div className="mb-8 flex justify-end">
+                <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+                  <button type="button" onClick={() => setCancelOpen(true)} className="inline-flex items-center gap-2 rounded-full border border-destructive/30 px-4 py-2 text-sm text-destructive hover:bg-destructive/10">
+                    <XCircle className="h-4 w-4" /> Cancel order
+                  </button>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel this order?</AlertDialogTitle>
+                      <AlertDialogDescription>This is available only while the order is still processing.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={cancelMutation.isPending}>Keep order</AlertDialogCancel>
+                      <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={(event) => { event.preventDefault(); cancelMutation.mutate(); }} disabled={cancelMutation.isPending}>
+                        {cancelMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Cancel order
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
 
             <div className="relative">
               {/* Progress Line */}
@@ -122,7 +173,8 @@ export function TrackOrder() {
                   <div className="space-y-2 mb-4">
                     {tracking.items.map((item, i) => (
                       <div key={i} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">
+                        <span className="flex items-center gap-3 text-muted-foreground">
+                          {item.imageUrl && <img src={resolveMediaUrl(item.imageUrl)} alt="" className="h-10 w-10 rounded-md object-cover" />}
                           {item.name} <span className="text-xs">× {item.quantity}</span>
                         </span>
                         <span>{formatJOD(item.price * item.quantity)}</span>
