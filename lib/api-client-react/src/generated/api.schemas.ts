@@ -451,6 +451,10 @@ export type AdminDeleteStaff200 = {
   success?: boolean;
 };
 
+export type AdminDeleteOrder200 = {
+  success?: boolean;
+};
+
 export type AdminListOrdersParams = {
 status?: string;
 page?: number;

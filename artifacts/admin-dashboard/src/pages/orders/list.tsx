@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatPrice } from '@/lib/currency';
-import { useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
+import { useAdminDeleteOrder, useAdminListOrders, useAdminUpdateOrderStatus, getAdminListOrdersQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { 
   Table, 
@@ -22,6 +22,16 @@ import {
 } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import {
   Package,
@@ -36,6 +46,7 @@ import {
   Calendar,
   Clock,
   ShoppingCart,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { AdminOrder } from '@workspace/api-client-react';
@@ -71,6 +82,8 @@ export default function OrdersList() {
   });
 
   const updateStatus = useAdminUpdateOrderStatus();
+  const deleteOrder = useAdminDeleteOrder();
+  const [orderToDelete, setOrderToDelete] = React.useState<AdminOrder | null>(null);
 
   const handleStatusChange = (orderId: string, newStatus: string) => {
     updateStatus.mutate(
@@ -102,6 +115,27 @@ export default function OrdersList() {
           toast({ title: "Failed to update delivery time", variant: "destructive" });
         }
       }
+    );
+  };
+
+  const handleDeleteOrder = () => {
+    if (!orderToDelete) return;
+
+    deleteOrder.mutate(
+      { id: orderToDelete.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Order deleted", description: `${orderToDelete.orderNumber} was permanently deleted.` });
+          queryClient.invalidateQueries({ queryKey: getAdminListOrdersQueryKey() });
+          if (selectedOrder?.id === orderToDelete.id) {
+            setSelectedOrder(null);
+          }
+          setOrderToDelete(null);
+        },
+        onError: () => {
+          toast({ title: "Failed to delete order", variant: "destructive" });
+        },
+      },
     );
   };
 
@@ -176,6 +210,7 @@ export default function OrdersList() {
               <TableHead className="text-right">Total</TableHead>
               <TableHead className="text-right">Details</TableHead>
               <TableHead className="text-right">Update Status</TableHead>
+              <TableHead className="text-right">Delete</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -190,11 +225,12 @@ export default function OrdersList() {
                   <TableCell><div className="h-4 bg-muted rounded w-16 ml-auto" /></TableCell>
                   <TableCell><div className="h-8 bg-muted rounded w-16 ml-auto" /></TableCell>
                   <TableCell><div className="h-10 bg-muted rounded w-32 ml-auto" /></TableCell>
+                  <TableCell><div className="h-8 bg-muted rounded w-16 ml-auto" /></TableCell>
                 </TableRow>
               ))
             ) : data?.items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="h-32 text-center text-muted-foreground">
                   No orders found.
                 </TableCell>
               </TableRow>
@@ -245,6 +281,19 @@ export default function OrdersList() {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => setOrderToDelete(order)}
+                      aria-label={`Delete order ${order.orderNumber}`}
+                      title="Delete order"
+                      disabled={deleteOrder.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
@@ -298,6 +347,17 @@ export default function OrdersList() {
                     {getStatusIcon(selectedOrder.status)}
                     {STATUS_LABEL[selectedOrder.status] ?? selectedOrder.status}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                    onClick={() => setOrderToDelete(selectedOrder)}
+                    aria-label={`Delete order ${selectedOrder.orderNumber}`}
+                    title="Delete order"
+                    disabled={deleteOrder.isPending}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </SheetHeader>
 
@@ -512,6 +572,33 @@ export default function OrdersList() {
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog
+        open={!!orderToDelete}
+        onOpenChange={(open) => !open && !deleteOrder.isPending && setOrderToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this order permanently?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete {orderToDelete?.orderNumber ?? 'this order'} and cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteOrder.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                handleDeleteOrder();
+              }}
+              disabled={deleteOrder.isPending}
+            >
+              {deleteOrder.isPending ? 'Deleting…' : 'Delete order'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

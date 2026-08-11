@@ -23,6 +23,7 @@ import type {
   AdminDeleteCategory200,
   AdminDeleteImageParams,
   AdminDeleteImageResult,
+  AdminDeleteOrder200,
   AdminDeleteProduct200,
   AdminDeleteStaff200,
   AdminImageListResult,
@@ -2281,6 +2282,55 @@ export const useAdminUpdateOrderStatus = <TError = ErrorType<void>,
       > => {
       return useMutation(getAdminUpdateOrderStatusMutationOptions(options));
     }
+
+export const getAdminDeleteOrderUrl = (id: string,) => {
+  return `/api/admin/orders/${id}`
+}
+
+/**
+ * @summary Delete an order (admin or manager)
+ */
+export const adminDeleteOrder = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<AdminDeleteOrder200> => {
+  return customFetch<AdminDeleteOrder200>(getAdminDeleteOrderUrl(id), {
+    ...options,
+    method: 'DELETE'
+  });
+}
+
+export const getAdminDeleteOrderMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteOrder>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof adminDeleteOrder>>, TError,{id: string}, TContext> => {
+  const mutationKey = ['adminDeleteOrder'];
+  const {mutation: mutationOptions, request: requestOptions} = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+    : {mutation: { mutationKey }, request: undefined};
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminDeleteOrder>>, {id: string}> = (props) => {
+    const {id} = props ?? {};
+    return adminDeleteOrder(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+}
+
+export type AdminDeleteOrderMutationResult = NonNullable<Awaited<ReturnType<typeof adminDeleteOrder>>>
+export type AdminDeleteOrderMutationError = ErrorType<void>
+
+/**
+ * @summary Delete an order (admin or manager)
+ */
+export const useAdminDeleteOrder = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminDeleteOrder>>, TError,{id: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationResult<
+        Awaited<ReturnType<typeof adminDeleteOrder>>,
+        TError,
+        {id: string},
+        TContext
+      > => {
+  return useMutation(getAdminDeleteOrderMutationOptions(options));
+}
 
 export const getAdminListNewsletterSubscribersUrl = () => {
 

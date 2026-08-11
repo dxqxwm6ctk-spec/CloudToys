@@ -38,6 +38,8 @@ import {
   AdminUpdateOrderStatusParams,
   AdminUpdateOrderStatusBody,
   AdminUpdateOrderStatusResponse,
+  AdminDeleteOrderParams,
+  AdminDeleteOrderResponse,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -862,6 +864,26 @@ router.put("/admin/orders/:id/status", async (req, res): Promise<void> => {
       createdAt: updated.createdAt?.toISOString() ?? null,
     }),
   );
+});
+
+router.delete("/admin/orders/:id", requireRole("admin", "manager"), async (req, res): Promise<void> => {
+  const params = AdminDeleteOrderParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [deleted] = await db
+    .delete(ordersTable)
+    .where(eq(ordersTable.id, Number(params.data.id)))
+    .returning({ id: ordersTable.id });
+
+  if (!deleted) {
+    res.status(404).json({ error: "Order not found" });
+    return;
+  }
+
+  res.json(AdminDeleteOrderResponse.parse({ success: true }));
 });
 
 // ── Admin Settings (free shipping threshold) ───────────────────────────────

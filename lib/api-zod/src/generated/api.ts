@@ -719,6 +719,17 @@ export const AdminUpdateOrderStatusBody = zod.object({
   "estimatedDelivery": zod.string().optional()
 })
 
+/**
+ * @summary Delete an order (admin or manager)
+ */
+export const AdminDeleteOrderParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const AdminDeleteOrderResponse = zod.object({
+  "success": zod.boolean().optional()
+})
+
 export const AdminUpdateOrderStatusResponse = zod.object({
   "id": zod.string(),
   "orderNumber": zod.string(),

@@ -12,3 +12,4 @@
 - [Live FK verification](live-fk-verification.md) — when deletes behave differently than the ORM schema suggests, inspect live information_schema constraints before changing application logic
 - [Heroku API build](heroku-api-build.md) — Heroku must build only the API, not recursive web/Expo artifacts
 - [Cloud Toys imported runtime](cloud-toys-imported-runtime.md) — catalog/API can run without Supabase Storage, but uploaded-image routes need storage secrets and should degrade to missing images
+- [Manual API contract sync](manual-api-contract-sync.md) — when dependencies are unavailable, keep OpenAPI, server, Zod, and React Query outputs aligned by minimal edits

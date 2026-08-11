@@ -617,6 +617,27 @@ paths:
         "404":
           description: Order not found
 
+  /admin/orders/{id}:
+    delete:
+      operationId: adminDeleteOrder
+      tags: [admin]
+      summary: Delete an order (admin or manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDeleteOrderResponse"
+        "404":
+          description: Order not found
+
   /admin/newsletter/subscribers:
     get:
       operationId: adminListNewsletterSubscribers
@@ -1114,6 +1135,11 @@ components:
         total: { type: number }
         page: { type: number }
         pageSize: { type: number }
+
+    AdminDeleteOrderResponse:
+      type: object
+      properties:
+        success: { type: boolean }
 
     OrderStatusUpdate:
       type: object
