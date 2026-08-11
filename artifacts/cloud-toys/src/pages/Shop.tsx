@@ -54,47 +54,30 @@ export function Shop() {
 
   return (
     <PageTransition>
-      <div className="bg-secondary/50 py-12 border-b border-border">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="font-serif text-4xl font-bold mb-4">
-            {searchParam ? `Search: "${searchParam}"` : categoryParam ? `Category: ${categoryParam}` : 'All Products'}
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Explore our complete collection of thoughtfully crafted toys, designed to inspire and delight.
-          </p>
-        </div>
-      </div>
-
-      {/* Mobile-first category rail: visual, quick to scan, and touch friendly. */}
+      {/* Visual category rail: square cards with the category image inside. */}
       <div className="border-b border-border bg-background">
         <div className="container mx-auto px-4 py-4 md:py-5">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-accent">Browse the collection</p>
-              <h2 className="font-serif text-lg md:text-xl font-semibold">Shop by category</h2>
-            </div>
-            <div className="hidden md:block text-sm text-muted-foreground">{data?.total || 0} products</div>
-          </div>
           <div
             className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             data-testid="category-rail"
+            aria-label="Shop by category"
           >
             <button
               type="button"
               data-testid="category-all"
               onClick={() => updateFilters('category', undefined)}
-              className={`group flex min-w-[76px] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border px-2.5 py-2.5 transition-colors md:min-w-[92px] ${
+              className={`group flex h-[104px] w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border px-2 transition-colors md:h-[112px] md:w-[92px] ${
                 !categoryParam
                   ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                   : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'
               }`}
             >
-              <span className={`flex h-12 w-12 items-center justify-center overflow-hidden rounded-full md:h-14 md:w-14 ${
+              <span className={`flex h-14 w-14 items-center justify-center overflow-hidden rounded-full md:h-16 md:w-16 ${
                 !categoryParam ? 'bg-primary-foreground/15' : 'bg-secondary'
               }`}>
-                <LayoutGrid className="h-5 w-5" aria-hidden="true" />
+                <LayoutGrid className="h-6 w-6" strokeWidth={1.8} aria-hidden="true" />
               </span>
-              <span className="max-w-full truncate text-[11px] font-semibold md:text-xs">All toys</span>
+              <span className="max-w-full truncate text-[11px] font-semibold md:text-xs">All</span>
             </button>
             {categories?.filter((category) => category.productCount > 0).map((category) => {
               const selected = categoryParam === category.slug;
@@ -104,14 +87,16 @@ export function Shop() {
                   type="button"
                   data-testid={`category-${category.id}`}
                   onClick={() => updateFilters('category', category.slug)}
-                  className={`group flex min-w-[76px] shrink-0 snap-start flex-col items-center gap-2 rounded-2xl border px-2.5 py-2.5 transition-colors md:min-w-[92px] ${
+                  className={`group flex h-[104px] w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border px-2 transition-colors md:h-[112px] md:w-[92px] ${
                     selected
                       ? 'border-primary bg-primary text-primary-foreground shadow-sm'
                       : 'border-border bg-card text-foreground hover:border-primary/40'
                   }`}
                 >
-                  <span className={`block h-12 w-12 overflow-hidden rounded-full md:h-14 md:w-14 ${
-                    selected ? 'ring-2 ring-primary-foreground/70 ring-offset-2 ring-offset-primary' : 'bg-secondary'
+                  <span className={`block h-14 w-14 overflow-hidden rounded-full border-2 md:h-16 md:w-16 ${
+                    selected
+                      ? 'border-primary-foreground/80 ring-2 ring-primary-foreground/70 ring-offset-2 ring-offset-primary'
+                      : 'border-border bg-secondary'
                   }`}>
                     <img
                       src={resolveMediaUrl(category.imageUrl)}
