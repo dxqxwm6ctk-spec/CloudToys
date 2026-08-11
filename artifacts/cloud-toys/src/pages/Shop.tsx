@@ -1,4 +1,4 @@
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { resolveMediaUrl, useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
@@ -7,8 +7,9 @@ import { Filter, Check, LayoutGrid } from 'lucide-react';
 import type { ListProductsSort } from '@workspace/api-client-react';
 
 export function Shop() {
-  const [location, setLocation] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
+  const [, setLocation] = useLocation();
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
   
   const categoryParam = searchParams.get('category') || undefined;
   const searchParam = searchParams.get('search') || undefined;
@@ -33,7 +34,9 @@ export function Shop() {
   const [showFilters, setShowFilters] = useState(false);
 
   const updateFilters = (key: string, value: string | undefined) => {
-    const params = new URLSearchParams(window.location.search);
+    // Read the current Wouter search state instead of window.location so the
+    // page re-renders immediately after an in-app filter click.
+    const params = new URLSearchParams(search);
     if (value) {
       params.set(key, value);
     } else {
@@ -41,7 +44,8 @@ export function Shop() {
     }
     // Reset page on filter change
     setPage(1);
-    setLocation(`/shop?${params.toString()}`);
+    const query = params.toString();
+    setLocation(query ? `/shop?${query}` : '/shop');
   };
 
   const sortOptions = [
