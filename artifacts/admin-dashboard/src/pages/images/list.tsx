@@ -306,7 +306,11 @@ export default function ImagesList() {
                   <Trash2 className="mr-2 h-4 w-4" />
                   Delete image
                 </Button>
-       )}
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {deleteTarget && (
         <div
@@ -345,10 +349,6 @@ export default function ImagesList() {
                 {deleteImage.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                 {deleteTarget.used ? 'Delete anyway' : 'Delete all sizes'}
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
             </div>
           </div>
         </div>
