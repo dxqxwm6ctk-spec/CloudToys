@@ -83,18 +83,37 @@ export function Checkout() {
   useEffect(() => {
     if (!governorate || !area) {
       setShippingPrice(null);
+      setLoadingShipping(false);
       return;
     }
+
+    const controller = new AbortController();
+    let cancelled = false;
     setLoadingShipping(true);
     setShippingPrice(null);
-    fetch(`${BASE}/api/shipping/lookup?governorate=${governorate}`)
-      .then((r) => r.json())
-      .then((data: { price: number | null }) => {
-        setShippingPrice(data.price);
+    fetch(`${BASE}/api/shipping/lookup?governorate=${encodeURIComponent(governorate)}`, {
+      signal: controller.signal,
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error('Shipping lookup failed');
+        return r.json();
       })
-      .catch(() => {})
-      .finally(() => setLoadingShipping(false));
-  }, [governorate]);
+      .then((data: { price: number | null }) => {
+        if (!cancelled) setShippingPrice(data.price);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled && !(error instanceof DOMException && error.name === 'AbortError')) {
+          setShippingPrice(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingShipping(false);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [governorate, area]);
 
   const { amount: freeShippingThreshold } = useShippingThreshold();
   const isFreeShipping = cartTotal >= freeShippingThreshold;
