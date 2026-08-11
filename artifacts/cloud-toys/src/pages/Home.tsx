@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { PageTransition } from '../components/ui/PageTransition';
 import { useListProducts, useListCategories } from '@workspace/api-client-react';
 import { ProductCard } from '../components/ui/ProductCard';
@@ -9,6 +9,7 @@ import { resolveMediaUrl } from '@workspace/api-client-react';
 
 export function Home() {
   const search = useSearch();
+  const [, setLocation] = useLocation();
   const categoryParam = new URLSearchParams(search).get('category') || undefined;
 
   const { data, isLoading, isError, error, refetch } = useListProducts({
@@ -48,6 +49,10 @@ export function Home() {
             <Link
               key={cat.id}
               href={`/shop?category=${encodeURIComponent(cat.slug)}`}
+              onClick={(event) => {
+                event.preventDefault();
+                setLocation(`/shop?category=${encodeURIComponent(cat.slug)}`);
+              }}
               className={`group flex h-[104px] w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-2 rounded-2xl border px-2 transition-colors md:h-[112px] md:w-[92px] ${
                 categoryParam === cat.slug
                   ? 'border-primary bg-primary text-white shadow-sm'

@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Instagram, Facebook, Mail, MapPin, Phone } from 'lucide-react';
 import { useState } from 'react';
 import { useContactInfo } from '@/hooks/useContactInfo';
@@ -14,6 +14,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
 }
 
 export function Footer() {
+  const [location] = useLocation();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [error, setError] = useState('');
@@ -38,41 +39,42 @@ export function Footer() {
 
   return (
     <footer className="bg-[#1A0A0F] text-white/80 mt-24">
-      {/* Newsletter band */}
-      <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="text-center md:text-left">
-            <h3 className="font-serif text-2xl md:text-3xl font-semibold text-white mb-2">
-              The Cloud Toys Journal
-            </h3>
-            <p className="text-white/60 text-sm">Early access, new arrivals, and curated guides for thoughtful parents.</p>
-          </div>
-          {subscribed ? (
-            <p className="text-[#C9A227] font-medium text-sm">✓ You're on the list — thank you!</p>
-          ) : (
-            <div className="w-full md:w-auto">
-              <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="flex-1 md:w-64 bg-white/8 border border-white/15 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#C9A227]/60 transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={subscribeMutation.isPending}
-                  className="bg-[#C9A227] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#b08e20] transition-all duration-200 hover:shadow-lg whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {subscribeMutation.isPending ? 'Subscribing…' : 'Subscribe'}
-                </button>
-              </form>
-              {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+      {location !== '/categories' && (
+        <div className="border-b border-white/10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="text-center md:text-left">
+              <h3 className="font-serif text-2xl md:text-3xl font-semibold text-white mb-2">
+                The Cloud Toys Journal
+              </h3>
+              <p className="text-white/60 text-sm">Early access, new arrivals, and curated guides for thoughtful parents.</p>
             </div>
-          )}
+            {subscribed ? (
+              <p className="text-[#C9A227] font-medium text-sm">✓ You're on the list — thank you!</p>
+            ) : (
+              <div className="w-full md:w-auto">
+                <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="flex-1 md:w-64 bg-white/8 border border-white/15 rounded-full px-5 py-2.5 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-[#C9A227]/60 transition-colors"
+                  />
+                  <button
+                    type="submit"
+                    disabled={subscribeMutation.isPending}
+                    className="bg-[#C9A227] text-white px-6 py-2.5 rounded-full text-sm font-semibold hover:bg-[#b08e20] transition-all duration-200 hover:shadow-lg whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {subscribeMutation.isPending ? 'Subscribing…' : 'Subscribe'}
+                  </button>
+                </form>
+                {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main footer grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-10">
