@@ -1,4 +1,4 @@
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { formatPrice as formatCurrency } from '../../lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
@@ -13,6 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [hovered, setHovered] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
@@ -33,6 +34,13 @@ export function ProductCard({ product }: { product: Product }) {
     }
   };
 
+  const handleImageClick = (e: React.MouseEvent) => {
+    // Keep the image itself a reliable single-click target. The hover action
+    // layer is visual only except for its Add to Bag button.
+    if ((e.target as HTMLElement).closest('button')) return;
+    setLocation(`/product/${product.slug}`);
+  };
+
   const formatPrice = (price: number) => formatCurrency(price, product.currency);
 
   const discountPct =
@@ -48,6 +56,7 @@ export function ProductCard({ product }: { product: Product }) {
         style={{ aspectRatio: '3/4', boxShadow: hovered ? '0 20px 60px rgba(122,31,61,0.12)' : '0 4px 24px rgba(0,0,0,0.06)', transition: 'box-shadow 0.4s ease' }}
         onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse') setHovered(false); }}
+        onClick={handleImageClick}
       >
         <ProductPicture
           src={product.mediumUrl ?? product.imageUrl}
@@ -102,12 +111,12 @@ export function ProductCard({ product }: { product: Product }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="absolute inset-x-3 bottom-3 flex gap-2"
+              className="pointer-events-none absolute inset-x-3 bottom-3 flex gap-2"
             >
               <button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className="flex-1 bg-white text-[#7A1F3D] h-10 rounded-full text-sm font-semibold hover:bg-[#7A1F3D] hover:text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="pointer-events-auto flex-1 bg-white text-[#7A1F3D] h-10 rounded-full text-sm font-semibold hover:bg-[#7A1F3D] hover:text-white flex items-center justify-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ShoppingBag className="w-4 h-4" />
                 {product.inStock ? 'Add to Bag' : 'Out of Stock'}
